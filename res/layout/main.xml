@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+    <jp.ddo.neko_daisuki.android.widget.uzumaki.UzumakiDiagram
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+		outer_diameter="0"
+		inner_diameter="0"
+		start_angle="0"
+		sweep_angle="-1080"/>
+</LinearLayout>
