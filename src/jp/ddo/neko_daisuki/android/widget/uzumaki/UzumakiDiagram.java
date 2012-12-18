@@ -37,18 +37,10 @@ public class UzumakiDiagram extends View
 
 	@Override
 	protected void onDraw(Canvas canvas) {
-		int size = this.getSmaller(this.getWidth(), this.getHeight());
+		int size = Math.min(this.getWidth(), this.getHeight());
 		int outer_diameter = this.outer_diameter == 0 ? size : this.outer_diameter;
 		int inner_diameter = this.inner_diameter == 0 ? (outer_diameter / 10 * 9) : this.inner_diameter;
 		this.draw(canvas, outer_diameter, inner_diameter);
-	}
-
-	private int getSmaller(int n, int m) {
-		return n < m ? n : m;
-	}
-
-	private int abs(int n) {
-		return n < 0 ? - n : n;
 	}
 
 	private void draw(Canvas canvas, int outer_diameter, int inner_diameter) {
@@ -56,12 +48,11 @@ public class UzumakiDiagram extends View
 		RectF oval = new RectF(0, 0, outer_diameter, outer_diameter);
 
 		Path path = new Path();
-		int diameter_step = (outer_diameter - inner_diameter) / (this.abs(this.sweep_angle) / 180) / 2;
+		int diameter_step = (outer_diameter - inner_diameter) / (Math.abs(this.sweep_angle) / 180) / 2;
 		int angle_step = (this.sweep_angle < 0 ? -1 : 1) * 90;
 		int angle;
-		for (angle = this.start_angle; this.abs(angle) < this.abs(this.sweep_angle); angle += angle_step) {
-			int pos = angle % 180;
-			if (pos == 0) {
+		for (angle = this.start_angle; angle != this.sweep_angle; angle += angle_step) {
+			if ((angle % 180) == 0) {
 				oval.bottom -= diameter_step;
 				oval.top += diameter_step;
 			}
