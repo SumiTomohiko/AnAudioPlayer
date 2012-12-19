@@ -7,8 +7,10 @@ rm -rf "${build_dir}"
 rm -rf "${dist_dir}"
 
 #create the needed directories
-mkdir -m 770 -p "${dist_dir}"
-mkdir -m 770 -p "${build_dir}/classes"
+mkdir_cmd="mkdir -m 770 -p"
+${mkdir_cmd} "${dist_dir}"
+${mkdir_cmd} "${build_dir}/classes"
+${mkdir_cmd} "${libs_dir}"
 
 #Rmove the R.java file as will be created by aapt
 rm "${r_dir}/R.java"
@@ -22,7 +24,14 @@ cd "${src_dir}"
 
 #Now compile - note the use of a seperate lib (in non-dex format!)
 echo Compile the java code
-javac ${javac_opt} -d "${classes_dir}" "${pkg_dir}/MainActivity.java" "jp/ddo/neko_daisuki/android/widget/uzumaki/UzumakiDiagram.java" #"jp/ddo/neko_daisuki/android/widget/PageView.java"
+cmd="javac ${javac_opt} -d ${classes_dir}"
+widget_dir="jp/ddo/neko_daisuki/android/widget"
+${cmd} "${widget_dir}/uzumaki/UzumakiDiagram.java"
+${cmd} "${widget_dir}/PageView.java"
+jar="${libs_dir}/neko_daisuki.jar"
+(cd ${classes_dir} && jar cf "${jar}" "${widget_dir}")
+
+${cmd} -cp "${jar}" "${pkg_dir}/MainActivity.java"
 
 #Back out
 cd "${dirpath}"

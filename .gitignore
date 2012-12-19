@@ -1,4 +1,5 @@
 _build
 dist
+libs
 projectrc.local
 src/jp/ddo/neko_daisuki/anaudioplayer/R.java

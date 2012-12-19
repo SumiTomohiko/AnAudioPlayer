@@ -4,6 +4,7 @@ cd $(dirname $0)
 
 dirpath=$(pwd)
 src_dir="${dirpath}/src"
+libs_dir="${dirpath}/libs"
 app_name="anaudioplayer"
 pkg_dir="jp/ddo/neko_daisuki/${app_name}"
 r_dir="${src_dir}/${pkg_dir}"
