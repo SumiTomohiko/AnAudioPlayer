@@ -28,11 +28,12 @@ public class UzumakiDiagram extends View
 
 	public UzumakiDiagram(Context context, AttributeSet attrs) {
 		super(context, attrs);
+		this.readAttribute(attrs);
+	}
 
-		this.inner_diameter = attrs.getAttributeIntValue(null, "inner_diameter", 0);
-		this.outer_diameter = attrs.getAttributeIntValue(null, "outer_diameter", 0);
-		this.start_angle = attrs.getAttributeIntValue(null, "start_angle", 0);
-		this.sweep_angle = attrs.getAttributeIntValue(null, "sweep_angle", DEFAULT_SWEEP_ANGLE);
+	public UzumakiDiagram(Context context, AttributeSet attrs, int defStyle) {
+		super(context, attrs, defStyle);
+		this.readAttribute(attrs);
 	}
 
 	@Override
@@ -68,5 +69,12 @@ public class UzumakiDiagram extends View
 		paint.setColor(0xffffffff);
 
 		canvas.drawPath(path, paint);
+	}
+
+	private void readAttribute(AttributeSet attrs) {
+		this.inner_diameter = attrs.getAttributeIntValue(null, "inner_diameter", 0);
+		this.outer_diameter = attrs.getAttributeIntValue(null, "outer_diameter", 0);
+		this.start_angle = attrs.getAttributeIntValue(null, "start_angle", 0);
+		this.sweep_angle = attrs.getAttributeIntValue(null, "sweep_angle", DEFAULT_SWEEP_ANGLE);
 	}
 }
