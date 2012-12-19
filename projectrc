@@ -13,4 +13,8 @@ javac_opt="-verbose"
 dex_path="${build_dir}/${app_name}.dex"
 dist_dir="${dirpath}/dist"
 
+if [ -f projectrc.local ]; then
+	. projectrc.local
+fi
+
 # vim: filetype=sh
