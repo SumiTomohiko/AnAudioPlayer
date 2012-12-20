@@ -27,8 +27,7 @@ echo Compile the java code
 cmd="javac ${javac_opt} -d ${classes_dir}"
 widget_dir="jp/ddo/neko_daisuki/android/widget"
 ${cmd} "${widget_dir}/uzumaki/UzumakiDiagram.java"
-${cmd} "${widget_dir}/PageView.java"
-jar="${libs_dir}/neko_daisuki.jar"
+jar="${libs_dir}/uzumaki.jar"
 (cd ${classes_dir} && jar cf "${jar}" "${widget_dir}")
 
 ${cmd} -cp "${jar}" "${pkg_dir}/MainActivity.java"
