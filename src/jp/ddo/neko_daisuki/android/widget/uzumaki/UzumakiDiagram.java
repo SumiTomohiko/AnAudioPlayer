@@ -45,8 +45,9 @@ public class UzumakiDiagram extends View
 	}
 
 	private void draw(Canvas canvas, int outer_diameter, int inner_diameter) {
-		/* left, top, right, bottom */
-		RectF oval = new RectF(0, 0, outer_diameter, outer_diameter);
+		int left = (this.getWidth() - outer_diameter) / 2;
+		int top = (this.getHeight() - outer_diameter) / 2;
+		RectF oval = new RectF(left, top, left + outer_diameter, top + outer_diameter);
 
 		Path path = new Path();
 		int diameter_step = (outer_diameter - inner_diameter) / (Math.abs(this.sweep_angle) / 180) / 2;
