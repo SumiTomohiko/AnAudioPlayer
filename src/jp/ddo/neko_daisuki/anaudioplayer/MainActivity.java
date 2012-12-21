@@ -32,22 +32,9 @@ public class MainActivity extends Activity
 	private void initializeDirList() {
 		ListView view = (ListView)this.findViewById(R.id.dir_list);
 		int layout = android.R.layout.simple_list_item_1;
-		this.dirList = this.listMp3Dir(new File("/sdcard"));
+		this.dirList = this.listMp3Dir(new File("/sdcard/u1"));
 		view.setAdapter(new ArrayAdapter<String>(this, layout, this.dirList));
 		view.setOnItemClickListener(new DirectoryListListener(this));
-	}
-
-	private class DirectoryListListener implements AdapterView.OnItemClickListener {
-
-		public DirectoryListListener(MainActivity activity) {
-			this.activity = activity;
-		}
-
-		public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
-			this.activity.selectDir(position);
-		}
-
-		private MainActivity activity;
 	}
 
 	private File[] listFiles(File dir, FilenameFilter filter) {
@@ -114,7 +101,44 @@ public class MainActivity extends Activity
 
 		ListView view = (ListView)this.findViewById(R.id.file_list);
 		view.setAdapter(new ArrayAdapter<String>(this, layout, this.files));
+		view.setOnItemClickListener(new FileListListener(this));
+
 		this.flipper.showNext();
+	}
+
+	private void selectFile(int position) {
+		this.flipper.showNext();
+	}
+
+	private abstract class ListListener implements AdapterView.OnItemClickListener {
+
+		public ListListener(MainActivity activity) {
+			this.activity = activity;
+		}
+
+		protected MainActivity activity;
+	}
+
+	private class DirectoryListListener extends ListListener {
+
+		public DirectoryListListener(MainActivity activity) {
+			super(activity);
+		}
+
+		public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
+			this.activity.selectDir(position);
+		}
+	}
+
+	private class FileListListener extends ListListener {
+
+		public FileListListener(MainActivity activity) {
+			super(activity);
+		}
+
+		public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
+			this.activity.selectFile(position);
+		}
 	}
 
 	private void setClickListener(int[] widgets, View.OnClickListener listener) {
