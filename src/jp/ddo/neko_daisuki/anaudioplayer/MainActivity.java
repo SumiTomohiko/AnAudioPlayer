@@ -10,6 +10,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -31,8 +32,22 @@ public class MainActivity extends Activity
 	private void initializeDirList() {
 		ListView view = (ListView)this.findViewById(R.id.dir_list);
 		int layout = android.R.layout.simple_list_item_1;
-		List<String> files = this.listMp3Dir(new File("/sdcard"));
-		view.setAdapter(new ArrayAdapter<String>(this, layout, files));
+		this.dirList = this.listMp3Dir(new File("/sdcard"));
+		view.setAdapter(new ArrayAdapter<String>(this, layout, this.dirList));
+		view.setOnItemClickListener(new DirectoryListListener(this));
+	}
+
+	private class DirectoryListListener implements AdapterView.OnItemClickListener {
+
+		public DirectoryListListener(MainActivity activity) {
+			this.activity = activity;
+		}
+
+		public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
+			this.activity.selectDir(position);
+		}
+
+		private MainActivity activity;
 	}
 
 	private File[] listFiles(File dir, FilenameFilter filter) {
@@ -85,11 +100,21 @@ public class MainActivity extends Activity
 	}
 
 	private void initializeFlipper() {
-		ViewFlipper flipper = (ViewFlipper)this.findViewById(R.id.flipper);
+		this.flipper = (ViewFlipper)this.findViewById(R.id.flipper);
 		int[] next_buttons = { R.id.next0, R.id.next1, R.id.next2 };
-		this.setClickListener(next_buttons, new NextFlipper(flipper));
+		this.setClickListener(next_buttons, new NextFlipper(this.flipper));
 		int[] previous_buttons = { R.id.prev0, R.id.prev1, R.id.prev2 };
-		this.setClickListener(previous_buttons, new PreviousFlipper(flipper));
+		this.setClickListener(previous_buttons, new PreviousFlipper(this.flipper));
+	}
+
+	private void selectDir(int position) {
+		int layout = android.R.layout.simple_list_item_1;
+		String dir = this.dirList.get(position);
+		this.files = (new File(dir)).list(new Mp3Filter());
+
+		ListView view = (ListView)this.findViewById(R.id.file_list);
+		view.setAdapter(new ArrayAdapter<String>(this, layout, this.files));
+		this.flipper.showNext();
 	}
 
 	private void setClickListener(int[] widgets, View.OnClickListener listener) {
@@ -131,4 +156,8 @@ public class MainActivity extends Activity
 			this.flipper.showPrevious();
 		}
 	}
+
+	private List<String> dirList = null;
+	private String[] files = new String[0];
+	private ViewFlipper flipper;
 }
