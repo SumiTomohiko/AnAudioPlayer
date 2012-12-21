@@ -10,6 +10,9 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.view.animation.Interpolator;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -25,14 +28,36 @@ public class MainActivity extends Activity
 	{
         super.onCreate(savedInstanceState);
         this.setContentView(R.layout.main);
-		this.initializeFlipper();
+		this.initializeButtonListener();
 		this.initializeDirList();
+		this.initializeAnimation();
     }
+
+	private static final long ANIMATION_DURATION = 250;
+	//private static final int INTERPOLATOR = android.R.anim.decelerate_interpolator;
+	private static final int INTERPOLATOR = android.R.anim.linear_interpolator;
+
+	private Animation loadAnimation(int id, Interpolator interp) {
+		Animation anim = AnimationUtils.loadAnimation(this, id);
+		anim.setDuration(ANIMATION_DURATION);
+		anim.setInterpolator(interp);
+		return anim;
+	}
+
+	private void initializeAnimation() {
+		Interpolator interp = AnimationUtils.loadInterpolator(this, INTERPOLATOR);
+		this.leftInAnimation = this.loadAnimation(R.anim.anim_left_in, interp);
+		this.leftOutAnimation = this.loadAnimation(R.anim.anim_left_out, interp);
+		this.rightInAnimation = this.loadAnimation(R.anim.anim_right_in, interp);
+		this.rightOutAnimation = this.loadAnimation(R.anim.anim_right_out, interp);
+	}
+
+	private static final String MEDIA_PATH = "/sdcard/u1";
 
 	private void initializeDirList() {
 		ListView view = (ListView)this.findViewById(R.id.dir_list);
 		int layout = android.R.layout.simple_list_item_1;
-		this.dirList = this.listMp3Dir(new File("/sdcard/u1"));
+		this.dirList = this.listMp3Dir(new File(MEDIA_PATH));
 		view.setAdapter(new ArrayAdapter<String>(this, layout, this.dirList));
 		view.setOnItemClickListener(new DirectoryListListener(this));
 	}
@@ -86,12 +111,12 @@ public class MainActivity extends Activity
 		}
 	}
 
-	private void initializeFlipper() {
+	private void initializeButtonListener() {
 		this.flipper = (ViewFlipper)this.findViewById(R.id.flipper);
 		int[] next_buttons = { R.id.next0, R.id.next1, R.id.next2 };
-		this.setClickListener(next_buttons, new NextFlipper(this.flipper));
+		this.setClickListener(next_buttons, new NextButtonListener(this));
 		int[] previous_buttons = { R.id.prev0, R.id.prev1, R.id.prev2 };
-		this.setClickListener(previous_buttons, new PreviousFlipper(this.flipper));
+		this.setClickListener(previous_buttons, new PreviousButtonListener(this));
 	}
 
 	private void selectDir(int position) {
@@ -103,10 +128,22 @@ public class MainActivity extends Activity
 		view.setAdapter(new ArrayAdapter<String>(this, layout, this.files));
 		view.setOnItemClickListener(new FileListListener(this));
 
-		this.flipper.showNext();
+		this.showNext();
 	}
 
 	private void selectFile(int position) {
+		this.showNext();
+	}
+
+	private void showPrevious() {
+		this.flipper.setInAnimation(this.leftInAnimation);
+		this.flipper.setOutAnimation(this.rightOutAnimation);
+		this.flipper.showPrevious();
+	}
+
+	private void showNext() {
+		this.flipper.setInAnimation(this.rightInAnimation);
+		this.flipper.setOutAnimation(this.leftOutAnimation);
 		this.flipper.showNext();
 	}
 
@@ -148,40 +185,44 @@ public class MainActivity extends Activity
 		}
 	}
 
-	private abstract class Flipper implements View.OnClickListener {
+	private abstract class ButtonListener implements View.OnClickListener {
 
-		public Flipper(ViewFlipper flipper) {
-			this.flipper = flipper;
+		public ButtonListener(MainActivity activity) {
+			this.activity = activity;
 		}
 
-		protected ViewFlipper flipper;
+		protected MainActivity activity;
 	}
 
-	private class NextFlipper extends Flipper {
+	private class NextButtonListener extends ButtonListener {
 
-		public NextFlipper(ViewFlipper flipper) {
-			super(flipper);
+		public NextButtonListener(MainActivity activity) {
+			super(activity);
 		}
 
 		@Override
 		public void onClick(View view) {
-			this.flipper.showNext();
+			this.activity.showNext();
 		}
 	}
 
-	private class PreviousFlipper extends Flipper {
+	private class PreviousButtonListener extends ButtonListener {
 
-		public PreviousFlipper(ViewFlipper flipper) {
-			super(flipper);
+		public PreviousButtonListener(MainActivity activity) {
+			super(activity);
 		}
 
 		@Override
 		public void onClick(View view) {
-			this.flipper.showPrevious();
+			this.activity.showPrevious();
 		}
 	}
 
 	private List<String> dirList = null;
 	private String[] files = new String[0];
 	private ViewFlipper flipper;
+	private Animation leftInAnimation;
+	private Animation leftOutAnimation;
+	private Animation rightInAnimation;
+	private Animation rightOutAnimation;
 }
