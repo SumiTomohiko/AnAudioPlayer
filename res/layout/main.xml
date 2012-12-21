@@ -50,14 +50,25 @@
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
             android:text="&lt;"/>
-        <jp.ddo.neko_daisuki.android.widget.uzumaki.UzumakiDiagram
+        <RelativeLayout
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:layout_weight="1"
-            outer_diameter="0"
-            inner_diameter="0"
-            start_angle="0"
-            sweep_angle="-1080"/>
+            android:layout_weight="1">
+            <jp.ddo.neko_daisuki.android.widget.uzumaki.UzumakiDiagram
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_centerInParent="true"
+                outer_diameter="0"
+                inner_diameter="0"
+                start_angle="0"
+                sweep_angle="-1080"/>
+            <Button
+                android:id="@+id/play"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="&gt;"/>
+        </RelativeLayout>
         <Button
             android:id="@+id/next2"
             android:layout_width="wrap_content"

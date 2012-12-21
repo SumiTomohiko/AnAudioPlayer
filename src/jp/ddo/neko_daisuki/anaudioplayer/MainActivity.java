@@ -28,7 +28,7 @@ public class MainActivity extends Activity
 	{
         super.onCreate(savedInstanceState);
         this.setContentView(R.layout.main);
-		this.initializeButtonListener();
+		this.initializeFlipButtonListener();
 		this.initializeDirList();
 		this.initializeAnimation();
     }
@@ -111,7 +111,7 @@ public class MainActivity extends Activity
 		}
 	}
 
-	private void initializeButtonListener() {
+	private void initializeFlipButtonListener() {
 		this.flipper = (ViewFlipper)this.findViewById(R.id.flipper);
 		int[] next_buttons = { R.id.next0, R.id.next1, R.id.next2 };
 		this.setClickListener(next_buttons, new NextButtonListener(this));
@@ -185,16 +185,16 @@ public class MainActivity extends Activity
 		}
 	}
 
-	private abstract class ButtonListener implements View.OnClickListener {
+	private abstract class FlipButtonListener implements View.OnClickListener {
 
-		public ButtonListener(MainActivity activity) {
+		public FlipButtonListener(MainActivity activity) {
 			this.activity = activity;
 		}
 
 		protected MainActivity activity;
 	}
 
-	private class NextButtonListener extends ButtonListener {
+	private class NextButtonListener extends FlipButtonListener {
 
 		public NextButtonListener(MainActivity activity) {
 			super(activity);
@@ -206,7 +206,7 @@ public class MainActivity extends Activity
 		}
 	}
 
-	private class PreviousButtonListener extends ButtonListener {
+	private class PreviousButtonListener extends FlipButtonListener {
 
 		public PreviousButtonListener(MainActivity activity) {
 			super(activity);
