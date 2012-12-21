@@ -1,4 +1,4 @@
-package jp.ddo.neko_daisuki.android.widget.uzumaki;
+package jp.ddo.neko_daisuki.android.widget;
 
 import android.content.Context;
 import android.graphics.Canvas;

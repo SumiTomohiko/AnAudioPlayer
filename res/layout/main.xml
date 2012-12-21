@@ -54,7 +54,7 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:layout_weight="1">
-            <jp.ddo.neko_daisuki.android.widget.uzumaki.UzumakiDiagram
+            <jp.ddo.neko_daisuki.android.widget.UzumakiDiagram
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:layout_centerInParent="true"
