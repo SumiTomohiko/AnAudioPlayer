@@ -51,17 +51,13 @@ public class UzumakiDiagram extends View
 
 		Path path = new Path();
 		int diameter_step = (outer_diameter - inner_diameter) / (Math.abs(this.sweep_angle) / 180) / 2;
+		RectShrinker verticalShrinker = new VerticalShrinker(diameter_step);
+		RectShrinker horizontalShrinker = new HorizontalShrinker(diameter_step);
 		int angle_step = (this.sweep_angle < 0 ? -1 : 1) * 90;
 		int angle;
 		for (angle = this.start_angle; angle != this.sweep_angle; angle += angle_step) {
-			if ((angle % 180) == 0) {
-				oval.bottom -= diameter_step;
-				oval.top += diameter_step;
-			}
-			else {
-				oval.left += diameter_step;
-				oval.right -= diameter_step;
-			}
+			RectShrinker shrinker = angle % 180 == 0 ? verticalShrinker : horizontalShrinker;
+			shrinker.shrink(oval);
 			path.addArc(oval, angle, angle_step);
 		}
 
@@ -77,5 +73,40 @@ public class UzumakiDiagram extends View
 		this.outer_diameter = attrs.getAttributeIntValue(null, "outer_diameter", 0);
 		this.start_angle = attrs.getAttributeIntValue(null, "start_angle", 0);
 		this.sweep_angle = attrs.getAttributeIntValue(null, "sweep_angle", DEFAULT_SWEEP_ANGLE);
+	}
+
+	private abstract class RectShrinker {
+
+		public RectShrinker(int size) {
+			this.size = size;
+		}
+
+		public abstract void shrink(RectF rect);
+
+		protected int size;
+	}
+
+	private class HorizontalShrinker extends RectShrinker {
+
+		public HorizontalShrinker(int size) {
+			super(size);
+		}
+
+		public void shrink(RectF rect) {
+			rect.left += this.size;
+			rect.right -= this.size;
+		}
+	}
+
+	private class VerticalShrinker extends RectShrinker {
+
+		public VerticalShrinker(int size) {
+			super(size);
+		}
+
+		public void shrink(RectF rect) {
+			rect.bottom -= this.size;
+			rect.top += this.size;
+		}
 	}
 }
