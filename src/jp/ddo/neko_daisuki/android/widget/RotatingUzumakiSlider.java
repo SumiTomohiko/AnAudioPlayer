@@ -20,6 +20,7 @@ class RotatingUzumakiSlider extends UzumakiSlider {
 
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
+        canvas.rotate(this.getProgress(), this.getWidth() / 2, this.getHeight() / 2);
         this.drawUzumaki(canvas);
     }
 }

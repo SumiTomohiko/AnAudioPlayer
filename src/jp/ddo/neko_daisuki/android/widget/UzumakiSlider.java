@@ -6,7 +6,7 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
 
-abstract class UzumakiSlider extends View {
+public abstract class UzumakiSlider extends View {
 
     public UzumakiSlider(Context context) {
         super(context);
@@ -23,6 +23,15 @@ abstract class UzumakiSlider extends View {
         super(context, attrs, defStyle);
         this.initialize();
         this.readAttribute(attrs);
+    }
+
+    public int getProgress() {
+        return this.progress;
+    }
+
+    public void setProgress(int progress) {
+        this.progress = progress;
+        this.invalidate();
     }
 
     private void initialize() {

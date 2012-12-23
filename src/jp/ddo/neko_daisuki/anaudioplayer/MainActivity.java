@@ -5,9 +5,12 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
@@ -19,6 +22,8 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ViewFlipper;
 
+import jp.ddo.neko_daisuki.android.widget.UzumakiSlider;
+
 public class MainActivity extends Activity
 {
 	private static final String log_tag = "An Audio Player";
@@ -28,10 +33,54 @@ public class MainActivity extends Activity
 	{
         super.onCreate(savedInstanceState);
         this.setContentView(R.layout.main);
+
 		this.initializeFlipButtonListener();
 		this.initializeDirList();
 		this.initializeAnimation();
+		this.initializePlayButton();
+
+		this.task = new PlayerTask(this);
     }
+
+	private void initializePlayButton() {
+		this.play_button = (Button)this.findViewById(R.id.play);
+		this.pause_listener = new PauseButtonListener(this);
+		this.play_button.setOnClickListener(this.pause_listener);
+		this.play_listener = new PlayButtonListener(this);
+	}
+
+	private class ActivityListener {
+
+		public ActivityListener(MainActivity activity) {
+			this.activity = activity;
+		}
+
+		protected MainActivity activity;
+	}
+
+	private class PauseButtonListener extends ActivityListener implements View.OnClickListener {
+
+		public PauseButtonListener(MainActivity activity) {
+			super(activity);
+		}
+
+		@Override
+		public void onClick(View view) {
+			this.activity.pause();
+		}
+	}
+
+	private class PlayButtonListener extends ActivityListener implements View.OnClickListener {
+
+		public PlayButtonListener(MainActivity activity) {
+			super(activity);
+		}
+
+		@Override
+		public void onClick(View view) {
+			this.activity.play();
+		}
+	}
 
 	private static final long ANIMATION_DURATION = 250;
 	//private static final int INTERPOLATOR = android.R.anim.decelerate_interpolator;
@@ -131,8 +180,56 @@ public class MainActivity extends Activity
 		this.showNext();
 	}
 
+	private void pause() {
+		this.timer.cancel();
+		this.play_button.setOnClickListener(this.play_listener);
+	}
+
+	private class PlayerTask extends TimerTask {
+
+		public PlayerTask(MainActivity activity) {
+			this.handler = new Handler();
+			this.proc = new Proc(activity);
+		}
+
+		public class Proc implements Runnable {
+
+			public Proc(MainActivity activity) {
+				this.activity = activity;
+			}
+
+			public void run() {
+				this.activity.updateSlider();
+			}
+
+			private MainActivity activity;
+		}
+
+		@Override
+		public void run() {
+			this.handler.post(this.proc);
+		}
+
+		private Handler handler;
+		private Runnable proc;
+	}
+
+	private void updateSlider() {
+		UzumakiSlider slider = (UzumakiSlider)this.findViewById(R.id.slider);
+		slider.setProgress(slider.getProgress() + 1);
+	}
+
+	private void play() {
+		this.timer = new Timer(true);
+		this.timer.scheduleAtFixedRate(this.task, 0, 100);
+
+		this.play_button.setOnClickListener(this.pause_listener);
+	}
+
 	private void selectFile(int position) {
+		this.filePosition = position;
 		this.showNext();
+		this.play();
 	}
 
 	private void showPrevious() {
@@ -225,4 +322,11 @@ public class MainActivity extends Activity
 	private Animation leftOutAnimation;
 	private Animation rightInAnimation;
 	private Animation rightOutAnimation;
+	private int filePosition;
+
+	private Button play_button;
+	private View.OnClickListener pause_listener;
+	private View.OnClickListener play_listener;
+	private Timer timer;
+	private PlayerTask task;
 }
