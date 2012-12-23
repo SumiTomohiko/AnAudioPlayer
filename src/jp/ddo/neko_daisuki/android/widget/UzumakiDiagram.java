@@ -1,52 +1,34 @@
 package jp.ddo.neko_daisuki.android.widget;
 
-import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
-import android.util.AttributeSet;
-import android.view.View;
 
-public class UzumakiDiagram extends View
+public class UzumakiDiagram
 {
-	private int inner_diameter;
-	private int outer_diameter;
 	private int start_angle;
 	private int sweep_angle;
+	private int outer_diameter;
+	private int inner_diameter;
+	private Paint paint;
 
-	private static final int DEFAULT_SWEEP_ANGLE = -3 * 360;
-
-	public UzumakiDiagram(Context context) {
-		super(context);
-
-		this.inner_diameter = 0;
-		this.outer_diameter = 0;
-		this.start_angle = 0;
-		this.sweep_angle = DEFAULT_SWEEP_ANGLE;
+	public UzumakiDiagram(int start_angle, int sweep_angle, int outer_diameter, int inner_diameter, Paint paint) {
+		this.start_angle = start_angle;
+		this.sweep_angle = sweep_angle;
+		this.outer_diameter = outer_diameter;
+		this.inner_diameter = inner_diameter;
+		this.paint = paint;
 	}
 
-	public UzumakiDiagram(Context context, AttributeSet attrs) {
-		super(context, attrs);
-		this.readAttribute(attrs);
-	}
-
-	public UzumakiDiagram(Context context, AttributeSet attrs, int defStyle) {
-		super(context, attrs, defStyle);
-		this.readAttribute(attrs);
-	}
-
-	@Override
-	protected void onDraw(Canvas canvas) {
-		int size = Math.min(this.getWidth(), this.getHeight());
-		int outer_diameter = this.outer_diameter == 0 ? size : this.outer_diameter;
-		int inner_diameter = this.inner_diameter == 0 ? (outer_diameter / 10 * 9) : this.inner_diameter;
-		this.draw(canvas, outer_diameter, inner_diameter);
+	public void draw(Canvas canvas) {
+		int outer_diameter = this.outer_diameter == 0 ? Math.min(canvas.getWidth(), canvas.getHeight()) : this.outer_diameter;
+		this.draw(canvas, outer_diameter, this.inner_diameter);
 	}
 
 	private void draw(Canvas canvas, int outer_diameter, int inner_diameter) {
-		int left = (this.getWidth() - outer_diameter) / 2;
-		int top = (this.getHeight() - outer_diameter) / 2;
+		int left = (canvas.getWidth() - outer_diameter) / 2;
+		int top = (canvas.getHeight() - outer_diameter) / 2;
 		RectF oval = new RectF(left, top, left + outer_diameter, top + outer_diameter);
 
 		Path path = new Path();
@@ -61,18 +43,7 @@ public class UzumakiDiagram extends View
 			path.addArc(oval, angle, angle_step);
 		}
 
-		Paint paint = new Paint();
-		paint.setStyle(Paint.Style.STROKE);
-		paint.setColor(0xffffffff);
-
-		canvas.drawPath(path, paint);
-	}
-
-	private void readAttribute(AttributeSet attrs) {
-		this.inner_diameter = attrs.getAttributeIntValue(null, "inner_diameter", 0);
-		this.outer_diameter = attrs.getAttributeIntValue(null, "outer_diameter", 0);
-		this.start_angle = attrs.getAttributeIntValue(null, "start_angle", 0);
-		this.sweep_angle = attrs.getAttributeIntValue(null, "sweep_angle", DEFAULT_SWEEP_ANGLE);
+		canvas.drawPath(path, this.paint);
 	}
 
 	private abstract class RectShrinker {
