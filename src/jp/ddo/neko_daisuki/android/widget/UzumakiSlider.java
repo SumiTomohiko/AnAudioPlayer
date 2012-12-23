@@ -54,6 +54,8 @@ public abstract class UzumakiSlider extends View {
     protected void drawUzumaki(Canvas canvas) {
         Paint paint = new Paint();
         paint.setARGB(255, 255, 255, 255);
+        paint.setAntiAlias(true);
+        paint.setStrokeWidth(10);
         paint.setStyle(Paint.Style.STROKE);
 
         UzumakiDiagram uzumaki = new UzumakiDiagram(this.start_angle, this.sweep_angle, this.outer_diameter, this.inner_diameter, paint);
