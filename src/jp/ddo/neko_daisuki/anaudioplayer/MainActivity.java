@@ -221,7 +221,7 @@ public class MainActivity extends Activity
 
 	private void play() {
 		this.timer = new Timer(true);
-		this.timer.scheduleAtFixedRate(this.task, 0, 100);
+		this.timer.scheduleAtFixedRate(this.task, 0, 10);
 
 		this.play_button.setOnClickListener(this.pause_listener);
 	}
