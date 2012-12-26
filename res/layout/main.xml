@@ -21,6 +21,7 @@
             android:id="@+id/next0"
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
+            android:enabled="false"
             android:text="&gt;"/>
     </LinearLayout>
     <LinearLayout
@@ -40,6 +41,7 @@
             android:id="@+id/next1"
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
+            android:enabled="false"
             android:text="&gt;"/>
     </LinearLayout>
     <LinearLayout

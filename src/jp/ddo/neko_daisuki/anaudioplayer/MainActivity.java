@@ -189,6 +189,7 @@ public class MainActivity extends Activity
         this.fileList.setAdapter(new ArrayAdapter<String>(this, layout, this.files));
         this.fileList.setOnItemClickListener(new FileListListener(this));
 
+        this.nextButton0.setEnabled(true);
         this.showNext();
     }
 
@@ -239,6 +240,7 @@ public class MainActivity extends Activity
 
     private void selectFile(int position) {
         this.filePosition = position;
+        this.nextButton1.setEnabled(true);
         this.showNext();
         this.play();
     }
