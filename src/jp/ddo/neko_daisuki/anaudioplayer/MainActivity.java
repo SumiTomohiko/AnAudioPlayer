@@ -39,8 +39,11 @@ public class MainActivity extends Activity
         this.initializeDirList();
         this.initializeAnimation();
         this.initializePlayButton();
+        this.initializeTimer();
+    }
 
-        this.task = new PlayerTask(this);
+    private void initializeTimer() {
+        this.timer = this.fakeTimer = new FakeTimer();
     }
 
     private void findViews() {
@@ -195,6 +198,8 @@ public class MainActivity extends Activity
 
     private void pause() {
         this.timer.cancel();
+        this.timer = this.fakeTimer;
+
         this.playButton.setOnClickListener(this.playListener);
     }
 
@@ -232,8 +237,10 @@ public class MainActivity extends Activity
     }
 
     private void play() {
-        this.timer = new Timer(true);
-        this.timer.scheduleAtFixedRate(this.task, 0, 10);
+        this.timer.cancel();
+        this.timer = new TrueTimer();
+        // Each Timer requests new TimerTask object (Timers cannot share one task).
+        this.timer.scheduleAtFixedRate(new PlayerTask(this), 0, 10);
 
         this.playButton.setOnClickListener(this.pauseListener);
     }
@@ -327,6 +334,38 @@ public class MainActivity extends Activity
         }
     }
 
+    private interface TimerInterface {
+
+        public void scheduleAtFixedRate(TimerTask task, long deley, long period);
+        public void cancel();
+    }
+
+    private class TrueTimer implements TimerInterface {
+
+        public TrueTimer() {
+            this.timer = new Timer(true);
+        }
+
+        public void scheduleAtFixedRate(TimerTask task, long deley, long period) {
+            this.timer.scheduleAtFixedRate(task, deley, period);
+        }
+
+        public void cancel() {
+            this.timer.cancel();
+        }
+
+        private Timer timer;
+    }
+
+    private class FakeTimer implements TimerInterface {
+
+        public void scheduleAtFixedRate(TimerTask task, long deley, long period) {
+        }
+
+        public void cancel() {
+        }
+    }
+
     private ViewFlipper flipper;
 
     private ListView dirList;
@@ -351,8 +390,8 @@ public class MainActivity extends Activity
 
     private View.OnClickListener pauseListener;
     private View.OnClickListener playListener;
-    private Timer timer;
-    private PlayerTask task;
+    private TimerInterface timer;
+    private FakeTimer fakeTimer;
 }
 
 // vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
