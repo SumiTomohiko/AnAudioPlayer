@@ -34,6 +34,7 @@ public class MainActivity extends Activity
         super.onCreate(savedInstanceState);
         this.setContentView(R.layout.main);
 
+        this.findViews();
         this.initializeFlipButtonListener();
         this.initializeDirList();
         this.initializeAnimation();
@@ -42,11 +43,25 @@ public class MainActivity extends Activity
         this.task = new PlayerTask(this);
     }
 
+    private void findViews() {
+        this.flipper = (ViewFlipper)this.findViewById(R.id.flipper);
+
+        this.dirList = (ListView)this.findViewById(R.id.dir_list);
+        this.nextButton0 = (Button)this.findViewById(R.id.next0);
+
+        this.prevButton1 = (Button)this.findViewById(R.id.prev1);
+        this.fileList = (ListView)this.findViewById(R.id.file_list);
+        this.nextButton1 = (Button)this.findViewById(R.id.next1);
+
+        this.prevButton2 = (Button)this.findViewById(R.id.prev2);
+        this.playButton = (Button)this.findViewById(R.id.play);
+        this.slider = (UzumakiSlider)this.findViewById(R.id.slider);
+    }
+
     private void initializePlayButton() {
-        this.play_button = (Button)this.findViewById(R.id.play);
-        this.pause_listener = new PauseButtonListener(this);
-        this.play_button.setOnClickListener(this.pause_listener);
-        this.play_listener = new PlayButtonListener(this);
+        this.pauseListener = new PauseButtonListener(this);
+        this.playButton.setOnClickListener(this.pauseListener);
+        this.playListener = new PlayButtonListener(this);
     }
 
     private class ActivityListener {
@@ -104,11 +119,10 @@ public class MainActivity extends Activity
     private static final String MEDIA_PATH = "/sdcard/u1";
 
     private void initializeDirList() {
-        ListView view = (ListView)this.findViewById(R.id.dir_list);
         int layout = android.R.layout.simple_list_item_1;
-        this.dirList = this.listMp3Dir(new File(MEDIA_PATH));
-        view.setAdapter(new ArrayAdapter<String>(this, layout, this.dirList));
-        view.setOnItemClickListener(new DirectoryListListener(this));
+        this.dirs = this.listMp3Dir(new File(MEDIA_PATH));
+        this.dirList.setAdapter(new ArrayAdapter<String>(this, layout, this.dirs));
+        this.dirList.setOnItemClickListener(new DirectoryListListener(this));
     }
 
     private File[] listFiles(File dir, FilenameFilter filter) {
@@ -161,28 +175,26 @@ public class MainActivity extends Activity
     }
 
     private void initializeFlipButtonListener() {
-        this.flipper = (ViewFlipper)this.findViewById(R.id.flipper);
-        int[] next_buttons = { R.id.next0, R.id.next1, R.id.next2 };
+        Button[] next_buttons = { this.nextButton0, this.nextButton1 };
         this.setClickListener(next_buttons, new NextButtonListener(this));
-        int[] previous_buttons = { R.id.prev0, R.id.prev1, R.id.prev2 };
+        Button[] previous_buttons = { this.prevButton1, this.prevButton2 };
         this.setClickListener(previous_buttons, new PreviousButtonListener(this));
     }
 
     private void selectDir(int position) {
         int layout = android.R.layout.simple_list_item_1;
-        String dir = this.dirList.get(position);
+        String dir = this.dirs.get(position);
         this.files = (new File(dir)).list(new Mp3Filter());
 
-        ListView view = (ListView)this.findViewById(R.id.file_list);
-        view.setAdapter(new ArrayAdapter<String>(this, layout, this.files));
-        view.setOnItemClickListener(new FileListListener(this));
+        this.fileList.setAdapter(new ArrayAdapter<String>(this, layout, this.files));
+        this.fileList.setOnItemClickListener(new FileListListener(this));
 
         this.showNext();
     }
 
     private void pause() {
         this.timer.cancel();
-        this.play_button.setOnClickListener(this.play_listener);
+        this.playButton.setOnClickListener(this.playListener);
     }
 
     private class PlayerTask extends TimerTask {
@@ -215,15 +227,14 @@ public class MainActivity extends Activity
     }
 
     private void updateSlider() {
-        UzumakiSlider slider = (UzumakiSlider)this.findViewById(R.id.slider);
-        slider.setProgress(slider.getProgress() + 1);
+        this.slider.setProgress(this.slider.getProgress() + 1);
     }
 
     private void play() {
         this.timer = new Timer(true);
         this.timer.scheduleAtFixedRate(this.task, 0, 10);
 
-        this.play_button.setOnClickListener(this.pause_listener);
+        this.playButton.setOnClickListener(this.pauseListener);
     }
 
     private void selectFile(int position) {
@@ -275,9 +286,8 @@ public class MainActivity extends Activity
         }
     }
 
-    private void setClickListener(int[] widgets, View.OnClickListener listener) {
-        for (int id: widgets) {
-            Button button = (Button)this.findViewById(id);
+    private void setClickListener(Button[] buttons, View.OnClickListener listener) {
+        for (Button button: buttons) {
             button.setOnClickListener(listener);
         }
     }
@@ -315,18 +325,30 @@ public class MainActivity extends Activity
         }
     }
 
-    private List<String> dirList = null;
-    private String[] files = new String[0];
     private ViewFlipper flipper;
+
+    private ListView dirList;
+    private Button nextButton0;
+
+    private Button prevButton1;
+    private ListView fileList;
+    private Button nextButton1;
+
+    private Button prevButton2;
+    private Button playButton;
+    private UzumakiSlider slider;
+
+    private List<String> dirs = null;
+    private String[] files = new String[0];
+    private int filePosition;
+
     private Animation leftInAnimation;
     private Animation leftOutAnimation;
     private Animation rightInAnimation;
     private Animation rightOutAnimation;
-    private int filePosition;
 
-    private Button play_button;
-    private View.OnClickListener pause_listener;
-    private View.OnClickListener play_listener;
+    private View.OnClickListener pauseListener;
+    private View.OnClickListener playListener;
     private Timer timer;
     private PlayerTask task;
 }
