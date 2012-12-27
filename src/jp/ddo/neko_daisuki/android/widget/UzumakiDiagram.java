@@ -7,13 +7,17 @@ import android.graphics.RectF;
 
 public class UzumakiDiagram
 {
+    private int x;
+    private int y;
     private int start_angle;
     private int sweep_angle;
     private int outer_diameter;
     private int inner_diameter;
     private Paint paint;
 
-    public UzumakiDiagram(int start_angle, int sweep_angle, int outer_diameter, int inner_diameter, Paint paint) {
+    public UzumakiDiagram(int x, int y, int start_angle, int sweep_angle, int outer_diameter, int inner_diameter, Paint paint) {
+        this.x = x;
+        this.y = y;
         this.start_angle = start_angle;
         this.sweep_angle = sweep_angle;
         this.outer_diameter = outer_diameter;
@@ -22,13 +26,10 @@ public class UzumakiDiagram
     }
 
     public void draw(Canvas canvas) {
-        int outer_diameter = this.outer_diameter == 0 ? Math.min(canvas.getWidth(), canvas.getHeight()) : this.outer_diameter;
-        this.draw(canvas, outer_diameter, this.inner_diameter);
-    }
-
-    private void draw(Canvas canvas, int outer_diameter, int inner_diameter) {
-        int left = (canvas.getWidth() - outer_diameter) / 2;
-        int top = (canvas.getHeight() - outer_diameter) / 2;
+        int outer_diameter = this.outer_diameter;
+        int inner_diameter = this.inner_diameter;
+        int left = this.x - outer_diameter / 2;
+        int top = this.y - outer_diameter / 2;
         RectF oval = new RectF(left, top, left + outer_diameter, top + outer_diameter);
 
         Path path = new Path();

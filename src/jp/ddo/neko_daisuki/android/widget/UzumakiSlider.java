@@ -3,6 +3,8 @@ package jp.ddo.neko_daisuki.android.widget;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.Region;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -51,15 +53,38 @@ public abstract class UzumakiSlider extends View {
         this.outline_inner_diameter = attrs.getAttributeIntValue(null, "outline_inner_diameter", this.inner_diameter);
     }
 
-    protected void drawUzumaki(Canvas canvas) {
+    private void drawLine(Canvas canvas, int x, int y) {
         Paint paint = new Paint();
         paint.setARGB(255, 255, 255, 255);
         paint.setAntiAlias(true);
         paint.setStrokeWidth(10);
         paint.setStyle(Paint.Style.STROKE);
 
-        UzumakiDiagram uzumaki = new UzumakiDiagram(this.start_angle, this.sweep_angle, this.outer_diameter, this.inner_diameter, paint);
+        int outer_diameter = this.outer_diameter != 0 ? this.outer_diameter : Math.min(Math.min(x, this.getWidth() - x), Math.min(y, this.getHeight() - y));
+        UzumakiDiagram uzumaki = new UzumakiDiagram(x, y, this.start_angle, this.sweep_angle, outer_diameter, this.inner_diameter, paint);
         uzumaki.draw(canvas);
+    }
+
+    private void drawTie(Canvas canvas, int x, int y) {
+        Path outer_outline = new Path();
+        outer_outline.addCircle(x, y, 100, Path.Direction.CW);
+
+        Path inner_outline = new Path();
+        inner_outline.addCircle(x, y, 50, Path.Direction.CW);
+
+        Paint paint = new Paint();
+        paint.setARGB(255, 255, 0, 0);
+        paint.setAntiAlias(true);
+        canvas.clipPath(outer_outline);
+        canvas.clipPath(inner_outline, Region.Op.DIFFERENCE);
+        canvas.drawPaint(paint);
+    }
+
+    protected void drawUzumaki(Canvas canvas) {
+        int x = this.getWidth() / 2;
+        int y = this.getHeight() / 2;
+        this.drawTie(canvas, x, y);
+        this.drawLine(canvas, x, y);
     }
 
     private int min;
