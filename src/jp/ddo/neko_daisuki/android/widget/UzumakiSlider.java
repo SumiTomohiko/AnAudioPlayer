@@ -67,7 +67,8 @@ public abstract class UzumakiSlider extends View {
 
     private void drawTie(Canvas canvas, int x, int y) {
         Path outer_outline = new Path();
-        outer_outline.addCircle(x, y, 100, Path.Direction.CW);
+        int radius = Math.min(this.getWidth(), this.getHeight()) / 2;
+        outer_outline.addCircle(x, y, radius, Path.Direction.CW);
 
         Path inner_outline = new Path();
         inner_outline.addCircle(x, y, 50, Path.Direction.CW);
