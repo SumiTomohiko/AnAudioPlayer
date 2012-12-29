@@ -62,9 +62,9 @@
                 android:layout_height="fill_parent"
                 android:layout_centerInParent="true"
                 outer_diameter="0"
-                inner_diameter="0"
+                inner_diameter="40%"
                 start_angle="0"
-                sweep_angle="-1080"/>
+                sweep_angle="-3600"/>
             <Button
                 android:id="@+id/play"
                 android:layout_width="wrap_content"
