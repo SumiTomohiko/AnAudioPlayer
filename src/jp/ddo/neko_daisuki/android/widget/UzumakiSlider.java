@@ -43,17 +43,17 @@ public abstract class UzumakiSlider extends View {
         this.progress = 0;
     }
 
-    private abstract class MemberSetter {
-
-        public abstract void set(UzumakiSlider slider, int value);
-    }
-
     public void setInnerDiameter(int value) {
         this.inner_diameter = value;
     }
 
     public void setInnerDiameterType(SizeType type) {
         this.inner_diameter_type = type;
+    }
+
+    private abstract class MemberSetter {
+
+        public abstract void set(UzumakiSlider slider, int value);
     }
 
     private class InnerDiameterPercentSetter extends MemberSetter {
@@ -72,6 +72,30 @@ public abstract class UzumakiSlider extends View {
         }
     }
 
+    private class OuterDiameterPercentSetter extends MemberSetter {
+
+        public void set(UzumakiSlider slider, int value) {
+            slider.setOuterDiameter(value);
+            slider.setOuterDiameterType(SizeType.TYPE_PERCENT);
+        }
+    }
+
+    private class OuterDiameterPixelSetter extends MemberSetter {
+
+        public void set(UzumakiSlider slider, int value) {
+            slider.setOuterDiameter(value);
+            slider.setOuterDiameterType(SizeType.TYPE_PIXEL);
+        }
+    }
+
+    public void setOuterDiameter(int value) {
+        this.outer_diameter = value;
+    }
+
+    public void setOuterDiameterType(SizeType type) {
+        this.outer_diameter_type = type;
+    }
+
     private void parseSize(String value, MemberSetter percentSetter, MemberSetter pixelSetter) {
         boolean isPercent = value.endsWith("%");
         int n = Integer.parseInt(isPercent ? value.substring(0, value.length() - 1) : value);
@@ -84,12 +108,16 @@ public abstract class UzumakiSlider extends View {
     private void readAttribute(AttributeSet attrs) {
         this.start_angle = attrs.getAttributeIntValue(null, "start_angle", 0);
         this.sweep_angle = attrs.getAttributeIntValue(null, "sweep_angle", DEFAULT_SWEEP_ANGLE);
-        this.outer_diameter = attrs.getAttributeIntValue(null, "outer_diameter", 0);
 
+        this.outline_outer_diameter = attrs.getAttributeIntValue(null, "outline_outer_diameter", 0);
+        this.outline_inner_diameter = attrs.getAttributeIntValue(null, "outline_inner_diameter", 0);
+        this.parseSize(attrs.getAttributeValue(null, "outer_diameter"), new OuterDiameterPercentSetter(), new OuterDiameterPixelSetter());
         this.parseSize(attrs.getAttributeValue(null, "inner_diameter"), new InnerDiameterPercentSetter(), new InnerDiameterPixelSetter());
 
-        this.outline_outer_diameter = attrs.getAttributeIntValue(null, "outline_outer_diameter", this.outer_diameter);
-        this.outline_inner_diameter = attrs.getAttributeIntValue(null, "outline_inner_diameter", this.inner_diameter);
+    }
+
+    private int computeDiameter(SizeType type, int size) {
+        return type == SizeType.TYPE_PERCENT ? this.getOutlineOuterDiameter() * size / 100 : size;
     }
 
     private void drawLine(Canvas canvas, int x, int y) {
@@ -99,16 +127,19 @@ public abstract class UzumakiSlider extends View {
         paint.setStrokeWidth(10);
         paint.setStyle(Paint.Style.STROKE);
 
-        int outer_diameter = this.outer_diameter != 0 ? this.outer_diameter : (2 * Math.min(Math.min(x, this.getWidth() - x), Math.min(y, this.getHeight() - y)));
-        int inner_diameter = this.inner_diameter_type == SizeType.TYPE_PERCENT ? (outer_diameter * this.inner_diameter) / 100 : this.inner_diameter;
+        int outer_diameter = this.computeDiameter(this.outer_diameter_type, this.outer_diameter);
+        int inner_diameter = this.computeDiameter(this.inner_diameter_type, this.inner_diameter);
         UzumakiDiagram uzumaki = new UzumakiDiagram(x, y, this.start_angle, this.sweep_angle, outer_diameter, inner_diameter, paint);
         uzumaki.draw(canvas);
     }
 
+    private int getOutlineOuterDiameter() {
+        return Math.min(this.getWidth(), this.getHeight());
+    }
+
     private void drawTie(Canvas canvas, int x, int y) {
         Path outer_outline = new Path();
-        int radius = Math.min(this.getWidth(), this.getHeight()) / 2;
-        outer_outline.addCircle(x, y, radius, Path.Direction.CW);
+        outer_outline.addCircle(x, y, this.getOutlineOuterDiameter() / 2, Path.Direction.CW);
 
         Path inner_outline = new Path();
         inner_outline.addCircle(x, y, 50, Path.Direction.CW);
@@ -136,13 +167,13 @@ public abstract class UzumakiSlider extends View {
 
     private int start_angle;
     private int sweep_angle;
-    private int outer_diameter;
-    private int inner_diameter;
-    private SizeType inner_diameter_type;
     private int outline_outer_diameter;
-    private SizeType outline_outer_diameter_type;
     private int outline_inner_diameter;
     private SizeType outline_inner_diameter_type;
+    private int outer_diameter;
+    private SizeType outer_diameter_type;
+    private int inner_diameter;
+    private SizeType inner_diameter_type;
 }
 
 // vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
