@@ -15,17 +15,17 @@ public abstract class UzumakiSlider extends View {
     private int max;
     private int progress;
 
-    private enum SizeType { TYPE_PIXEL, TYPE_PERCENT };
-
     private int startAngle;
     private int sweepAngle;
+
+    private enum SizeType { TYPE_PIXEL, TYPE_PERCENT };
     private int outlineOuterDiameter;
-    private int outlineInnerDiameter;
-    private SizeType outlineInnerDiameterType;
-    private int outerDiameter;
     private SizeType outerDiameterType;
-    private int innerDiameter;
+    private int outerDiameter;
     private SizeType innerDiameterType;
+    private int innerDiameter;
+    private SizeType outlineInnerDiameterType;
+    private int outlineInnerDiameter;
 
     public UzumakiSlider(Context context) {
         super(context);
@@ -57,6 +57,16 @@ public abstract class UzumakiSlider extends View {
         this.min = 0;
         this.max = 0;
         this.progress = 0;
+
+        this.startAngle = 0;
+        this.sweepAngle = -10 * 360;
+
+        this.outerDiameter = 95;
+        this.outerDiameterType = SizeType.TYPE_PERCENT;
+        this.innerDiameter = 45;
+        this.innerDiameterType = SizeType.TYPE_PERCENT;
+        this.outlineInnerDiameter = 40;
+        this.outlineInnerDiameterType = SizeType.TYPE_PERCENT;
     }
 
     public void setInnerDiameter(int value) {
@@ -137,17 +147,18 @@ public abstract class UzumakiSlider extends View {
     }
 
     private void parseSize(String value, MemberSetter percentSetter, MemberSetter pixelSetter) {
+        if (value == null) {
+            return;
+        }
         boolean isPercent = value.endsWith("%");
         int n = Integer.parseInt(isPercent ? value.substring(0, value.length() - 1) : value);
         MemberSetter setter = isPercent ? percentSetter : pixelSetter;
         setter.set(this, n);
     }
 
-    private static final int DEFAULT_SWEEP_ANGLE = -3 * 360;
-
     private void readAttribute(AttributeSet attrs) {
-        this.startAngle = attrs.getAttributeIntValue(null, "start_angle", 0);
-        this.sweepAngle = attrs.getAttributeIntValue(null, "sweep_angle", DEFAULT_SWEEP_ANGLE);
+        this.startAngle = attrs.getAttributeIntValue(null, "start_angle", this.startAngle);
+        this.sweepAngle = attrs.getAttributeIntValue(null, "sweep_angle", this.sweepAngle);
 
         this.outlineOuterDiameter = attrs.getAttributeIntValue(null, "outline_outer_diameter", 0);
         this.parseSize(attrs.getAttributeValue(null, "outline_inner_diameter"), new OutlineInnerDiameterPercentSetter(), new OutlineInnerDiameterPixelSetter());
