@@ -61,8 +61,9 @@
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:layout_centerInParent="true"
-                outer_diameter="90%"
-                inner_diameter="20%"
+                outer_diameter="95%"
+                inner_diameter="45%"
+                outline_inner_diameter="40%"
                 start_angle="0"
                 sweep_angle="-3600"/>
             <Button

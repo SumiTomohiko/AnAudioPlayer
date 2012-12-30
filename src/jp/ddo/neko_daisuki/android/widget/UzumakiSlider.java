@@ -88,6 +88,30 @@ public abstract class UzumakiSlider extends View {
         }
     }
 
+    private class OutlineInnerDiameterPercentSetter extends MemberSetter {
+
+        public void set(UzumakiSlider slider, int value) {
+            slider.setOutlineInnerDiameter(value);
+            slider.setOutlineInnerDiameterType(SizeType.TYPE_PERCENT);
+        }
+    }
+
+    private class OutlineInnerDiameterPixelSetter extends MemberSetter {
+
+        public void set(UzumakiSlider slider, int value) {
+            slider.setOutlineInnerDiameter(value);
+            slider.setOutlineInnerDiameterType(SizeType.TYPE_PIXEL);
+        }
+    }
+
+    public void setOutlineInnerDiameter(int value) {
+        this.outline_inner_diameter = value;
+    }
+
+    public void setOutlineInnerDiameterType(SizeType type) {
+        this.outline_inner_diameter_type = type;
+    }
+
     public void setOuterDiameter(int value) {
         this.outer_diameter = value;
     }
@@ -110,7 +134,7 @@ public abstract class UzumakiSlider extends View {
         this.sweep_angle = attrs.getAttributeIntValue(null, "sweep_angle", DEFAULT_SWEEP_ANGLE);
 
         this.outline_outer_diameter = attrs.getAttributeIntValue(null, "outline_outer_diameter", 0);
-        this.outline_inner_diameter = attrs.getAttributeIntValue(null, "outline_inner_diameter", 0);
+        this.parseSize(attrs.getAttributeValue(null, "outline_inner_diameter"), new OutlineInnerDiameterPercentSetter(), new OutlineInnerDiameterPixelSetter());
         this.parseSize(attrs.getAttributeValue(null, "outer_diameter"), new OuterDiameterPercentSetter(), new OuterDiameterPixelSetter());
         this.parseSize(attrs.getAttributeValue(null, "inner_diameter"), new InnerDiameterPercentSetter(), new InnerDiameterPixelSetter());
 
@@ -142,7 +166,8 @@ public abstract class UzumakiSlider extends View {
         outer_outline.addCircle(x, y, this.getOutlineOuterDiameter() / 2, Path.Direction.CW);
 
         Path inner_outline = new Path();
-        inner_outline.addCircle(x, y, 50, Path.Direction.CW);
+        int inner_diameter = this.computeDiameter(this.outline_inner_diameter_type, this.outline_inner_diameter);
+        inner_outline.addCircle(x, y, inner_diameter / 2, Path.Direction.CW);
 
         Paint paint = new Paint();
         paint.setARGB(255, 255, 0, 0);
