@@ -9,39 +9,39 @@ public class UzumakiDiagram
 {
     private int x;
     private int y;
-    private int start_angle;
-    private int sweep_angle;
-    private int outer_diameter;
-    private int inner_diameter;
+    private int startAngle;
+    private int sweepAngle;
+    private int outerDiameter;
+    private int innerDiameter;
     private Paint paint;
 
-    public UzumakiDiagram(int x, int y, int start_angle, int sweep_angle, int outer_diameter, int inner_diameter, Paint paint) {
+    public UzumakiDiagram(int x, int y, int startAngle, int sweepAngle, int outerDiameter, int innerDiameter, Paint paint) {
         this.x = x;
         this.y = y;
-        this.start_angle = start_angle;
-        this.sweep_angle = sweep_angle;
-        this.outer_diameter = outer_diameter;
-        this.inner_diameter = inner_diameter;
+        this.startAngle = startAngle;
+        this.sweepAngle = sweepAngle;
+        this.outerDiameter = outerDiameter;
+        this.innerDiameter = innerDiameter;
         this.paint = paint;
     }
 
     public void draw(Canvas canvas) {
-        int outer_diameter = this.outer_diameter;
-        int inner_diameter = this.inner_diameter;
-        int left = this.x - outer_diameter / 2;
-        int top = this.y - outer_diameter / 2;
-        RectF oval = new RectF(left, top, left + outer_diameter, top + outer_diameter);
+        int outerDiameter = this.outerDiameter;
+        int innerDiameter = this.innerDiameter;
+        int left = this.x - outerDiameter / 2;
+        int top = this.y - outerDiameter / 2;
+        RectF oval = new RectF(left, top, left + outerDiameter, top + outerDiameter);
 
         Path path = new Path();
-        int diameter_step = (outer_diameter - inner_diameter) / (Math.abs(this.sweep_angle) / 180) / 2;
-        RectShrinker verticalShrinker = new VerticalShrinker(diameter_step);
-        RectShrinker horizontalShrinker = new HorizontalShrinker(diameter_step);
-        int angle_step = (this.sweep_angle < 0 ? -1 : 1) * 90;
+        int diameterStep = (outerDiameter - innerDiameter) / (Math.abs(this.sweepAngle) / 180) / 2;
+        RectShrinker verticalShrinker = new VerticalShrinker(diameterStep);
+        RectShrinker horizontalShrinker = new HorizontalShrinker(diameterStep);
+        int angleStep = (this.sweepAngle < 0 ? -1 : 1) * 90;
         int angle;
-        for (angle = this.start_angle; angle != this.sweep_angle; angle += angle_step) {
+        for (angle = this.startAngle; angle != this.sweepAngle; angle += angleStep) {
             RectShrinker shrinker = angle % 180 == 0 ? verticalShrinker : horizontalShrinker;
             shrinker.shrink(oval);
-            path.addArc(oval, angle, angle_step);
+            path.addArc(oval, angle, angleStep);
         }
 
         canvas.drawPath(path, this.paint);

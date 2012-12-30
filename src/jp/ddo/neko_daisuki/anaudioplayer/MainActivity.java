@@ -26,7 +26,34 @@ import jp.ddo.neko_daisuki.android.widget.UzumakiSlider;
 
 public class MainActivity extends Activity
 {
-    private static final String log_tag = "An Audio Player";
+    private static final String LOG_TAG = "An Audio Player";
+
+    private ViewFlipper flipper;
+
+    private ListView dirList;
+    private Button nextButton0;
+
+    private Button prevButton1;
+    private ListView fileList;
+    private Button nextButton1;
+
+    private Button prevButton2;
+    private Button playButton;
+    private UzumakiSlider slider;
+
+    private List<String> dirs = null;
+    private String[] files = new String[0];
+    private int filePosition;
+
+    private Animation leftInAnimation;
+    private Animation leftOutAnimation;
+    private Animation rightInAnimation;
+    private Animation rightOutAnimation;
+
+    private View.OnClickListener pauseListener;
+    private View.OnClickListener playListener;
+    private TimerInterface timer;
+    private FakeTimer fakeTimer;
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -365,33 +392,6 @@ public class MainActivity extends Activity
         public void cancel() {
         }
     }
-
-    private ViewFlipper flipper;
-
-    private ListView dirList;
-    private Button nextButton0;
-
-    private Button prevButton1;
-    private ListView fileList;
-    private Button nextButton1;
-
-    private Button prevButton2;
-    private Button playButton;
-    private UzumakiSlider slider;
-
-    private List<String> dirs = null;
-    private String[] files = new String[0];
-    private int filePosition;
-
-    private Animation leftInAnimation;
-    private Animation leftOutAnimation;
-    private Animation rightInAnimation;
-    private Animation rightOutAnimation;
-
-    private View.OnClickListener pauseListener;
-    private View.OnClickListener playListener;
-    private TimerInterface timer;
-    private FakeTimer fakeTimer;
 }
 
 // vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
