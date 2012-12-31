@@ -216,9 +216,16 @@ public abstract class UzumakiSlider extends ViewGroup {
         Paint paint = new Paint();
         paint.setARGB(255, 255, 0, 0);
         paint.setAntiAlias(true);
-        canvas.clipPath(outerOutline);
-        canvas.clipPath(innerOutline, Region.Op.DIFFERENCE);
-        canvas.drawPaint(paint);
+
+        canvas.save();
+        try {
+            canvas.clipPath(outerOutline);
+            canvas.clipPath(innerOutline, Region.Op.DIFFERENCE);
+            canvas.drawPaint(paint);
+        }
+        finally {
+            canvas.restore();
+        }
     }
 
     protected void drawUzumaki(Canvas canvas) {
