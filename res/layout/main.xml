@@ -62,8 +62,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:background="@drawable/round_button"
-                android:textColor="#ff000000"
-                android:text="II"/>
+                android:textColor="#ff000000"/>
         </jp.ddo.neko_daisuki.android.widget.RotatingUzumakiSlider>
         <Button
             android:id="@+id/next2"

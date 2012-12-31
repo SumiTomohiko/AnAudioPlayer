@@ -228,6 +228,7 @@ public class MainActivity extends Activity
         this.timer = this.fakeTimer;
 
         this.playButton.setOnClickListener(this.playListener);
+        this.playButton.setText(">");
     }
 
     private class PlayerTask extends TimerTask {
@@ -270,6 +271,7 @@ public class MainActivity extends Activity
         this.timer.scheduleAtFixedRate(new PlayerTask(this), 0, 10);
 
         this.playButton.setOnClickListener(this.pauseListener);
+        this.playButton.setText("II");
     }
 
     private void selectFile(int position) {
