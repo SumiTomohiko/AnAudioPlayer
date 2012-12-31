@@ -149,6 +149,21 @@ public abstract class UzumakiSlider extends ViewGroup {
     }
 
     @Override
+    public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+        int width = MeasureSpec.getSize(widthMeasureSpec);
+        int height = MeasureSpec.getSize(heightMeasureSpec);
+        int outlineOuterDiameter = Math.min(width, height);
+        int outlineInnerDiameter = this.computeDiameter(this.outlineInnerDiameterType, this.outlineInnerDiameter, outlineOuterDiameter);
+        int spec = MeasureSpec.makeMeasureSpec(outlineInnerDiameter, MeasureSpec.EXACTLY);
+        int nChildren = this.getChildCount();
+        for (int i = 0; i < nChildren; i++) {
+            this.getChildAt(i).measure(spec, spec);
+        }
+    }
+
+    @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         int width = r - l;
         int height = b - t;
@@ -184,8 +199,12 @@ public abstract class UzumakiSlider extends ViewGroup {
 
     }
 
+    private int computeDiameter(SizeType type, int size, int baseSize) {
+        return type == SizeType.TYPE_PERCENT ? baseSize * size / 100 : size;
+    }
+
     private int computeDiameter(SizeType type, int size) {
-        return type == SizeType.TYPE_PERCENT ? this.getOutlineOuterDiameter() * size / 100 : size;
+        return this.computeDiameter(type, size, this.getOutlineOuterDiameter());
     }
 
     private void drawLine(Canvas canvas, int x, int y) {
