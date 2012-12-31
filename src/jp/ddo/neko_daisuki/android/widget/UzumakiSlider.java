@@ -7,9 +7,9 @@ import android.graphics.Path;
 import android.graphics.Region;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.View;
+import android.view.ViewGroup;
 
-public abstract class UzumakiSlider extends View {
+public abstract class UzumakiSlider extends ViewGroup {
 
     private int min;
     private int max;
@@ -54,6 +54,8 @@ public abstract class UzumakiSlider extends View {
     }
 
     private void initialize() {
+        this.setWillNotDraw(false);
+
         this.min = 0;
         this.max = 0;
         this.progress = 0;
@@ -144,6 +146,21 @@ public abstract class UzumakiSlider extends View {
 
     public void setOuterDiameterType(SizeType type) {
         this.outerDiameterType = type;
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        int width = r - l;
+        int height = b - t;
+        int diameter = this.outlineInnerDiameterType == SizeType.TYPE_PERCENT ? Math.min(width, height) * this.outlineInnerDiameter / 100 : this.outlineInnerDiameter;
+        int left = (width - diameter) / 2;
+        int top = (height - diameter) / 2;
+        int right = left + diameter;
+        int bottom = top + diameter;
+        int nChildren = this.getChildCount();
+        for (int i = 0; i < nChildren; i++) {
+            this.getChildAt(i).layout(left, top, right, bottom);
+        }
     }
 
     private void parseSize(String value, MemberSetter percentSetter, MemberSetter pixelSetter) {
