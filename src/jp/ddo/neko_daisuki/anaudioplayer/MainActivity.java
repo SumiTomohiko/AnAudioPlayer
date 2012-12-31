@@ -9,6 +9,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import android.app.Activity;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -26,6 +27,33 @@ import jp.ddo.neko_daisuki.android.widget.UzumakiSlider;
 
 public class MainActivity extends Activity
 {
+    private class Player {
+
+        private MediaPlayer mp;
+
+        public Player() {
+            this.mp = new MediaPlayer();
+        }
+
+        public void setup(String path) throws IOException {
+            this.mp.reset();
+            this.mp.setDataSource(path);
+            this.mp.prepare();
+        }
+
+        public void play() {
+            this.mp.start();
+        }
+
+        public void pause() {
+            this.mp.pause();
+        }
+
+        public void release() {
+            this.mp.release();
+        }
+    }
+
     private static final String LOG_TAG = "An Audio Player";
 
     private ViewFlipper flipper;
@@ -42,8 +70,10 @@ public class MainActivity extends Activity
     private UzumakiSlider slider;
 
     private List<String> dirs = null;
+    private String selectedDir = null;
     private String[] files = new String[0];
     private int filePosition;
+    private Player player = new Player();
 
     private Animation leftInAnimation;
     private Animation leftOutAnimation;
@@ -213,8 +243,8 @@ public class MainActivity extends Activity
 
     private void selectDir(int position) {
         int layout = android.R.layout.simple_list_item_1;
-        String dir = this.dirs.get(position);
-        this.files = (new File(dir)).list(new Mp3Filter());
+        this.selectedDir = this.dirs.get(position);
+        this.files = (new File(this.selectedDir)).list(new Mp3Filter());
 
         this.fileList.setAdapter(new ArrayAdapter<String>(this, layout, this.files));
         this.fileList.setOnItemClickListener(new FileListListener(this));
@@ -226,6 +256,8 @@ public class MainActivity extends Activity
     private void pause() {
         this.timer.cancel();
         this.timer = this.fakeTimer;
+
+        this.player.pause();
 
         this.playButton.setOnClickListener(this.playListener);
         this.playButton.setText(">");
@@ -270,14 +302,29 @@ public class MainActivity extends Activity
         // Each Timer requests new TimerTask object (Timers cannot share one task).
         this.timer.scheduleAtFixedRate(new PlayerTask(this), 0, 10);
 
+        this.player.play();
+
         this.playButton.setOnClickListener(this.pauseListener);
         this.playButton.setText("II");
     }
 
+    private String getSelectedPath() {
+        return this.selectedDir + File.separator + this.files[this.filePosition];
+    }
+
     private void selectFile(int position) {
         this.filePosition = position;
+        try {
+            this.player.setup(this.getSelectedPath());
+        }
+        catch (IOException e) {
+            Log.e(LOG_TAG, e.toString());
+            return;
+        }
+
         this.nextButton1.setEnabled(true);
         this.showNext();
+
         this.play();
     }
 
