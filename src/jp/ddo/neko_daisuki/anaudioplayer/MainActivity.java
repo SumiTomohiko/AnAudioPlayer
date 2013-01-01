@@ -42,6 +42,10 @@ public class MainActivity extends Activity
             this.mp.prepare();
         }
 
+        public int getCurrentPosition() {
+            return this.mp.getCurrentPosition();
+        }
+
         public void play() {
             this.mp.start();
         }
@@ -295,7 +299,7 @@ public class MainActivity extends Activity
     }
 
     private void updateSlider() {
-        this.slider.setProgress(this.slider.getProgress() + 1);
+        this.slider.setProgress(this.player.getCurrentPosition());
     }
 
     private void play() {
