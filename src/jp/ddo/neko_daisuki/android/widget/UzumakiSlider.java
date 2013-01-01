@@ -220,7 +220,6 @@ public abstract class UzumakiSlider extends ViewGroup {
         this.parseSize(attrs.getAttributeValue(null, "outline_inner_diameter"), new OutlineInnerDiameterPercentSetter(), new OutlineInnerDiameterPixelSetter());
         this.parseSize(attrs.getAttributeValue(null, "outer_diameter"), new OuterDiameterPercentSetter(), new OuterDiameterPixelSetter());
         this.parseSize(attrs.getAttributeValue(null, "inner_diameter"), new InnerDiameterPercentSetter(), new InnerDiameterPixelSetter());
-
     }
 
     private int computeDiameter(SizeType type, int size, int baseSize) {
@@ -257,7 +256,7 @@ public abstract class UzumakiSlider extends ViewGroup {
         innerOutline.addCircle(x, y, outlineInnerDiameter / 2, Path.Direction.CW);
 
         Paint paint = new Paint();
-        paint.setARGB(255, 255, 0, 0);
+        paint.setARGB(255, 0, 0, 0);
         paint.setAntiAlias(true);
 
         canvas.save();
