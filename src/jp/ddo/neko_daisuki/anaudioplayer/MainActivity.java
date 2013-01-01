@@ -9,6 +9,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import android.app.Activity;
+import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
@@ -84,6 +85,7 @@ public class MainActivity extends Activity
     private View.OnClickListener playListener;
     private TimerInterface timer;
     private FakeTimer fakeTimer;
+    private MediaMetadataRetriever meta = new MediaMetadataRetriever();
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -297,8 +299,6 @@ public class MainActivity extends Activity
     }
 
     private void play() {
-        this.slider.setProgress(0);
-
         this.timer.cancel();
         this.timer = new TrueTimer();
         // Each Timer requests new TimerTask object (Timers cannot share one task).
@@ -314,15 +314,32 @@ public class MainActivity extends Activity
         return this.selectedDir + File.separator + this.files[this.filePosition];
     }
 
+    private int getDuration(String path) {
+        int key = MediaMetadataRetriever.METADATA_KEY_DURATION;
+        String datum;
+        meta.setDataSource(path);
+        try {
+            datum = meta.extractMetadata(key);
+        }
+        finally {
+            meta.release();
+        }
+        return Integer.parseInt(datum);
+    }
+
     private void selectFile(int position) {
         this.filePosition = position;
+        String path = this.getSelectedPath();
         try {
-            this.player.setup(this.getSelectedPath());
+            this.player.setup(path);
         }
         catch (IOException e) {
             Log.e(LOG_TAG, e.toString());
             return;
         }
+
+        this.slider.setMax(this.getDuration(path));
+        this.slider.setProgress(0);
 
         this.nextButton1.setEnabled(true);
         this.showNext();
