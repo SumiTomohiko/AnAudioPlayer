@@ -87,7 +87,7 @@ public abstract class UzumakiSlider extends ViewGroup {
         this.setProgress(0);
 
         this.startAngle = 0;
-        this.sweepAngle = -10 * 360;
+        this.sweepAngle = - (10 * 360 + 180);
 
         this.outerDiameter = 95;
         this.outerDiameterType = SizeType.TYPE_PERCENT;
