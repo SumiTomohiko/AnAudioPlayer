@@ -297,6 +297,8 @@ public class MainActivity extends Activity
     }
 
     private void play() {
+        this.slider.setProgress(0);
+
         this.timer.cancel();
         this.timer = new TrueTimer();
         // Each Timer requests new TimerTask object (Timers cannot share one task).
