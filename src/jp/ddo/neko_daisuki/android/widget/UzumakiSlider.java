@@ -240,24 +240,13 @@ public abstract class UzumakiSlider extends ViewGroup {
         return this.computeDiameter(type, size, this.getOutlineOuterDiameter());
     }
 
-    private void drawLine(Canvas canvas, int x, int y) {
-        Paint paint = new Paint();
-        paint.setARGB(255, 255, 255, 255);
-        paint.setAntiAlias(true);
-        paint.setStrokeWidth(this.strokeWidth);
-        paint.setStyle(Paint.Style.STROKE);
-
-        int outerDiameter = this.getAbsoluteOuterDiameter();
-        int innerDiameter = this.getAbsoluteInnerDiameter();
-        UzumakiDiagram uzumaki = new UzumakiDiagram(x, y, this.startAngle, this.sweepAngle, outerDiameter, innerDiameter, paint);
-        uzumaki.draw(canvas);
-    }
-
     private int getOutlineOuterDiameter() {
         return Math.min(this.getWidth(), this.getHeight());
     }
 
-    private void drawTie(Canvas canvas, int x, int y) {
+    protected void drawTie(Canvas canvas) {
+        int x = this.getWidth() / 2;
+        int y = this.getHeight() / 2;
         Path outerOutline = new Path();
         outerOutline.addCircle(x, y, this.getOutlineOuterDiameter() / 2, Path.Direction.CW);
 
@@ -283,8 +272,17 @@ public abstract class UzumakiSlider extends ViewGroup {
     protected void drawUzumaki(Canvas canvas) {
         int x = this.getWidth() / 2;
         int y = this.getHeight() / 2;
-        this.drawTie(canvas, x, y);
-        this.drawLine(canvas, x, y);
+
+        Paint paint = new Paint();
+        paint.setARGB(255, 255, 255, 255);
+        paint.setAntiAlias(true);
+        paint.setStrokeWidth(this.strokeWidth);
+        paint.setStyle(Paint.Style.STROKE);
+
+        int outerDiameter = this.getAbsoluteOuterDiameter();
+        int innerDiameter = this.getAbsoluteInnerDiameter();
+        UzumakiDiagram uzumaki = new UzumakiDiagram(x, y, this.startAngle, this.sweepAngle, outerDiameter, innerDiameter, paint);
+        uzumaki.draw(canvas);
     }
 }
 
