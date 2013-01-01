@@ -27,6 +27,8 @@ public abstract class UzumakiSlider extends ViewGroup {
     private SizeType outlineInnerDiameterType;
     private int outlineInnerDiameter;
 
+    private int strokeWidth;
+
     public UzumakiSlider(Context context) {
         super(context);
         this.initialize();
@@ -93,6 +95,8 @@ public abstract class UzumakiSlider extends ViewGroup {
         this.innerDiameterType = SizeType.TYPE_PERCENT;
         this.outlineInnerDiameter = 40;
         this.outlineInnerDiameterType = SizeType.TYPE_PERCENT;
+
+        this.strokeWidth = 4;
     }
 
     public void setInnerDiameter(int value) {
@@ -220,6 +224,8 @@ public abstract class UzumakiSlider extends ViewGroup {
         this.parseSize(attrs.getAttributeValue(null, "outline_inner_diameter"), new OutlineInnerDiameterPercentSetter(), new OutlineInnerDiameterPixelSetter());
         this.parseSize(attrs.getAttributeValue(null, "outer_diameter"), new OuterDiameterPercentSetter(), new OuterDiameterPixelSetter());
         this.parseSize(attrs.getAttributeValue(null, "inner_diameter"), new InnerDiameterPercentSetter(), new InnerDiameterPixelSetter());
+
+        this.strokeWidth = attrs.getAttributeIntValue(null, "stroke_width", this.strokeWidth);
     }
 
     private int computeDiameter(SizeType type, int size, int baseSize) {
@@ -234,7 +240,7 @@ public abstract class UzumakiSlider extends ViewGroup {
         Paint paint = new Paint();
         paint.setARGB(255, 255, 255, 255);
         paint.setAntiAlias(true);
-        paint.setStrokeWidth(10);
+        paint.setStrokeWidth(this.strokeWidth);
         paint.setStyle(Paint.Style.STROKE);
 
         int outerDiameter = this.getAbsoluteOuterDiameter();
