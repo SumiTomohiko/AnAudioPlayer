@@ -79,6 +79,10 @@ public abstract class UzumakiSlider extends ViewGroup {
         return this.computeDiameter(this.outerDiameterType, this.outerDiameter);
     }
 
+    public int getSweepAngle() {
+        return this.sweepAngle;
+    }
+
     private void initialize() {
         this.setWillNotDraw(false);
 

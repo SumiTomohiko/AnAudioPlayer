@@ -64,9 +64,15 @@ class RotatingUzumakiSlider extends UzumakiSlider {
     }
 
     private void drawRotatingUzumaki(Canvas canvas) {
+        int x = this.getWidth() / 2;
+        int y = this.getHeight() / 2;
+        int min = this.getMin();
+        int progress = this.getProgress() - min;
+        int size = this.getMax() - min;
+        int degree = this.getSweepAngle() * progress / size;
         canvas.save();
         try {
-            canvas.rotate(this.getProgress(), this.getWidth() / 2, this.getHeight() / 2);
+            canvas.rotate(- degree, x, y);
             this.drawUzumaki(canvas);
         }
         finally {
