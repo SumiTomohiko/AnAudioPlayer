@@ -100,7 +100,7 @@ public abstract class UzumakiSlider extends ViewGroup {
         this.outlineInnerDiameter = 40;
         this.outlineInnerDiameterType = SizeType.TYPE_PERCENT;
 
-        this.strokeWidth = 4;
+        this.strokeWidth = 2;
     }
 
     public void setInnerDiameter(int value) {
