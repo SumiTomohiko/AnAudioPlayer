@@ -47,6 +47,8 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
 
     private Map<Integer, MotionEventDispatcher> dispatchers;
     private UzumakiSlider slider;
+    private int xAtDown;
+    private int yAtDown;
 
     public UzumakiImageHead(Context context) {
         super(context);
@@ -92,6 +94,8 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
     private void onActionDown(MotionEvent event) {
         this.slider.onStartHeadMoving();
         this.dispatchers.put(MotionEvent.ACTION_MOVE, new ActionMoveDispatcher());
+        this.xAtDown = (int)this.getEventX(event);
+        this.yAtDown = (int)this.getEventY(event);
     }
 
     private void onActionUp(MotionEvent event) {
@@ -99,10 +103,18 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
         this.disableActionMove();
     }
 
+    private float getEventX(MotionEvent event) {
+        return event.getX(event.getPointerId(0));
+    }
+
+    private float getEventY(MotionEvent event) {
+        return event.getY(event.getPointerId(0));
+    }
+
     private void onActionMove(MotionEvent event) {
         int pointerIndex = event.getPointerId(0);
-        int x = (int)event.getX(pointerIndex) + this.getLeft();
-        int y = (int)event.getY(pointerIndex) + this.getTop();
+        int x = (int)event.getX(pointerIndex) - this.xAtDown + this.getLeft();
+        int y = (int)event.getY(pointerIndex) - this.yAtDown + this.getTop();
 
         // API level 11 has View.setX()/setY().
         this.layout(x, y, x + this.getWidth(), y + this.getHeight());
