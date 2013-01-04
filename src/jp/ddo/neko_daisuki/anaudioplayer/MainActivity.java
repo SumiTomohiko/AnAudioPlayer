@@ -24,6 +24,12 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.ViewFlipper;
 
+import jp.ddo.neko_daisuki.android.widget.UzumakiHead;
+/*
+ * UzumakiImageHead is referred only from main.xml. So if without the following import statment,
+ * UzumakiImageHead.java will be out of compile targets.
+ */
+import jp.ddo.neko_daisuki.android.widget.UzumakiImageHead;
 import jp.ddo.neko_daisuki.android.widget.UzumakiSlider;
 
 public class MainActivity extends Activity
@@ -73,6 +79,7 @@ public class MainActivity extends Activity
     private Button prevButton2;
     private Button playButton;
     private UzumakiSlider slider;
+    private UzumakiHead head;
 
     private List<String> dirs = null;
     private String selectedDir = null;
@@ -122,6 +129,7 @@ public class MainActivity extends Activity
         this.prevButton2 = (Button)this.findViewById(R.id.prev2);
         this.playButton = (Button)this.findViewById(R.id.play);
         this.slider = (UzumakiSlider)this.findViewById(R.id.slider);
+        this.head = (UzumakiHead)this.findViewById(R.id.head);
     }
 
     private void initializePlayButton() {

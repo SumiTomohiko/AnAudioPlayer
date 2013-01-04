@@ -53,18 +53,27 @@
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
             android:text="&lt;"/>
-        <jp.ddo.neko_daisuki.android.widget.RotatingUzumakiSlider
-            android:id="@+id/slider"
+        <RelativeLayout
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:layout_weight="1">
-            <Button
-                android:id="@+id/play"
+            <jp.ddo.neko_daisuki.android.widget.RotatingUzumakiSlider
+                android:id="@+id/slider"
                 android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:background="@drawable/round_button"
-                android:textColor="#ff000000"/>
-        </jp.ddo.neko_daisuki.android.widget.RotatingUzumakiSlider>
+                android:layout_height="fill_parent">
+                <Button
+                    android:id="@+id/play"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:background="@drawable/round_button"
+                    android:textColor="#ff000000"/>
+            </jp.ddo.neko_daisuki.android.widget.RotatingUzumakiSlider>
+            <jp.ddo.neko_daisuki.android.widget.UzumakiImageHead
+                    android:id="@+id/head"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_launcher"/>
+        </RelativeLayout>
         <Button
             android:id="@+id/next2"
             android:layout_width="wrap_content"
