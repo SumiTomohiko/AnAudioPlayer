@@ -29,6 +29,8 @@ public abstract class UzumakiSlider extends ViewGroup {
 
     private int strokeWidth;
 
+    private UzumakiHead head;
+
     public UzumakiSlider(Context context) {
         super(context);
         this.initialize();
@@ -69,6 +71,11 @@ public abstract class UzumakiSlider extends ViewGroup {
 
     public void setMin(int min) {
         this.min = min;
+    }
+
+    public void attachHead(UzumakiHead head) {
+        this.head = head;
+        head.setSlider(this);
     }
 
     public int getAbsoluteInnerDiameter() {
@@ -178,6 +185,14 @@ public abstract class UzumakiSlider extends ViewGroup {
 
     public void setOuterDiameterType(SizeType type) {
         this.outerDiameterType = type;
+    }
+
+    public void onStartHeadMoving() {
+        // TODO
+    }
+
+    public void onStopHeadMoving() {
+        // TODO
     }
 
     @Override

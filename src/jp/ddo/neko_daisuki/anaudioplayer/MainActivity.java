@@ -110,6 +110,11 @@ public class MainActivity extends Activity
         this.initializeAnimation();
         this.initializePlayButton();
         this.initializeTimer();
+        this.initializeSlider();
+    }
+
+    private void initializeSlider() {
+        this.slider.attachHead(this.head);
     }
 
     private void initializeTimer() {
