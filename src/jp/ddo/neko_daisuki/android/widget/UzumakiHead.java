@@ -2,6 +2,7 @@ package jp.ddo.neko_daisuki.android.widget;
 
 public interface UzumakiHead {
 
+    public void changePointerPosition(int pointerX, int pointerY);
     public void setSlider(UzumakiSlider slider);
 }
 

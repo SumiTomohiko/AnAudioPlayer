@@ -65,6 +65,10 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
         this.initialize();
     }
 
+    public void changePointerPosition(int pointerX, int pointerY) {
+        this.move(pointerX - this.getWidth() / 2, pointerY - this.getHeight());
+    }
+
     public void setSlider(UzumakiSlider slider) {
         this.slider = slider;
     }
@@ -92,14 +96,14 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
     }
 
     private void onActionDown(MotionEvent event) {
-        this.slider.onStartHeadMoving();
+        this.slider.fireOnStartHeadMovingListeners();
         this.dispatchers.put(MotionEvent.ACTION_MOVE, new ActionMoveDispatcher());
         this.xAtDown = (int)this.getEventX(event);
         this.yAtDown = (int)this.getEventY(event);
     }
 
     private void onActionUp(MotionEvent event) {
-        this.slider.onStopHeadMoving();
+        this.slider.fireOnStopHeadMovingListeners();
         this.disableActionMove();
     }
 
@@ -111,13 +115,16 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
         return event.getY(event.getPointerId(0));
     }
 
+    private void move(int left, int top) {
+        // API level 11 has View.setX()/setY().
+        this.layout(left, top, left + this.getWidth(), top + this.getHeight());
+    }
+
     private void onActionMove(MotionEvent event) {
         int pointerIndex = event.getPointerId(0);
         int x = (int)event.getX(pointerIndex) - this.xAtDown + this.getLeft();
         int y = (int)event.getY(pointerIndex) - this.yAtDown + this.getTop();
-
-        // API level 11 has View.setX()/setY().
-        this.layout(x, y, x + this.getWidth(), y + this.getHeight());
+        this.slider.placeHead(x, y);
     }
 }
 

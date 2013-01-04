@@ -1,5 +1,8 @@
 package jp.ddo.neko_daisuki.android.widget;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -11,13 +14,22 @@ import android.view.ViewGroup;
 
 public abstract class UzumakiSlider extends ViewGroup {
 
+    public interface OnStartHeadMovingListener {
+
+        public void onStartHeadMoving(UzumakiSlider slider, UzumakiHead head);
+    }
+
+    public interface OnStopHeadMovingListener {
+
+        public void onStopHeadMoving(UzumakiSlider slider, UzumakiHead head);
+    }
+
     private int min;
     private int max;
     private int progress;
 
     private int startAngle;
     private int sweepAngle;
-
     private enum SizeType { TYPE_PIXEL, TYPE_PERCENT };
     private int outlineOuterDiameter;
     private SizeType outerDiameterType;
@@ -30,6 +42,8 @@ public abstract class UzumakiSlider extends ViewGroup {
     private int strokeWidth;
 
     private UzumakiHead head;
+    private List<OnStartHeadMovingListener> onStartHeadMovingListenerList;
+    private List<OnStopHeadMovingListener> onStopHeadMovingListenerList;
 
     public UzumakiSlider(Context context) {
         super(context);
@@ -108,6 +122,17 @@ public abstract class UzumakiSlider extends ViewGroup {
         this.outlineInnerDiameterType = SizeType.TYPE_PERCENT;
 
         this.strokeWidth = 2;
+
+        this.onStartHeadMovingListenerList = new ArrayList<OnStartHeadMovingListener>();
+        this.onStopHeadMovingListenerList = new ArrayList<OnStopHeadMovingListener>();
+    }
+
+    public void addOnStartHeadMovingListener(OnStartHeadMovingListener listener) {
+        this.onStartHeadMovingListenerList.add(listener);
+    }
+
+    public void addOnStopHeadMovingListener(OnStopHeadMovingListener listener) {
+        this.onStopHeadMovingListenerList.add(listener);
     }
 
     public void setInnerDiameter(int value) {
@@ -187,12 +212,20 @@ public abstract class UzumakiSlider extends ViewGroup {
         this.outerDiameterType = type;
     }
 
-    public void onStartHeadMoving() {
-        // TODO
+    public void fireOnStartHeadMovingListeners() {
+        for (OnStartHeadMovingListener listener: this.onStartHeadMovingListenerList) {
+            listener.onStartHeadMoving(this, this.head);
+        }
     }
 
-    public void onStopHeadMoving() {
-        // TODO
+    public void fireOnStopHeadMovingListeners() {
+        for (OnStopHeadMovingListener listener: this.onStopHeadMovingListenerList) {
+            listener.onStopHeadMoving(this, this.head);
+        }
+    }
+
+    public void placeHead(int pointerX, int pointerY) {
+        this.head.changePointerPosition(0, 0);
     }
 
     @Override
