@@ -29,6 +29,10 @@ class RotatingUzumakiSlider extends UzumakiSlider {
         this.initialize();
     }
 
+    public void placeHead(int pointerX, int pointerY) {
+        //this.head.changePointerPosition(0, 0);
+    }
+
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         this.drawTie(canvas);
@@ -47,6 +51,10 @@ class RotatingUzumakiSlider extends UzumakiSlider {
         paint.setColor(Color.YELLOW);
         paint.setStyle(Paint.Style.FILL);
         canvas.drawPath(path, paint);
+
+        int x = this.computeHeaderPosition() + this.getLeft();
+        int y = this.getHeight() / 2 + this.getTop();
+        this.head.changePointerPosition(x, y);
     }
 
     private void initialize() {

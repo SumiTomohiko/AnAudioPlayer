@@ -41,7 +41,7 @@ public abstract class UzumakiSlider extends ViewGroup {
 
     private int strokeWidth;
 
-    private UzumakiHead head;
+    protected UzumakiHead head;
     private List<OnStartHeadMovingListener> onStartHeadMovingListenerList;
     private List<OnStopHeadMovingListener> onStopHeadMovingListenerList;
 
@@ -224,9 +224,7 @@ public abstract class UzumakiSlider extends ViewGroup {
         }
     }
 
-    public void placeHead(int pointerX, int pointerY) {
-        this.head.changePointerPosition(0, 0);
-    }
+    public abstract void placeHead(int pointerX, int pointerY);
 
     @Override
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
