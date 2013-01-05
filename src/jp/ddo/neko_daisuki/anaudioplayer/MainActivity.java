@@ -34,11 +34,39 @@ import jp.ddo.neko_daisuki.android.widget.UzumakiSlider;
 
 public class MainActivity extends Activity
 {
-    private class Player {
+    private interface Player {
+
+        public void setup(String path) throws IOException;
+        public int getCurrentPosition();
+        public void play();
+        public void pause();
+        public void release();
+    }
+
+    private class FakePlayer implements Player {
+
+        public void setup(String path) throws IOException {
+        }
+
+        public int getCurrentPosition() {
+            return 0;
+        }
+
+        public void play() {
+        }
+
+        public void pause() {
+        }
+
+        public void release() {
+        }
+    }
+
+    private class TruePlayer implements Player {
 
         private MediaPlayer mp;
 
-        public Player() {
+        public TruePlayer() {
             this.mp = new MediaPlayer();
         }
 
@@ -85,7 +113,7 @@ public class MainActivity extends Activity
     private String selectedDir = null;
     private String[] files = new String[0];
     private int filePosition;
-    private Player player = new Player();
+    private Player player = new FakePlayer();
 
     private Animation leftInAnimation;
     private Animation leftOutAnimation;
@@ -96,7 +124,6 @@ public class MainActivity extends Activity
     private View.OnClickListener playListener;
     private TimerInterface timer;
     private FakeTimer fakeTimer;
-    private MediaMetadataRetriever meta = new MediaMetadataRetriever();
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -332,9 +359,11 @@ public class MainActivity extends Activity
     }
 
     private int getDuration(String path) {
+        // MediaMetadataRetriever is not reusable.
+        MediaMetadataRetriever meta = new MediaMetadataRetriever();
+        meta.setDataSource(path);
         int key = MediaMetadataRetriever.METADATA_KEY_DURATION;
         String datum;
-        meta.setDataSource(path);
         try {
             datum = meta.extractMetadata(key);
         }
@@ -345,6 +374,9 @@ public class MainActivity extends Activity
     }
 
     private void selectFile(int position) {
+        this.player.release();
+
+        this.player = new TruePlayer();
         this.filePosition = position;
         String path = this.getSelectedPath();
         try {
