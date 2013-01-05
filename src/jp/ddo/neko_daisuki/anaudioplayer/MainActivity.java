@@ -93,6 +93,32 @@ public class MainActivity extends Activity
         }
     }
 
+    private class OnStartHeadMovingListener implements UzumakiSlider.OnStartHeadMovingListener {
+
+        private MainActivity activity;
+
+        public OnStartHeadMovingListener(MainActivity activity) {
+            this.activity = activity;
+        }
+
+        public void onStartHeadMoving(UzumakiSlider slider, UzumakiHead head) {
+            this.activity.pause();
+        }
+    }
+
+    private class OnStopHeadMovingListener implements UzumakiSlider.OnStopHeadMovingListener {
+
+        private MainActivity activity;
+
+        public OnStopHeadMovingListener(MainActivity activity) {
+            this.activity = activity;
+        }
+
+        public void onStopHeadMoving(UzumakiSlider slider, UzumakiHead head) {
+            this.activity.play();
+        }
+    }
+
     private static final String LOG_TAG = "An Audio Player";
 
     private ViewFlipper flipper;
@@ -142,6 +168,8 @@ public class MainActivity extends Activity
 
     private void initializeSlider() {
         this.slider.attachHead(this.head);
+        this.slider.addOnStartHeadMovingListener(new OnStartHeadMovingListener(this));
+        this.slider.addOnStopHeadMovingListener(new OnStopHeadMovingListener(this));
     }
 
     private void initializeTimer() {
