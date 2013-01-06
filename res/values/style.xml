@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Text">
+        <item name="android:textSize">36sp</item>
+    </style>
+    <style name="TimeText" parent="Text">
+        <item name="android:typeface">monospace</item>
+    </style>
+</resources>
+<!--
+vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
+-->
