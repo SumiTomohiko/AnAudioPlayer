@@ -10,7 +10,7 @@ pkg_dir="jp/ddo/neko_daisuki/${app_name}"
 r_dir="${src_dir}/${pkg_dir}"
 build_dir="${dirpath}/_build"
 classes_dir="${build_dir}/classes"
-javac_opt="-verbose"
+javac_opt="-Werror"
 dex_path="${build_dir}/${app_name}.dex"
 dist_dir="${dirpath}/dist"
 
