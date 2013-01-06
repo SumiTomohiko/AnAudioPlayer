@@ -22,6 +22,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.ViewFlipper;
 
 import jp.ddo.neko_daisuki.android.widget.UzumakiHead;
@@ -41,6 +42,44 @@ public class MainActivity extends Activity
         public void play();
         public void pause();
         public void release();
+        public void seekTo(int msec);
+    }
+
+    private interface ProcAfterSeeking {
+
+        public void run();
+    }
+
+    private class PlayAfterSeeking implements ProcAfterSeeking {
+
+        private MainActivity activity;
+
+        public PlayAfterSeeking(MainActivity activity) {
+            this.activity = activity;
+        }
+
+        public void run() {
+            this.activity.play();
+        }
+    }
+
+    private class StayAfterSeeking implements ProcAfterSeeking {
+
+        public void run() {
+        }
+    }
+
+    private class SliderLogger implements UzumakiSlider.Logger {
+
+        private MainActivity activity;
+
+        public SliderLogger(MainActivity activity) {
+            this.activity = activity;
+        }
+
+        public void log(String msg) {
+            this.activity.log(msg);
+        }
     }
 
     private class FakePlayer implements Player {
@@ -56,6 +95,9 @@ public class MainActivity extends Activity
         }
 
         public void pause() {
+        }
+
+        public void seekTo(int msec) {
         }
 
         public void release() {
@@ -87,6 +129,9 @@ public class MainActivity extends Activity
         public void pause() {
             this.mp.pause();
         }
+        public void seekTo(int msec) {
+            this.mp.seekTo(msec);
+        }
 
         public void release() {
             this.mp.release();
@@ -115,7 +160,7 @@ public class MainActivity extends Activity
         }
 
         public void onStopHeadMoving(UzumakiSlider slider, UzumakiHead head) {
-            this.activity.play();
+            this.activity.onStopHeadMoving();
         }
     }
 
@@ -134,6 +179,9 @@ public class MainActivity extends Activity
     private Button playButton;
     private UzumakiSlider slider;
     private UzumakiHead head;
+    private TextView title;
+    private TextView currentTime;
+    private TextView totalTime;
 
     private List<String> dirs = null;
     private String selectedDir = null;
@@ -150,6 +198,7 @@ public class MainActivity extends Activity
     private View.OnClickListener playListener;
     private TimerInterface timer;
     private FakeTimer fakeTimer;
+    private ProcAfterSeeking procAfterSeeking;
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -170,6 +219,7 @@ public class MainActivity extends Activity
         this.slider.attachHead(this.head);
         this.slider.addOnStartHeadMovingListener(new OnStartHeadMovingListener(this));
         this.slider.addOnStopHeadMovingListener(new OnStopHeadMovingListener(this));
+        this.slider.setLogger(new SliderLogger(this));
     }
 
     private void initializeTimer() {
@@ -190,6 +240,10 @@ public class MainActivity extends Activity
         this.playButton = (Button)this.findViewById(R.id.play);
         this.slider = (UzumakiSlider)this.findViewById(R.id.slider);
         this.head = (UzumakiHead)this.findViewById(R.id.head);
+
+        this.title = (TextView)this.findViewById(R.id.title);
+        this.currentTime = (TextView)this.findViewById(R.id.current_time);
+        this.totalTime = (TextView)this.findViewById(R.id.total_time);
     }
 
     private void initializePlayButton() {
@@ -215,6 +269,7 @@ public class MainActivity extends Activity
 
         @Override
         public void onClick(View view) {
+            this.activity.procAfterSeeking = new StayAfterSeeking();
             this.activity.pause();
         }
     }
@@ -227,6 +282,7 @@ public class MainActivity extends Activity
 
         @Override
         public void onClick(View view) {
+            this.activity.procAfterSeeking = new PlayAfterSeeking(this.activity);
             this.activity.play();
         }
     }
@@ -344,14 +400,14 @@ public class MainActivity extends Activity
             this.proc = new Proc(activity);
         }
 
-        public class Proc implements Runnable {
+        private class Proc implements Runnable {
 
             public Proc(MainActivity activity) {
                 this.activity = activity;
             }
 
             public void run() {
-                this.activity.updateSlider();
+                this.activity.updateCurrentTime();
             }
 
             private MainActivity activity;
@@ -366,8 +422,10 @@ public class MainActivity extends Activity
         private Runnable proc;
     }
 
-    private void updateSlider() {
-        this.slider.setProgress(this.player.getCurrentPosition());
+    private void updateCurrentTime() {
+        int position = this.player.getCurrentPosition();
+        this.slider.setProgress(position);
+        //this.showTime(this.currentTime, position);
     }
 
     private void play() {
@@ -382,8 +440,17 @@ public class MainActivity extends Activity
         this.playButton.setText("II");
     }
 
+    private void onStopHeadMoving() {
+        this.seekTo(this.slider.getProgress());
+        this.procAfterSeeking.run();
+    }
+
+    private String getSelectedFile() {
+        return this.files[this.filePosition];
+    }
+
     private String getSelectedPath() {
-        return this.selectedDir + File.separator + this.files[this.filePosition];
+        return this.selectedDir + File.separator + this.getSelectedFile();
     }
 
     private int getDuration(String path) {
@@ -401,6 +468,13 @@ public class MainActivity extends Activity
         return Integer.parseInt(datum);
     }
 
+    private void showTime(TextView view, int time_msec) {
+        int time_sec = time_msec / 1000;
+        int min = (time_sec / 60) % 100;
+        int sec = time_sec % 60;
+        view.setText(String.format("%02d:%02d", min, sec));
+    }
+
     private void selectFile(int position) {
         this.player.release();
 
@@ -415,8 +489,13 @@ public class MainActivity extends Activity
             return;
         }
 
-        this.slider.setMax(this.getDuration(path));
+        int duration = this.getDuration(path);
+        this.slider.setMax(duration);
         this.slider.setProgress(0);
+        this.procAfterSeeking = new PlayAfterSeeking(this);
+        this.title.setText(this.getSelectedFile());
+        this.showTime(this.currentTime, 0);
+        this.showTime(this.totalTime, duration);
 
         this.nextButton1.setEnabled(true);
         this.showNext();
@@ -536,6 +615,14 @@ public class MainActivity extends Activity
 
         public void cancel() {
         }
+    }
+
+    private void seekTo(int msec) {
+        this.player.seekTo(msec);
+    }
+
+    private void log(String msg) {
+        this.title.setText(msg);
     }
 }
 

@@ -53,27 +53,61 @@
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
             android:text="&lt;"/>
-        <RelativeLayout
+        <LinearLayout
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:layout_weight="1">
-            <jp.ddo.neko_daisuki.android.widget.RotatingUzumakiSlider
-                android:id="@+id/slider"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            <RelativeLayout
                 android:layout_width="fill_parent"
-                android:layout_height="fill_parent">
-                <Button
-                    android:id="@+id/play"
+                android:layout_height="wrap_content"
+                android:layout_weight="1">
+                <jp.ddo.neko_daisuki.android.widget.RotatingUzumakiSlider
+                    android:id="@+id/slider"
                     android:layout_width="fill_parent"
-                    android:layout_height="fill_parent"
-                    android:background="@drawable/round_button"
-                    android:textColor="#ff000000"/>
-            </jp.ddo.neko_daisuki.android.widget.RotatingUzumakiSlider>
-            <jp.ddo.neko_daisuki.android.widget.UzumakiImageHead
-                    android:id="@+id/head"
+                    android:layout_height="fill_parent">
+                    <Button
+                        android:id="@+id/play"
+                        android:layout_width="fill_parent"
+                        android:layout_height="fill_parent"
+                        android:background="@drawable/round_button"
+                        android:textColor="#ff000000"/>
+                </jp.ddo.neko_daisuki.android.widget.RotatingUzumakiSlider>
+                <jp.ddo.neko_daisuki.android.widget.UzumakiImageHead
+                        android:id="@+id/head"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/ic_launcher"/>
+            </RelativeLayout>
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:id="@+id/title"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="X"
+                    style="@style/Text"/>
+                <TextView
+                    android:id="@+id/current_time"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:src="@drawable/ic_launcher"/>
-        </RelativeLayout>
+                    android:text="XX:XX"
+                    style="@style/TimeText"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="/"
+                    style="@style/TimeText"/>
+                <TextView
+                    android:id="@+id/total_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="XX:XX"
+                    style="@style/TimeText"/>
+            </LinearLayout>
+        </LinearLayout>
         <Button
             android:id="@+id/next2"
             android:layout_width="wrap_content"

@@ -14,6 +14,11 @@ import android.view.ViewGroup;
 
 public abstract class UzumakiSlider extends ViewGroup {
 
+    public interface Logger {
+
+        public void log(String msg);
+    }
+
     public interface OnStartHeadMovingListener {
 
         public void onStartHeadMoving(UzumakiSlider slider, UzumakiHead head);
@@ -23,6 +28,23 @@ public abstract class UzumakiSlider extends ViewGroup {
 
         public void onStopHeadMoving(UzumakiSlider slider, UzumakiHead head);
     }
+
+    private class FakeLogger implements Logger {
+
+        public void log(String msg) {
+        }
+    }
+
+    private class FakeHead implements UzumakiHead {
+
+        public void changePointerPosition(int pointerX, int pointerY) {
+        }
+
+        public void setSlider(UzumakiSlider slider) {
+        }
+    }
+
+    protected UzumakiHead head;
 
     private int min;
     private int max;
@@ -41,9 +63,10 @@ public abstract class UzumakiSlider extends ViewGroup {
 
     private int strokeWidth;
 
-    protected UzumakiHead head;
     private List<OnStartHeadMovingListener> onStartHeadMovingListenerList;
     private List<OnStopHeadMovingListener> onStopHeadMovingListenerList;
+
+    private Logger logger;
 
     public UzumakiSlider(Context context) {
         super(context);
@@ -68,11 +91,16 @@ public abstract class UzumakiSlider extends ViewGroup {
 
     public void setProgress(int progress) {
         this.progress = progress;
+        this.updateHead();
         this.invalidate();
     }
 
     public int getMax() {
         return this.max;
+    }
+
+    public int getSize() {
+        return this.max - this.min;
     }
 
     public void setMax(int max) {
@@ -107,12 +135,15 @@ public abstract class UzumakiSlider extends ViewGroup {
     private void initialize() {
         this.setWillNotDraw(false);
 
+        this.attachHead(new FakeHead());
+
         this.setMin(0);
         this.setMax(100);
         this.setProgress(0);
 
         this.startAngle = 0;
         this.sweepAngle = - (10 * 360 + 180);
+        //this.sweepAngle = - 2 * 360;
 
         this.outerDiameter = 95;
         this.outerDiameterType = SizeType.TYPE_PERCENT;
@@ -125,6 +156,8 @@ public abstract class UzumakiSlider extends ViewGroup {
 
         this.onStartHeadMovingListenerList = new ArrayList<OnStartHeadMovingListener>();
         this.onStopHeadMovingListenerList = new ArrayList<OnStopHeadMovingListener>();
+
+        this.setLogger(new FakeLogger());
     }
 
     public void addOnStartHeadMovingListener(OnStartHeadMovingListener listener) {
@@ -141,6 +174,14 @@ public abstract class UzumakiSlider extends ViewGroup {
 
     public void setInnerDiameterType(SizeType type) {
         this.innerDiameterType = type;
+    }
+
+    public void setLogger(Logger logger) {
+        this.logger = logger;
+    }
+
+    protected void log(String msg) {
+        this.logger.log(msg);
     }
 
     private abstract class MemberSetter {
@@ -224,7 +265,7 @@ public abstract class UzumakiSlider extends ViewGroup {
         }
     }
 
-    public abstract void placeHead(int pointerX, int pointerY);
+    public abstract void placeHead(float pointerX, float pointerY);
 
     @Override
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -254,6 +295,8 @@ public abstract class UzumakiSlider extends ViewGroup {
         for (int i = 0; i < nChildren; i++) {
             this.getChildAt(i).layout(left, top, right, bottom);
         }
+
+        this.updateHead();
     }
 
     private void parseSize(String value, MemberSetter percentSetter, MemberSetter pixelSetter) {
@@ -330,6 +373,8 @@ public abstract class UzumakiSlider extends ViewGroup {
         UzumakiDiagram uzumaki = new UzumakiDiagram(x, y, this.startAngle, this.sweepAngle, outerDiameter, innerDiameter, paint);
         uzumaki.draw(canvas);
     }
+
+    protected abstract void updateHead();
 }
 
 // vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4

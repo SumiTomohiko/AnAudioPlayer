@@ -29,8 +29,15 @@ class RotatingUzumakiSlider extends UzumakiSlider {
         this.initialize();
     }
 
-    public void placeHead(int pointerX, int pointerY) {
-        //this.head.changePointerPosition(0, 0);
+    public void placeHead(float pointerX, float pointerY) {
+        int outerRadius = this.getAbsoluteOuterDiameter() / 2;
+        float len = this.getWidth() / 2 + outerRadius - pointerX;
+        int innerRadius = this.getAbsoluteInnerDiameter() / 2;
+        int maxLen = outerRadius - innerRadius;
+        int min = this.getMin();
+        float progress = len * this.getSize() / maxLen + min;
+        int n = (int)Math.max(Math.min(progress, this.getMax()), min);
+        this.setProgress(n);
     }
 
     public void onDraw(Canvas canvas) {
@@ -40,9 +47,15 @@ class RotatingUzumakiSlider extends UzumakiSlider {
         this.drawHeader(canvas);
     }
 
+    protected void updateHead() {
+        int x = this.computeHeadPosition();
+        int y = this.getHeight() / 2;
+        this.head.changePointerPosition(x, y);
+    }
+
     private void drawHeader(Canvas canvas) {
         Path path = new Path();
-        path.moveTo(this.computeHeaderPosition(), this.getHeight() / 2);
+        path.moveTo(this.computeHeadPosition(), this.getHeight() / 2);
         path.rLineTo(this.headerSize, - this.headerSize);
         path.rLineTo(-2 * this.headerSize, 0);
         path.close();
@@ -51,37 +64,33 @@ class RotatingUzumakiSlider extends UzumakiSlider {
         paint.setColor(Color.YELLOW);
         paint.setStyle(Paint.Style.FILL);
         canvas.drawPath(path, paint);
-
-        int x = this.computeHeaderPosition() + this.getLeft();
-        int y = this.getHeight() / 2 + this.getTop();
-        this.head.changePointerPosition(x, y);
     }
 
     private void initialize() {
         this.headerSize = 42;
     }
 
-    private int computeHeaderPosition() {
+    private int computeHeadPosition() {
         int center = this.getWidth() / 2;
         int innerRadius = this.getAbsoluteInnerDiameter() / 2;
-        int max = this.getMax();
-        int step = max - this.getProgress();
-        int size = max - this.getMin();
+        int step = this.getMax() - this.getProgress();
         int outerRadius = this.getAbsoluteOuterDiameter() / 2;
-        int span = (outerRadius - innerRadius) * step / size;
+        int span = (outerRadius - innerRadius) * step / this.getSize();
         return center + innerRadius + span;
+    }
+
+    private float computeCurrentAngle() {
+        int progress = this.getProgress() - this.getMin();
+        return this.getSweepAngle() * (float)progress / this.getSize();
     }
 
     private void drawRotatingUzumaki(Canvas canvas) {
         int x = this.getWidth() / 2;
         int y = this.getHeight() / 2;
-        int min = this.getMin();
-        int progress = this.getProgress() - min;
-        int size = this.getMax() - min;
-        int degree = this.getSweepAngle() * progress / size;
+        float angle = this.computeCurrentAngle();
         canvas.save();
         try {
-            canvas.rotate(- degree, x, y);
+            canvas.rotate(- angle, x, y);
             this.drawUzumaki(canvas);
         }
         finally {
