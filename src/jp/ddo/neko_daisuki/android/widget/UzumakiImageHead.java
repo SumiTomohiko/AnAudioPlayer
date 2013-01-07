@@ -23,11 +23,11 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
         }
 
         public boolean run(MotionEvent event) {
-            this.accept(this.head, event);
+            this.callback(this.head, event);
             return true;
         }
 
-        protected abstract void accept(UzumakiImageHead head, MotionEvent event);
+        protected abstract void callback(UzumakiImageHead head, MotionEvent event);
     }
 
     private class ActionMoveProc extends MotionEventProc {
@@ -36,7 +36,7 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
             super(head);
         }
 
-        protected void accept(UzumakiImageHead head, MotionEvent event) {
+        protected void callback(UzumakiImageHead head, MotionEvent event) {
             head.onActionMove(event);
         }
     }
@@ -47,7 +47,7 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
             super(head);
         }
 
-        protected void accept(UzumakiImageHead head, MotionEvent event) {
+        protected void callback(UzumakiImageHead head, MotionEvent event) {
             head.onActionDown(event);
         }
     }
@@ -58,7 +58,7 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
             super(head);
         }
 
-        protected void accept(UzumakiImageHead head, MotionEvent event) {
+        protected void callback(UzumakiImageHead head, MotionEvent event) {
             head.onActionUp(event);
         }
     }
