@@ -10,42 +10,60 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.widget.ImageView;
 
+import jp.ddo.neko_daisuki.android.view.MotionEventDispatcher;
+
 public class UzumakiImageHead extends ImageView implements UzumakiHead {
 
-    private interface MotionEventDispatcher {
+    private abstract class MotionEventProc implements MotionEventDispatcher.Proc {
 
-        public void dispatch(UzumakiImageHead head, MotionEvent event);
-    }
+        private UzumakiImageHead head;
 
-    private class FakeDispatcher implements MotionEventDispatcher {
-
-        public void dispatch(UzumakiImageHead head, MotionEvent event) {
-            // Does nothing.
+        public MotionEventProc(UzumakiImageHead head) {
+            this.head = head;
         }
+
+        public boolean run(MotionEvent event) {
+            this.accept(this.head, event);
+            return true;
+        }
+
+        protected abstract void accept(UzumakiImageHead head, MotionEvent event);
     }
 
-    private class ActionMoveDispatcher implements MotionEventDispatcher {
+    private class ActionMoveProc extends MotionEventProc {
 
-        public void dispatch(UzumakiImageHead head, MotionEvent event) {
+        public ActionMoveProc(UzumakiImageHead head) {
+            super(head);
+        }
+
+        protected void accept(UzumakiImageHead head, MotionEvent event) {
             head.onActionMove(event);
         }
     }
 
-    private class ActionDownDispatcher implements MotionEventDispatcher {
+    private class ActionDownProc extends MotionEventProc {
 
-        public void dispatch(UzumakiImageHead head, MotionEvent event) {
+        public ActionDownProc(UzumakiImageHead head) {
+            super(head);
+        }
+
+        protected void accept(UzumakiImageHead head, MotionEvent event) {
             head.onActionDown(event);
         }
     }
 
-    private class ActionUpDispatcher implements MotionEventDispatcher {
+    private class ActionUpProc extends MotionEventProc {
 
-        public void dispatch(UzumakiImageHead head, MotionEvent event) {
+        public ActionUpProc(UzumakiImageHead head) {
+            super(head);
+        }
+
+        protected void accept(UzumakiImageHead head, MotionEvent event) {
             head.onActionUp(event);
         }
     }
 
-    private Map<Integer, MotionEventDispatcher> dispatchers;
+    private MotionEventDispatcher dispatcher;
     private UzumakiSlider slider;
     private float xAtDown;
     private float yAtDown;
@@ -74,30 +92,26 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
     }
 
     public boolean onTouchEvent(MotionEvent event) {
-        int action = event.getActionMasked();
-        MotionEventDispatcher dispatcher = this.getDispatcher(action);
-        dispatcher.dispatch(this, event);
-        return true;
-    }
-
-    private MotionEventDispatcher getDispatcher(int action) {
-        MotionEventDispatcher dispatcher = this.dispatchers.get(action);
-        return dispatcher != null ? dispatcher : new FakeDispatcher();
+        return this.dispatcher.dispatch(event);
     }
 
     private void disableActionMove() {
-        this.dispatchers.remove(MotionEvent.ACTION_MOVE);
+        this.dispatcher.removeMoveProc();
+    }
+
+    private void enableActionMove() {
+        this.dispatcher.setMoveProc(new ActionMoveProc(this));
     }
 
     private void initialize() {
-        this.dispatchers = new HashMap<Integer, MotionEventDispatcher>();
-        this.dispatchers.put(MotionEvent.ACTION_DOWN, new ActionDownDispatcher());
-        this.dispatchers.put(MotionEvent.ACTION_UP, new ActionUpDispatcher());
+        this.dispatcher = new MotionEventDispatcher();
+        this.dispatcher.setDownProc(new ActionDownProc(this));
+        this.dispatcher.setUpProc(new ActionUpProc(this));
     }
 
     private void onActionDown(MotionEvent event) {
         this.slider.fireOnStartHeadMovingListeners();
-        this.dispatchers.put(MotionEvent.ACTION_MOVE, new ActionMoveDispatcher());
+        this.enableActionMove();
         this.xAtDown = this.getEventX(event);
         this.yAtDown = this.getEventY(event);
     }
