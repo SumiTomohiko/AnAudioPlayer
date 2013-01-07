@@ -1,5 +1,8 @@
 package jp.ddo.neko_daisuki.android.widget;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -7,10 +10,76 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 
-class RotatingUzumakiSlider extends UzumakiSlider {
+import jp.ddo.neko_daisuki.android.view.MotionEventDispatcher;
 
-    private static String LOG_TAG = "RotatingUzumakiSlider";
+public class RotatingUzumakiSlider extends UzumakiSlider {
+
+    public interface OnStartRotatingListener {
+
+        public void onStartRotating(RotatingUzumakiSlider slider);
+    }
+
+    public interface OnStopRotatingListener {
+
+        public void onStopRotating(RotatingUzumakiSlider slider);
+    }
+
+    private abstract class MotionEventProc implements MotionEventDispatcher.Proc {
+
+        private RotatingUzumakiSlider slider;
+
+        public MotionEventProc(RotatingUzumakiSlider slider) {
+            this.slider = slider;
+        }
+
+        public boolean run(MotionEvent event) {
+            return this.callback(this.slider, event);
+        }
+
+        protected abstract boolean callback(RotatingUzumakiSlider slider, MotionEvent event);
+    }
+
+    private class ActionDownProc extends MotionEventProc {
+
+        public ActionDownProc(RotatingUzumakiSlider slider) {
+            super(slider);
+        }
+
+        protected boolean callback(RotatingUzumakiSlider slider, MotionEvent event) {
+            return slider.onActionDown(event);
+        }
+    }
+
+    private class ActionMoveProc extends MotionEventProc {
+
+        public ActionMoveProc(RotatingUzumakiSlider slider) {
+            super(slider);
+        }
+
+        protected boolean callback(RotatingUzumakiSlider slider, MotionEvent event) {
+            return slider.onActionMove(event);
+        }
+    }
+
+    private class ActionUpProc extends MotionEventProc {
+
+        public ActionUpProc(RotatingUzumakiSlider slider) {
+            super(slider);
+        }
+
+        protected boolean callback(RotatingUzumakiSlider slider, MotionEvent event) {
+            return slider.onActionUp(event);
+        }
+    }
+
+    private static final String LOG_TAG = "RotatingUzumakiSlider";
+
+    private List<OnStartRotatingListener> onStartRotatingListeners;
+    private List<OnStopRotatingListener> onStopRotatingListeners;
+    private MotionEventDispatcher dispatcher;
+    private double rotationAngle;   // [degree]
 
     private int headerSize;
 
@@ -27,6 +96,18 @@ class RotatingUzumakiSlider extends UzumakiSlider {
     public RotatingUzumakiSlider(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         this.initialize();
+    }
+
+    public boolean onTouchEvent(MotionEvent event) {
+        return this.dispatcher.dispatch(event);
+    }
+
+    public void addOnStartRotatingListener(OnStartRotatingListener listener) {
+        this.onStartRotatingListeners.add(listener);
+    }
+
+    public void addOnStopRotatingListener(OnStopRotatingListener listener) {
+        this.onStopRotatingListeners.add(listener);
     }
 
     public void placeHead(float pointerX, float pointerY) {
@@ -67,6 +148,13 @@ class RotatingUzumakiSlider extends UzumakiSlider {
     }
 
     private void initialize() {
+        this.onStartRotatingListeners = new ArrayList<OnStartRotatingListener>();
+        this.onStopRotatingListeners = new ArrayList<OnStopRotatingListener>();
+        this.dispatcher = new MotionEventDispatcher();
+        this.dispatcher.setDownProc(new ActionDownProc(this));
+        this.dispatcher.setMoveProc(new ActionMoveProc(this));
+        this.dispatcher.setUpProc(new ActionUpProc(this));
+
         this.headerSize = 42;
     }
 
@@ -96,6 +184,77 @@ class RotatingUzumakiSlider extends UzumakiSlider {
         finally {
             canvas.restore();
         }
+    }
+
+    private float getEventX(MotionEvent event) {
+        return event.getX(event.getPointerId(0));
+    }
+
+    private float getEventY(MotionEvent event) {
+        return event.getY(event.getPointerId(0));
+    }
+
+    private boolean onActionDown(MotionEvent event) {
+        int centerX = this.getWidth() / 2;
+        int centerY = this.getHeight() / 2;
+        float x = this.getEventX(event);
+        float y = this.getEventY(event);
+        float deltaX = x - centerX;
+        float deltaY = y - centerY;
+        double len = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        int outerRadius = this.getOutlineOuterDiameter() / 2;
+        int innerRadius = this.getAbsoluteOutlineInnerDiameter() / 2;
+        boolean isTarget = (innerRadius <= len) && (len <= outerRadius);
+
+        return isTarget ? this.startRotating(x, y) : false;
+    }
+
+    private double computeRotationAngle(float x, float y) {
+        int centerX = this.getWidth() / 2;
+        int centerY = this.getHeight() / 2;
+        float deltaX = x - centerX;
+        float deltaY = y - centerY;
+        double radian = Math.atan2(deltaY, deltaX);
+        return Math.toDegrees(radian);
+    }
+
+    private boolean startRotating(float x, float y) {
+        this.rotationAngle = this.computeRotationAngle(x, y);
+
+        for (OnStartRotatingListener listener: this.onStartRotatingListeners) {
+            listener.onStartRotating(this);
+        }
+
+        /*
+         * Return value's type of this method must be void. But to make the
+         * last expression of onActionDown() simple, this method always returns
+         * true. This is a bad way exactlly.
+         */
+        return true;
+    }
+
+    private boolean onActionMove(MotionEvent event) {
+        float x = this.getEventX(event);
+        float y = this.getEventY(event);
+        double angle = this.computeRotationAngle(x, y);
+        double angleDelta = angle - this.rotationAngle;
+        double absDelta = Math.abs(angleDelta);
+        double calibration = absDelta < 180 ? 0 : angleDelta / absDelta * 360;
+        double actualDelta = angleDelta - calibration;
+        double progressDelta = actualDelta / this.getSweepAngle() * this.getSize() + this.getMin();
+        int direction = 0 < this.getSweepAngle() ? 1 : -1;
+        this.setProgress(this.getProgress() + direction * (int)progressDelta);
+        this.rotationAngle = angle;
+
+        return true;
+    }
+
+    private boolean onActionUp(MotionEvent event) {
+        for (OnStopRotatingListener listener: this.onStopRotatingListeners) {
+            listener.onStopRotating(this);
+        }
+
+        return true;
     }
 }
 

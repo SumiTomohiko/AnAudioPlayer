@@ -25,6 +25,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
 
+import jp.ddo.neko_daisuki.android.widget.RotatingUzumakiSlider;
 import jp.ddo.neko_daisuki.android.widget.UzumakiHead;
 /*
  * UzumakiImageHead is referred only from main.xml. So if without the following import statment,
@@ -35,6 +36,37 @@ import jp.ddo.neko_daisuki.android.widget.UzumakiSlider;
 
 public class MainActivity extends Activity
 {
+    private class RotatingListener {
+
+        protected MainActivity activity;
+
+        public RotatingListener(MainActivity activity) {
+            this.activity = activity;
+        }
+    }
+
+    private class OnStartRotatingListener extends RotatingListener implements RotatingUzumakiSlider.OnStartRotatingListener {
+
+        public OnStartRotatingListener(MainActivity activity) {
+            super(activity);
+        }
+
+        public void onStartRotating(RotatingUzumakiSlider slider) {
+            this.activity.pause();
+        }
+    }
+
+    private class OnStopRotatingListener extends RotatingListener implements RotatingUzumakiSlider.OnStopRotatingListener {
+
+        public OnStopRotatingListener(MainActivity activity) {
+            super(activity);
+        }
+
+        public void onStopRotating(RotatingUzumakiSlider slider) {
+            this.activity.onStopHeadMoving();
+        }
+    }
+
     private interface Player {
 
         public void setup(String path) throws IOException;
@@ -177,7 +209,7 @@ public class MainActivity extends Activity
 
     private Button prevButton2;
     private Button playButton;
-    private UzumakiSlider slider;
+    private RotatingUzumakiSlider slider;
     private UzumakiHead head;
     private TextView title;
     private TextView currentTime;
@@ -219,6 +251,8 @@ public class MainActivity extends Activity
         this.slider.attachHead(this.head);
         this.slider.addOnStartHeadMovingListener(new OnStartHeadMovingListener(this));
         this.slider.addOnStopHeadMovingListener(new OnStopHeadMovingListener(this));
+        this.slider.addOnStartRotatingListener(new OnStartRotatingListener(this));
+        this.slider.addOnStopRotatingListener(new OnStopRotatingListener(this));
         this.slider.setLogger(new SliderLogger(this));
     }
 
@@ -238,7 +272,7 @@ public class MainActivity extends Activity
 
         this.prevButton2 = (Button)this.findViewById(R.id.prev2);
         this.playButton = (Button)this.findViewById(R.id.play);
-        this.slider = (UzumakiSlider)this.findViewById(R.id.slider);
+        this.slider = (RotatingUzumakiSlider)this.findViewById(R.id.slider);
         this.head = (UzumakiHead)this.findViewById(R.id.head);
 
         this.title = (TextView)this.findViewById(R.id.title);

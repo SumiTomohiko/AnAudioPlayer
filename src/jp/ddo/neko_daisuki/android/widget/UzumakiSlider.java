@@ -120,12 +120,16 @@ public abstract class UzumakiSlider extends ViewGroup {
         head.setSlider(this);
     }
 
+    public int getAbsoluteOuterDiameter() {
+        return this.computeDiameter(this.outerDiameterType, this.outerDiameter);
+    }
+
     public int getAbsoluteInnerDiameter() {
         return this.computeDiameter(this.innerDiameterType, this.innerDiameter);
     }
 
-    public int getAbsoluteOuterDiameter() {
-        return this.computeDiameter(this.outerDiameterType, this.outerDiameter);
+    public int getAbsoluteOutlineInnerDiameter() {
+        return this.computeDiameter(this.outlineInnerDiameterType, this.outlineInnerDiameter);
     }
 
     public int getSweepAngle() {
@@ -274,7 +278,7 @@ public abstract class UzumakiSlider extends ViewGroup {
         int width = MeasureSpec.getSize(widthMeasureSpec);
         int height = MeasureSpec.getSize(heightMeasureSpec);
         int outlineOuterDiameter = Math.min(width, height);
-        int outlineInnerDiameter = this.computeDiameter(this.outlineInnerDiameterType, this.outlineInnerDiameter, outlineOuterDiameter);
+        int outlineInnerDiameter = this.getAbsoluteOutlineInnerDiameter();
         int spec = MeasureSpec.makeMeasureSpec(outlineInnerDiameter, MeasureSpec.EXACTLY);
         int nChildren = this.getChildCount();
         for (int i = 0; i < nChildren; i++) {
@@ -321,15 +325,12 @@ public abstract class UzumakiSlider extends ViewGroup {
         this.strokeWidth = attrs.getAttributeIntValue(null, "stroke_width", this.strokeWidth);
     }
 
-    private int computeDiameter(SizeType type, int size, int baseSize) {
+    private int computeDiameter(SizeType type, int size) {
+        int baseSize = this.getOutlineOuterDiameter();
         return type == SizeType.TYPE_PERCENT ? baseSize * size / 100 : size;
     }
 
-    private int computeDiameter(SizeType type, int size) {
-        return this.computeDiameter(type, size, this.getOutlineOuterDiameter());
-    }
-
-    private int getOutlineOuterDiameter() {
+    protected int getOutlineOuterDiameter() {
         return Math.min(this.getWidth(), this.getHeight());
     }
 
@@ -340,7 +341,7 @@ public abstract class UzumakiSlider extends ViewGroup {
         outerOutline.addCircle(x, y, this.getOutlineOuterDiameter() / 2, Path.Direction.CW);
 
         Path innerOutline = new Path();
-        int outlineInnerDiameter = this.computeDiameter(this.outlineInnerDiameterType, this.outlineInnerDiameter);
+        int outlineInnerDiameter = this.getAbsoluteOutlineInnerDiameter();
         innerOutline.addCircle(x, y, outlineInnerDiameter / 2, Path.Direction.CW);
 
         Paint paint = new Paint();
