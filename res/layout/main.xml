@@ -17,7 +17,7 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:layout_weight="1"
-            android:background="@color/neutral"
+            android:background="@color/background"
             android:listSelector="@drawable/row"/>
         <Button
             android:id="@+id/next0"

@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="selected">#ffff0000</color>
-    <color name="neutral">#ffffffff</color>
-    <color name="pressed">#fff0f0f0</color>
+    <color name="selected">#ffb6c1</color>      <!-- lightpink -->
+    <color name="neutral">#ffffff</color>
+    <color name="pressed">#ffc0cb</color>       <!-- pink -->
+    <color name="background">#dcdcdc</color>    <!-- gainsboro -->
 </resources>
 <!--
 vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4

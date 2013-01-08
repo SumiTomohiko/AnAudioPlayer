@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     android:background of LinearLayout is transparent. Because of it,
-    the list shows item's background as defined at listSelector.
+    the list shows item's background as defined at listSelector. The
+    biggest hint is at http://android.cyrilmottier.com/?p=454
 -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
