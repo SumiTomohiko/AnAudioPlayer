@@ -343,9 +343,8 @@ public class MainActivity extends Activity
     private static final String MEDIA_PATH = "/sdcard/u1";
 
     private void initializeDirList() {
-        int layout = android.R.layout.simple_list_item_1;
         this.dirs = this.listMp3Dir(new File(MEDIA_PATH));
-        this.dirList.setAdapter(new ArrayAdapter<String>(this, layout, this.dirs));
+        this.dirList.setAdapter(new ArrayAdapter<String>(this, R.layout.dir_row, R.id.path, this.dirs));
         this.dirList.setOnItemClickListener(new DirectoryListListener(this));
     }
 

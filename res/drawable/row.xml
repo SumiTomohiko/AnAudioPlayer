@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+        These settings are not perfect. If you select an item, and come back the previous list,
+        the list will forget selected item, whose background color will not be @color/selected.
+    -->
+    <item
+        android:state_pressed="true"
+        android:drawable="@color/pressed"/>
+    <item
+        android:drawable="@color/selected"/>
+</selector>
+<!--
+vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
+-->
