@@ -10,6 +10,12 @@
     <style name="Button">
         <item name="android:background">@drawable/button</item>
     </style>
+    <style name="NavRightButton" parent="Button">
+        <item name="android:src">@drawable/nav_right</item>
+    </style>
+    <style name="NavLeftButton" parent="Button">
+        <item name="android:src">@drawable/nav_left</item>
+    </style>
 </resources>
 <!--
 vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4

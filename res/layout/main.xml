@@ -20,45 +20,41 @@
             android:layout_weight="1"
             android:background="@color/background"
             android:listSelector="@drawable/row"/>
-        <Button
+        <ImageButton
             android:id="@+id/next0"
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
             android:enabled="false"
-            android:text="&gt;"
-            style="@style/Button"/>
+            style="@style/NavRightButton"/>
     </LinearLayout>
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="fill_parent">
-        <Button
+        <ImageButton
             android:id="@+id/prev1"
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
-            android:text="&lt;"
-            style="@style/Button"/>
+            style="@style/NavLeftButton"/>
         <ListView
             android:id="@+id/file_list"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:layout_weight="1"/>
-        <Button
+        <ImageButton
             android:id="@+id/next1"
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
             android:enabled="false"
-            android:text="&gt;"
-            style="@style/Button"/>
+            style="@style/NavRightButton"/>
     </LinearLayout>
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="fill_parent">
-        <Button
+        <ImageButton
             android:id="@+id/prev2"
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
-            android:text="&lt;"
-            style="@style/Button"/>
+            style="@style/NavLeftButton"/>
         <LinearLayout
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"

@@ -201,13 +201,13 @@ public class MainActivity extends Activity
     private ViewFlipper flipper;
 
     private ListView dirList;
-    private Button nextButton0;
+    private View nextButton0;
 
-    private Button prevButton1;
+    private View prevButton1;
     private ListView fileList;
-    private Button nextButton1;
+    private View nextButton1;
 
-    private Button prevButton2;
+    private View prevButton2;
     private Button playButton;
     private RotatingUzumakiSlider slider;
     private UzumakiHead head;
@@ -264,13 +264,13 @@ public class MainActivity extends Activity
         this.flipper = (ViewFlipper)this.findViewById(R.id.flipper);
 
         this.dirList = (ListView)this.findViewById(R.id.dir_list);
-        this.nextButton0 = (Button)this.findViewById(R.id.next0);
+        this.nextButton0 = (View)this.findViewById(R.id.next0);
 
-        this.prevButton1 = (Button)this.findViewById(R.id.prev1);
+        this.prevButton1 = (View)this.findViewById(R.id.prev1);
         this.fileList = (ListView)this.findViewById(R.id.file_list);
-        this.nextButton1 = (Button)this.findViewById(R.id.next1);
+        this.nextButton1 = (View)this.findViewById(R.id.next1);
 
-        this.prevButton2 = (Button)this.findViewById(R.id.prev2);
+        this.prevButton2 = (View)this.findViewById(R.id.prev2);
         this.playButton = (Button)this.findViewById(R.id.play);
         this.slider = (RotatingUzumakiSlider)this.findViewById(R.id.slider);
         this.head = (UzumakiHead)this.findViewById(R.id.head);
@@ -398,9 +398,9 @@ public class MainActivity extends Activity
     }
 
     private void initializeFlipButtonListener() {
-        Button[] next_buttons = { this.nextButton0, this.nextButton1 };
+        View[] next_buttons = { this.nextButton0, this.nextButton1 };
         this.setClickListener(next_buttons, new NextButtonListener(this));
-        Button[] previous_buttons = { this.prevButton1, this.prevButton2 };
+        View[] previous_buttons = { this.prevButton1, this.prevButton2 };
         this.setClickListener(previous_buttons, new PreviousButtonListener(this));
     }
 
@@ -579,8 +579,8 @@ public class MainActivity extends Activity
         }
     }
 
-    private void setClickListener(Button[] buttons, View.OnClickListener listener) {
-        for (Button button: buttons) {
+    private void setClickListener(View[] buttons, View.OnClickListener listener) {
+        for (View button: buttons) {
             button.setOnClickListener(listener);
         }
     }
