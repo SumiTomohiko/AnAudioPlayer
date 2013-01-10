@@ -11,7 +11,8 @@
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
             android:enabled="false"
-            android:text="&lt;"/>
+            android:text="&lt;"
+            style="@style/Button"/>
         <ListView
             android:id="@+id/dir_list"
             android:layout_width="fill_parent"
@@ -24,7 +25,8 @@
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
             android:enabled="false"
-            android:text="&gt;"/>
+            android:text="&gt;"
+            style="@style/Button"/>
     </LinearLayout>
     <LinearLayout
         android:layout_width="fill_parent"
@@ -33,7 +35,8 @@
             android:id="@+id/prev1"
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
-            android:text="&lt;"/>
+            android:text="&lt;"
+            style="@style/Button"/>
         <ListView
             android:id="@+id/file_list"
             android:layout_width="fill_parent"
@@ -44,7 +47,8 @@
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
             android:enabled="false"
-            android:text="&gt;"/>
+            android:text="&gt;"
+            style="@style/Button"/>
     </LinearLayout>
     <LinearLayout
         android:layout_width="fill_parent"
@@ -53,7 +57,8 @@
             android:id="@+id/prev2"
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
-            android:text="&lt;"/>
+            android:text="&lt;"
+            style="@style/Button"/>
         <LinearLayout
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
@@ -114,7 +119,8 @@
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
             android:enabled="false"
-            android:text="&gt;"/>
+            android:text="&gt;"
+            style="@style/Button"/>
     </LinearLayout>
 </ViewFlipper>
 <!--
