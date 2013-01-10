@@ -6,13 +6,12 @@
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="fill_parent">
-        <Button
+        <ImageButton
             android:id="@+id/prev0"
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
-            android:enabled="false"
-            android:text="&lt;"
-            style="@style/Button"/>
+            android:src="@drawable/nav_left_disabled"
+            style="@style/DisabledButton"/>
         <ListView
             android:id="@+id/dir_list"
             android:layout_width="fill_parent"
@@ -110,13 +109,12 @@
                     style="@style/TimeText"/>
             </LinearLayout>
         </LinearLayout>
-        <Button
+        <ImageButton
             android:id="@+id/next2"
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
-            android:enabled="false"
-            android:text="&gt;"
-            style="@style/Button"/>
+            android:src="@drawable/nav_right_disabled"
+            style="@style/DisabledButton"/>
     </LinearLayout>
 </ViewFlipper>
 <!--
