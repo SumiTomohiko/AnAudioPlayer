@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="selected">#ffb6c1</color>      <!-- lightpink -->
+    <color name="selected">#f4a0bd</color>      <!-- pastel pink -->
     <color name="neutral">#ffffff</color>
-    <color name="pressed">#ffb6c1</color>       <!-- lightpink -->
+    <color name="pressed">#f4a0bd</color>       <!-- pastel pink -->
     <color name="background">#ffffff</color>    <!-- white -->
 </resources>
 <!--
