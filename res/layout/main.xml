@@ -17,8 +17,7 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
             android:layout_weight="1"
-            android:background="@color/background"
-            android:listSelector="@drawable/row"/>
+            style="@style/List"/>
         <ImageButton
             android:id="@+id/next0"
             android:layout_width="wrap_content"
@@ -38,7 +37,8 @@
             android:id="@+id/file_list"
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:layout_weight="1"/>
+            android:layout_weight="1"
+            style="@style/List"/>
         <ImageButton
             android:id="@+id/next1"
             android:layout_width="wrap_content"

@@ -19,6 +19,10 @@
     <style name="DisabledButton" parent="Button">
         <item name="android:clickable">false</item>
     </style>
+    <style name="List">
+        <item name="android:background">@color/background</item>
+        <item name="android:listSelector">@drawable/row</item>
+    </style>
 </resources>
 <!--
 vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4

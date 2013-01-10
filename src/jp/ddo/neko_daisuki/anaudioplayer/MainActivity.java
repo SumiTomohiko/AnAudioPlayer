@@ -405,11 +405,10 @@ public class MainActivity extends Activity
     }
 
     private void selectDir(int position) {
-        int layout = android.R.layout.simple_list_item_1;
         this.selectedDir = this.dirs.get(position);
         this.files = (new File(this.selectedDir)).list(new Mp3Filter());
 
-        this.fileList.setAdapter(new ArrayAdapter<String>(this, layout, this.files));
+        this.fileList.setAdapter(new ArrayAdapter<String>(this, R.layout.file_row, R.id.name, this.files));
         this.fileList.setOnItemClickListener(new FileListListener(this));
 
         this.nextButton0.setEnabled(true);
