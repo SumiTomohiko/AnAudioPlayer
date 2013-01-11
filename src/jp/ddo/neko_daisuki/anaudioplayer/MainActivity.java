@@ -11,6 +11,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -296,7 +297,8 @@ public class MainActivity extends Activity
     }
 
     private void showAbout() {
-        // TODO
+        Intent i = new Intent(this, AboutActivity.class);
+        this.startActivity(i);
     }
 
     private void initializeMenu() {

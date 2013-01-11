@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">An Audio Player</string>
+    <string name="about_title">About An Audio Player</string>
+    <string name="about_text">An Audio Player version 1.0.0dev1</string>
 </resources>
+<!--
+vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
+-->
