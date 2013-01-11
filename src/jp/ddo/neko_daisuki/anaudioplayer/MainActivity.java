@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +45,44 @@ import jp.ddo.neko_daisuki.android.widget.UzumakiSlider;
 
 public class MainActivity extends Activity
 {
+    private class Mp3Comparator implements Comparator<String> {
+
+        private String dir;
+
+        public Mp3Comparator(String dir) {
+            this.dir = dir;
+        }
+
+        public int compare(String name1, String name2) {
+            String path1 = this.dir + File.separator + name1;
+            String path2 = this.dir + File.separator + name2;
+            int trackNo1 = this.extractTrackNumber(path1);
+            int trackNo2 = this.extractTrackNumber(path2);
+            return trackNo1 != trackNo2 ?  trackNo1 - trackNo2 : path1.compareTo(path2);
+        }
+
+        private int extractTrackNumber(String path) {
+            MediaMetadataRetriever meta = new MediaMetadataRetriever();
+            meta.setDataSource(path);
+            int key = MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER;
+            String datum = meta.extractMetadata(key);
+            return datum != null ? this.getTrackNumber(datum) : 0;
+        }
+
+        private int getTrackNumber(String datum) {
+            // Track number is stored in format of "Num/Total".
+            int pos = datum.indexOf('/');
+            String s = pos < 0 ? datum : datum.substring(0, pos);
+            try {
+                return Integer.parseInt(s);
+            }
+            catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+            return 0;
+        }
+    }
+
     private class RotatingListener {
 
         protected MainActivity activity;
@@ -467,7 +507,17 @@ public class MainActivity extends Activity
 
     private void selectDir(int position) {
         this.selectedDir = this.dirs.get(position);
-        this.files = (new File(this.selectedDir)).list(new Mp3Filter());
+        File dir = new File(this.selectedDir);
+        String dirPath;
+        try {
+            dirPath = dir.getCanonicalPath();
+        }
+        catch (IOException _) {
+            dirPath = "";
+        }
+        String[] files = dir.list(new Mp3Filter());
+        Arrays.sort(files, new Mp3Comparator(dirPath));
+        this.files = files;
 
         this.fileList.setAdapter(new ArrayAdapter<String>(this, R.layout.file_row, R.id.name, this.files));
         this.fileList.setOnItemClickListener(new FileListListener(this));
