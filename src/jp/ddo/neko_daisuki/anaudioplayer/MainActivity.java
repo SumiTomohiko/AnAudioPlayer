@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -401,7 +402,9 @@ public class MainActivity extends Activity
     private static final String MEDIA_PATH = "/sdcard/u1";
 
     private void initializeDirList() {
-        this.dirs = this.listMp3Dir(new File(MEDIA_PATH));
+        List<String> dirs = this.listMp3Dir(new File(MEDIA_PATH));
+        Collections.sort(dirs);
+        this.dirs = dirs;
         this.dirList.setAdapter(new ArrayAdapter<String>(this, R.layout.dir_row, R.id.path, this.dirs));
         this.dirList.setOnItemClickListener(new DirectoryListListener(this));
     }
