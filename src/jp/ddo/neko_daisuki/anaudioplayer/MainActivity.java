@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -14,6 +16,9 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -196,6 +201,33 @@ public class MainActivity extends Activity
         }
     }
 
+    private abstract class MenuDispatcher {
+
+        protected MainActivity activity;
+
+        public MenuDispatcher(MainActivity activity) {
+            this.activity = activity;
+        }
+
+        public boolean dispatch() {
+            this.callback();
+            return true;
+        }
+
+        protected abstract void callback();
+    }
+
+    private class AboutDispatcher extends MenuDispatcher {
+
+        public AboutDispatcher(MainActivity activity) {
+            super(activity);
+        }
+
+        protected void callback() {
+            this.activity.showAbout();
+        }
+    }
+
     private static final String LOG_TAG = "An Audio Player";
 
     private ViewFlipper flipper;
@@ -232,6 +264,8 @@ public class MainActivity extends Activity
     private FakeTimer fakeTimer;
     private ProcAfterSeeking procAfterSeeking;
 
+    private Map<Integer, MenuDispatcher> menuDispatchers = new HashMap<Integer, MenuDispatcher>();
+
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
@@ -245,6 +279,28 @@ public class MainActivity extends Activity
         this.initializePlayButton();
         this.initializeTimer();
         this.initializeSlider();
+        this.initializeMenu();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.action_bar, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        MenuDispatcher dispatcher = this.menuDispatchers.get(item.getItemId());
+        return dispatcher != null ? dispatcher.dispatch() : super.onOptionsItemSelected(item);
+    }
+
+    private void showAbout() {
+        // TODO
+    }
+
+    private void initializeMenu() {
+        this.menuDispatchers.put(R.id.about, new AboutDispatcher(this));
     }
 
     private void initializeSlider() {
