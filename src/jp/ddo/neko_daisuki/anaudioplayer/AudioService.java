@@ -22,6 +22,61 @@ public class AudioService extends Service {
         public int offset;
     }
 
+    private interface Player {
+
+        public void play(String path, int offset) throws IOException;
+        public void pause();
+        public int getCurrentPosition();
+        public void release();
+    }
+
+    private class TruePlayer implements Player {
+
+        private MediaPlayer mp = new MediaPlayer();
+
+        public void play(String path, int offset) throws IOException {
+            this.mp.reset();
+            this.mp.setDataSource(path);
+            this.mp.prepare();
+            this.mp.seekTo(offset);
+            this.mp.start();
+        }
+
+        public void pause() {
+            this.mp.pause();
+        }
+
+        public int getCurrentPosition() {
+            return this.mp.getCurrentPosition();
+        }
+
+        public void release() {
+            this.mp.release();
+        }
+    }
+
+    private class FakePlayer implements Player {
+
+        private int position;
+
+        public FakePlayer(int position) {
+            this.position = position;
+        }
+
+        public void play(String path, int offset) throws IOException {
+        }
+
+        public void pause() {
+        }
+
+        public int getCurrentPosition() {
+            return this.position;
+        }
+
+        public void release() {
+        }
+    }
+
     private class IncomingHandler extends Handler {
 
         private abstract class MessageHandler {
@@ -63,21 +118,16 @@ public class AudioService extends Service {
             public void handle(Message msg) {
                 PlayArgument a = (PlayArgument)msg.obj;
 
-                MediaPlayer player = this.service.player;
-                player.reset();
                 try {
-                    player.setDataSource(a.path);
-                    player.prepare();
+                    this.service.player.play(a.path, a.offset);
                 }
                 catch (IOException e) {
                     e.printStackTrace();
                     // TODO: The handler must return an error to a client.
                     return;
                 }
-                player.seekTo(a.offset);
-                player.start();
 
-                Log.i(LOG_TAG, String.format("Play: %s", a.path));
+                Log.i(LOG_TAG, String.format("Play: %s from %d", a.path, a.offset));
             }
         }
 
@@ -107,7 +157,7 @@ public class AudioService extends Service {
     private static final String LOG_TAG = MainActivity.LOG_TAG;
 
     private Messenger messenger;
-    private MediaPlayer player;
+    private Player player;
 
     public static Object makePlayArgument(String path, int offset) {
         PlayArgument a = new PlayArgument();
@@ -132,14 +182,23 @@ public class AudioService extends Service {
     public void onCreate() {
         super.onCreate();
         this.messenger = new Messenger(new IncomingHandler(this));
-        this.player = new MediaPlayer();
+        this.player = new TruePlayer();
         Log.i(LOG_TAG, "AudioService was created.");
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        this.player.release();
+
+        /*
+         * MSG_WHAT_TIME message comes even after onDestroy().
+         * So I placed FakePlayer to handle MSG_WHAT_TIME.
+         */
+        Player player = this.player;
+        player.pause();
+        this.player = new FakePlayer(player.getCurrentPosition());
+        player.release();
+
         Log.i(LOG_TAG, "AudioService was destroyed.");
     }
 }

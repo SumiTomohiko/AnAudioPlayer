@@ -496,16 +496,7 @@ public class MainActivity extends Activity
         this.playListener = new PlayButtonListener(this);
     }
 
-    private class ActivityListener {
-
-        public ActivityListener(MainActivity activity) {
-            this.activity = activity;
-        }
-
-        protected MainActivity activity;
-    }
-
-    private class PauseButtonListener extends ActivityListener implements View.OnClickListener {
+    private class PauseButtonListener extends ActivityHolder implements View.OnClickListener {
 
         public PauseButtonListener(MainActivity activity) {
             super(activity);
@@ -518,7 +509,7 @@ public class MainActivity extends Activity
         }
     }
 
-    private class PlayButtonListener extends ActivityListener implements View.OnClickListener {
+    private class PlayButtonListener extends ActivityHolder implements View.OnClickListener {
 
         public PlayButtonListener(MainActivity activity) {
             super(activity);
@@ -699,7 +690,8 @@ public class MainActivity extends Activity
 
     private void sendPlay() {
         String path = this.getSelectedPath();
-        Object a = AudioService.makePlayArgument(path, 0);
+        int offset = this.slider.getProgress();
+        Object a = AudioService.makePlayArgument(path, offset);
         this.sendMessage(AudioService.MSG_PLAY, a);
     }
 
