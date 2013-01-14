@@ -210,56 +210,41 @@ public class MainActivity extends Activity
         }
     }
 
-    private class RotatingListener {
-
-        protected MainActivity activity;
-
-        public RotatingListener(MainActivity activity) {
-            this.activity = activity;
-        }
-    }
-
-    private class OnStartRotatingListener extends RotatingListener implements RotatingUzumakiSlider.OnStartRotatingListener {
+    private class OnStartRotatingListener extends ActivityHolder implements RotatingUzumakiSlider.OnStartRotatingListener {
 
         public OnStartRotatingListener(MainActivity activity) {
             super(activity);
         }
 
         public void onStartRotating(RotatingUzumakiSlider slider) {
-            this.activity.pause();
+            this.activity.onStartSliding();
         }
     }
 
-    private class OnStopRotatingListener extends RotatingListener implements RotatingUzumakiSlider.OnStopRotatingListener {
+    private class OnStopRotatingListener extends ActivityHolder implements RotatingUzumakiSlider.OnStopRotatingListener {
 
         public OnStopRotatingListener(MainActivity activity) {
             super(activity);
         }
 
         public void onStopRotating(RotatingUzumakiSlider slider) {
-            this.activity.onStopHeadMoving();
+            this.activity.procAfterSeeking.run();
         }
     }
 
-    private interface ProcAfterSeeking {
-
-        public void run();
-    }
-
-    private class PlayAfterSeeking implements ProcAfterSeeking {
-
-        private MainActivity activity;
+    private class PlayAfterSeeking extends ActivityHolder implements Runnable {
 
         public PlayAfterSeeking(MainActivity activity) {
-            this.activity = activity;
+            super(activity);
         }
 
         public void run() {
-            //this.activity.play();
+            this.activity.startTimer();
+            this.activity.sendPlay();
         }
     }
 
-    private class StayAfterSeeking implements ProcAfterSeeking {
+    private class StayAfterSeeking implements Runnable {
 
         public void run() {
         }
@@ -287,20 +272,18 @@ public class MainActivity extends Activity
         }
 
         public void onStartHeadMoving(UzumakiSlider slider, UzumakiHead head) {
-            this.activity.pause();
+            this.activity.onStartSliding();
         }
     }
 
-    private class OnStopHeadMovingListener implements UzumakiSlider.OnStopHeadMovingListener {
-
-        private MainActivity activity;
+    private class OnStopHeadMovingListener extends ActivityHolder implements UzumakiSlider.OnStopHeadMovingListener {
 
         public OnStopHeadMovingListener(MainActivity activity) {
-            this.activity = activity;
+            super(activity);
         }
 
         public void onStopHeadMoving(UzumakiSlider slider, UzumakiHead head) {
-            this.activity.onStopHeadMoving();
+            this.activity.procAfterSeeking.run();
         }
     }
 
@@ -399,7 +382,7 @@ public class MainActivity extends Activity
     private View.OnClickListener playListener;
     private TimerInterface timer;
     private FakeTimer fakeTimer;
-    private ProcAfterSeeking procAfterSeeking;
+    private Runnable procAfterSeeking;
 
     private Map<Integer, MenuDispatcher> menuDispatchers = new HashMap<Integer, MenuDispatcher>();
 
@@ -695,11 +678,6 @@ public class MainActivity extends Activity
         this.sendMessage(AudioService.MSG_PLAY, a);
     }
 
-    private void onStopHeadMoving() {
-        this.seekTo(this.slider.getProgress());
-        this.procAfterSeeking.run();
-    }
-
     private String getSelectedFile() {
         return this.files[this.filePosition];
     }
@@ -735,6 +713,7 @@ public class MainActivity extends Activity
 
         this.filePosition = position;
         this.play();
+        this.procAfterSeeking = new PlayAfterSeeking(this);
 
         this.nextButton1.setEnabled(true);
         String path = this.getSelectedPath();
@@ -944,6 +923,11 @@ public class MainActivity extends Activity
         this.connection = new Connection(this, procedureOnConnected);
         this.bindService(intent, this.connection, 0);
         this.serviceUnbinder = new TrueServiceUnbinder(this);
+    }
+
+    private void onStartSliding() {
+        this.stopTimer();
+        this.sendMessage(AudioService.MSG_PAUSE);
     }
 }
 

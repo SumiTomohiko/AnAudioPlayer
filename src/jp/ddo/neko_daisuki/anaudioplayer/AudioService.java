@@ -90,6 +90,17 @@ public class AudioService extends Service {
             public abstract void handle(Message msg);
         }
 
+        private class PauseHandler extends MessageHandler {
+
+            public PauseHandler(AudioService service) {
+                super(service);
+            }
+
+            public void handle(Message msg) {
+                this.service.player.pause();
+            }
+        }
+
         private class WhatTimeHandler extends MessageHandler {
 
             public WhatTimeHandler(AudioService service) {
@@ -146,12 +157,13 @@ public class AudioService extends Service {
         private void initializeHandlers(AudioService service) {
             this.handlers = new HashMap<Integer, MessageHandler>();
             this.handlers.put(MSG_PLAY, new PlayHandler(service));
+            this.handlers.put(MSG_PAUSE, new PauseHandler(service));
             this.handlers.put(MSG_WHAT_TIME, new WhatTimeHandler(service));
         }
     }
 
     public static final int MSG_PLAY = 3;
-    //public static final int MSG_PAUSE = 4;
+    public static final int MSG_PAUSE = 4;
     public static final int MSG_WHAT_TIME = 6;
 
     private static final String LOG_TAG = MainActivity.LOG_TAG;
