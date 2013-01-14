@@ -21,6 +21,8 @@
         <activity
             android:label="@string/about_title"
             android:name=".AboutActivity"/>
+        <service
+            android:name=".AudioService"/>
     </application>
 </manifest>
 <!--

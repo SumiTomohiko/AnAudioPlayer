@@ -14,11 +14,17 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.media.MediaMetadataRetriever;
-import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -45,6 +51,127 @@ import jp.ddo.neko_daisuki.android.widget.UzumakiSlider;
 
 public class MainActivity extends Activity
 {
+    private class ActivityHolder {
+
+        protected MainActivity activity;
+
+        public ActivityHolder(MainActivity activity) {
+            this.activity = activity;
+        }
+    }
+
+    private class PlayProcedureOnConnected extends ActivityHolder implements Runnable {
+
+        public PlayProcedureOnConnected(MainActivity activity) {
+            super(activity);
+        }
+
+        public void run() {
+            this.activity.sendPlay();
+            this.activity.startTimer();
+        }
+    }
+
+    private class ResumeProcedureOnConnected extends ActivityHolder implements Runnable {
+
+        public ResumeProcedureOnConnected(MainActivity activity) {
+            super(activity);
+        }
+
+        public void run() {
+            this.activity.startTimer();
+        }
+    }
+
+    private interface ServiceUnbinder {
+
+        public void unbind();
+    }
+
+    private class TrueServiceUnbinder extends ActivityHolder implements ServiceUnbinder {
+
+        public TrueServiceUnbinder(MainActivity activity) {
+            super(activity);
+        }
+
+        public void unbind() {
+            this.activity.unbindService(this.activity.connection);
+        }
+    }
+
+    private class FakeServiceUnbinder implements ServiceUnbinder {
+
+        public void unbind() {
+        }
+    }
+
+    private interface ServiceStarter {
+
+        public void start();
+    }
+
+    private class TrueServiceStarter extends ActivityHolder implements ServiceStarter {
+
+        public TrueServiceStarter(MainActivity activity) {
+            super(activity);
+        }
+
+        public void start() {
+            Intent intent = new Intent(this.activity, AudioService.class);
+            this.activity.startService(intent);
+        }
+    }
+
+    private class FakeServiceStarter implements ServiceStarter {
+
+        public void start() {
+        }
+    }
+
+    private interface ServiceStopper {
+
+        public void stop();
+    }
+
+    private class TrueServiceStopper extends ActivityHolder implements ServiceStopper {
+
+        public TrueServiceStopper(MainActivity activity) {
+            super(activity);
+        }
+
+        public void stop() {
+            this.activity.unbindAudioService();
+            Intent intent = new Intent(this.activity, AudioService.class);
+            this.activity.stopService(intent);
+        }
+    }
+
+    private class FakeServiceStopper implements ServiceStopper {
+
+        public void stop() {
+        }
+    }
+
+    private class Connection extends ActivityHolder implements ServiceConnection {
+
+        private Runnable procedureOnConnected;
+
+        public Connection(MainActivity activity, Runnable procedureOnConnected) {
+            super(activity);
+            this.procedureOnConnected = procedureOnConnected;
+        }
+
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            this.activity.outgoingMessenger = new Messenger(service);
+            this.procedureOnConnected.run();
+            Log.i(LOG_TAG, "MainActivity conneted to AudioService.");
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            Log.i(LOG_TAG, "MainActivity disconnected from AudioService.");
+        }
+    }
+
     private class Mp3Comparator implements Comparator<String> {
 
         private String dir;
@@ -114,16 +241,6 @@ public class MainActivity extends Activity
         }
     }
 
-    private interface Player {
-
-        public void setup(String path) throws IOException;
-        public int getCurrentPosition();
-        public void play();
-        public void pause();
-        public void release();
-        public void seekTo(int msec);
-    }
-
     private interface ProcAfterSeeking {
 
         public void run();
@@ -138,7 +255,7 @@ public class MainActivity extends Activity
         }
 
         public void run() {
-            this.activity.play();
+            //this.activity.play();
         }
     }
 
@@ -158,62 +275,6 @@ public class MainActivity extends Activity
 
         public void log(String msg) {
             this.activity.log(msg);
-        }
-    }
-
-    private class FakePlayer implements Player {
-
-        public void setup(String path) throws IOException {
-        }
-
-        public int getCurrentPosition() {
-            return 0;
-        }
-
-        public void play() {
-        }
-
-        public void pause() {
-        }
-
-        public void seekTo(int msec) {
-        }
-
-        public void release() {
-        }
-    }
-
-    private class TruePlayer implements Player {
-
-        private MediaPlayer mp;
-
-        public TruePlayer() {
-            this.mp = new MediaPlayer();
-        }
-
-        public void setup(String path) throws IOException {
-            this.mp.reset();
-            this.mp.setDataSource(path);
-            this.mp.prepare();
-        }
-
-        public int getCurrentPosition() {
-            return this.mp.getCurrentPosition();
-        }
-
-        public void play() {
-            this.mp.start();
-        }
-
-        public void pause() {
-            this.mp.pause();
-        }
-        public void seekTo(int msec) {
-            this.mp.seekTo(msec);
-        }
-
-        public void release() {
-            this.mp.release();
         }
     }
 
@@ -270,7 +331,42 @@ public class MainActivity extends Activity
         }
     }
 
-    private static final String LOG_TAG = "An Audio Player";
+    private class IncomingHandler extends Handler {
+
+        private abstract class MessageHandler extends ActivityHolder {
+
+            public MessageHandler(MainActivity activity) {
+                super(activity);
+            }
+
+            public abstract void handle(Message msg);
+        }
+
+        private class WhatTimeHandler extends MessageHandler {
+
+            public WhatTimeHandler(MainActivity activity) {
+                super(activity);
+            }
+
+            public void handle(Message msg) {
+                this.activity.updateCurrentTime(msg.arg1);
+            }
+        }
+
+        private Map<Integer, MessageHandler> handlers;
+
+        public IncomingHandler(MainActivity activity) {
+            this.handlers = new HashMap<Integer, MessageHandler>();
+            this.handlers.put(AudioService.MSG_WHAT_TIME, new WhatTimeHandler(activity));
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            this.handlers.get(msg.what).handle(msg);
+        }
+    }
+
+    public static final String LOG_TAG = "anaudioplayer";
 
     private ViewFlipper flipper;
 
@@ -293,7 +389,6 @@ public class MainActivity extends Activity
     private String selectedDir = null;
     private String[] files = new String[0];
     private int filePosition;
-    private Player player = new FakePlayer();
 
     private Animation leftInAnimation;
     private Animation leftOutAnimation;
@@ -307,6 +402,18 @@ public class MainActivity extends Activity
     private ProcAfterSeeking procAfterSeeking;
 
     private Map<Integer, MenuDispatcher> menuDispatchers = new HashMap<Integer, MenuDispatcher>();
+
+    private ServiceStarter serviceStarter;
+    private ServiceStopper serviceStopper;
+    private ServiceUnbinder serviceUnbinder;
+    private ServiceConnection connection;
+    private Messenger outgoingMessenger;
+    private Messenger incomingMessenger;
+
+    @Override
+    public Object onRetainNonConfigurationInstance() {
+        return this.connection;
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -322,6 +429,10 @@ public class MainActivity extends Activity
         this.initializeTimer();
         this.initializeSlider();
         this.initializeMenu();
+
+        this.incomingMessenger = new Messenger(new IncomingHandler(this));
+
+        Log.i(LOG_TAG, "Created.");
     }
 
     @Override
@@ -526,11 +637,14 @@ public class MainActivity extends Activity
         this.showNext();
     }
 
-    private void pause() {
+    private void stopTimer() {
         this.timer.cancel();
         this.timer = this.fakeTimer;
+    }
 
-        this.player.pause();
+    private void pause() {
+        this.stopTimer();
+        this.stopAudioService();
 
         this.playButton.setOnClickListener(this.playListener);
         this.playButton.setText(">");
@@ -543,17 +657,15 @@ public class MainActivity extends Activity
             this.proc = new Proc(activity);
         }
 
-        private class Proc implements Runnable {
+        private class Proc extends ActivityHolder implements Runnable {
 
             public Proc(MainActivity activity) {
-                this.activity = activity;
+                super(activity);
             }
 
             public void run() {
-                this.activity.updateCurrentTime();
+                this.activity.sendMessage(AudioService.MSG_WHAT_TIME);
             }
-
-            private MainActivity activity;
         }
 
         @Override
@@ -565,22 +677,30 @@ public class MainActivity extends Activity
         private Runnable proc;
     }
 
-    private void updateCurrentTime() {
-        int position = this.player.getCurrentPosition();
+    private void updateCurrentTime(int position) {
         this.slider.setProgress(position);
-        //this.showTime(this.currentTime, position);
+        this.showTime(this.currentTime, position);
     }
 
-    private void play() {
-        this.timer.cancel();
+    private void startTimer() {
         this.timer = new TrueTimer();
         // Each Timer requests new TimerTask object (Timers cannot share one task).
         this.timer.scheduleAtFixedRate(new PlayerTask(this), 0, 10);
+    }
 
-        this.player.play();
+    private void play() {
+        this.stopTimer();
+        this.startAudioService();
+        this.bindAudioService(new PlayProcedureOnConnected(this));
 
         this.playButton.setOnClickListener(this.pauseListener);
         this.playButton.setText("II");
+    }
+
+    private void sendPlay() {
+        String path = this.getSelectedPath();
+        Object a = AudioService.makePlayArgument(path, 0);
+        this.sendMessage(AudioService.MSG_PLAY, a);
     }
 
     private void onStopHeadMoving() {
@@ -619,31 +739,21 @@ public class MainActivity extends Activity
     }
 
     private void selectFile(int position) {
-        this.player.release();
+        this.pause();
 
-        this.player = new TruePlayer();
         this.filePosition = position;
-        String path = this.getSelectedPath();
-        try {
-            this.player.setup(path);
-        }
-        catch (IOException e) {
-            Log.e(LOG_TAG, e.toString());
-            return;
-        }
+        this.play();
 
+        this.nextButton1.setEnabled(true);
+        String path = this.getSelectedPath();
         int duration = this.getDuration(path);
         this.slider.setMax(duration);
         this.slider.setProgress(0);
-        this.procAfterSeeking = new PlayAfterSeeking(this);
         this.title.setText(this.getSelectedFile());
         this.showTime(this.currentTime, 0);
         this.showTime(this.totalTime, duration);
 
-        this.nextButton1.setEnabled(true);
         this.showNext();
-
-        this.play();
     }
 
     private void showPrevious() {
@@ -760,12 +870,88 @@ public class MainActivity extends Activity
         }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        Intent intent = this.makeAudioServiceIntent();
+        Connection conn = new Connection(this, new ResumeProcedureOnConnected(this));
+        if (this.bindService(intent, conn, 0)) {
+            this.serviceStarter = new FakeServiceStarter();
+            this.serviceStopper = new TrueServiceStopper(this);
+            this.serviceUnbinder = new TrueServiceUnbinder(this);
+            this.connection = conn;
+        }
+        else {
+            this.serviceStarter = new TrueServiceStarter(this);
+            this.serviceStopper = new FakeServiceStopper();
+            this.serviceUnbinder = new FakeServiceUnbinder();
+            this.connection = null;
+        }
+
+        Log.i(LOG_TAG, "Resumed.");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        this.stopTimer();
+        this.unbindAudioService();
+
+        Log.i(LOG_TAG, "Paused.");
+    }
+
+    private void sendMessage(int what, Object o) {
+        Message msg = Message.obtain(null, what, 0, 0, o);
+        msg.replyTo = this.incomingMessenger;
+        try {
+            this.outgoingMessenger.send(msg);
+        }
+        catch (RemoteException e) {
+            // TODO: MainActivity must show error to users.
+            e.printStackTrace();
+        }
+    }
+
+    private void sendMessage(int what) {
+        this.sendMessage(what, null);
+    }
+
     private void seekTo(int msec) {
-        this.player.seekTo(msec);
+        //this.player.seekTo(msec);
     }
 
     private void log(String msg) {
         this.title.setText(msg);
+    }
+
+    private void startAudioService() {
+        this.serviceStarter.start();
+        this.serviceStarter = new FakeServiceStarter();
+        this.serviceStopper = new TrueServiceStopper(this);
+    }
+
+    private void stopAudioService() {
+        this.serviceStopper.stop();
+        this.serviceStarter = new TrueServiceStarter(this);
+        this.serviceStopper = new FakeServiceStopper();
+    }
+
+    private void unbindAudioService() {
+        this.serviceUnbinder.unbind();
+        this.serviceUnbinder = new FakeServiceUnbinder();
+    }
+
+    private Intent makeAudioServiceIntent() {
+        return new Intent(this, AudioService.class);
+    }
+
+    private void bindAudioService(Runnable procedureOnConnected) {
+        Intent intent = this.makeAudioServiceIntent();
+        this.connection = new Connection(this, procedureOnConnected);
+        this.bindService(intent, this.connection, 0);
+        this.serviceUnbinder = new TrueServiceUnbinder(this);
     }
 }
 
