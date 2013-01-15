@@ -377,7 +377,7 @@ public class MainActivity extends Activity
     private List<String> dirs = null;
     private String selectedDir = null;
     private String[] files = new String[0];
-    private int filePosition;
+    private int filePosition = -1;
 
     private Animation leftInAnimation;
     private Animation leftOutAnimation;
@@ -694,7 +694,9 @@ public class MainActivity extends Activity
     }
 
     private String getSelectedFile() {
-        return this.files[this.filePosition];
+        int pos = this.filePosition;
+        // Returning "" must be harmless.
+        return pos < 0 ? "" : this.files[pos];
     }
 
     private String getSelectedPath() {
@@ -735,11 +737,15 @@ public class MainActivity extends Activity
         int duration = this.getDuration(path);
         this.slider.setMax(duration);
         this.slider.setProgress(0);
-        this.title.setText(this.getSelectedFile());
-        this.showTime(this.currentTime, 0);
-        this.showTime(this.totalTime, duration);
+        this.showPlayingFile();
 
         this.showNext();
+    }
+
+    private void showPlayingFile() {
+        this.title.setText(this.getSelectedFile());
+        this.showTime(this.currentTime, this.slider.getProgress());
+        this.showTime(this.totalTime, this.slider.getMax());
     }
 
     private void showPrevious() {
@@ -895,7 +901,7 @@ public class MainActivity extends Activity
         SELECTED_DIR,
         FILES,
         FILE_POSITION,
-        POSITION,
+        PROGRESS,
         DURATION;
 
         public String getKey() {
@@ -910,6 +916,9 @@ public class MainActivity extends Activity
         outState.putInt(Key.PAGE_INDEX.getKey(), this.pageIndex);
         outState.putString(Key.SELECTED_DIR.getKey(), this.selectedDir);
         outState.putStringArray(Key.FILES.getKey(), this.files);
+        outState.putInt(Key.FILE_POSITION.getKey(), this.filePosition);
+        outState.putInt(Key.PROGRESS.getKey(), this.slider.getProgress());
+        outState.putInt(Key.DURATION.getKey(), this.slider.getMax());
 
         Log.i(LOG_TAG, "Instance state was saved.");
     }
@@ -924,6 +933,10 @@ public class MainActivity extends Activity
         }
         this.selectedDir = savedInstanceState.getString(Key.SELECTED_DIR.getKey());
         this.showFiles(savedInstanceState.getStringArray(Key.FILES.getKey()));
+        this.filePosition = savedInstanceState.getInt(Key.FILE_POSITION.getKey());
+        this.slider.setProgress(savedInstanceState.getInt(Key.PROGRESS.getKey()));
+        this.slider.setMax(savedInstanceState.getInt(Key.DURATION.getKey()));
+        this.showPlayingFile();
 
         Log.i(LOG_TAG, "Instance state was restored.");
     }
