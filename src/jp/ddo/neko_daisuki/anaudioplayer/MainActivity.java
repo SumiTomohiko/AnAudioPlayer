@@ -26,16 +26,19 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.animation.Interpolator;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
@@ -57,6 +60,47 @@ public class MainActivity extends Activity
 
         public ActivityHolder(MainActivity activity) {
             this.activity = activity;
+        }
+    }
+
+    private class DirectoryAdapter extends ArrayAdapter<String> {
+
+        private class Row {
+            ImageView playingIcon;
+            TextView path;
+        }
+
+        private LayoutInflater inflater;
+        private MainActivity activity;
+
+        public DirectoryAdapter(Context context, List<String> objects, MainActivity activity) {
+            super(context, 0, objects);
+
+            String service = Context.LAYOUT_INFLATER_SERVICE;
+            this.inflater = (LayoutInflater)context.getSystemService(service);
+            this.activity = activity;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            if (convertView == null) {
+                return this.getView(position, this.makeConvertView(parent), parent);
+            }
+            Row row = (Row)convertView.getTag();
+            String path = this.getItem(position);
+            int src = path != this.activity.selectedDir ? R.drawable.ic_blank : R.drawable.ic_playing;
+            row.playingIcon.setImageResource(src);
+            row.path.setText(path);
+            return convertView;
+        }
+
+        private View makeConvertView(ViewGroup parent) {
+            View view = this.inflater.inflate(R.layout.dir_row, parent, false);
+            Row row = new Row();
+            row.playingIcon = (ImageView)view.findViewById(R.id.playing_icon);
+            row.path = (TextView)view.findViewById(R.id.path);
+            view.setTag(row);
+            return view;
         }
     }
 
@@ -537,14 +581,14 @@ public class MainActivity extends Activity
     private void initializeDirList() {
         List<String> dirs = this.listMp3Dir(new File(MEDIA_PATH));
         Collections.sort(dirs);
-        this.showDirectries(dirs);
+        this.showDirectories(dirs);
 
         this.dirList.setOnItemClickListener(new DirectoryListListener(this));
     }
 
-    private void showDirectries(List<String> dirs) {
+    private void showDirectories(List<String> dirs) {
         this.dirs = dirs;
-        this.dirList.setAdapter(new ArrayAdapter<String>(this, R.layout.dir_row, R.id.path, this.dirs));
+        this.dirList.setAdapter(new DirectoryAdapter(this, this.dirs, this));
     }
 
     private File[] listFiles(File dir, FilenameFilter filter) {
@@ -617,6 +661,7 @@ public class MainActivity extends Activity
         Arrays.sort(files, new Mp3Comparator(dirPath));
         this.showFiles(files);
 
+        this.dirList.invalidateViews();
         this.nextButton0.setEnabled(true);
         this.showNext();
     }
