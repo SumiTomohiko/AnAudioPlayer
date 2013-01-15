@@ -352,6 +352,12 @@ public class MainActivity extends Activity
     public static final String LOG_TAG = "anaudioplayer";
 
     private ViewFlipper flipper;
+    /*
+     * pageIndex is needed for save/restore instance state. I tried some ways
+     * to get current page index on runtime, but I did not find the way useful
+     * in any cases. Counting manually is easiest.
+     */
+    private int pageIndex;
 
     private ListView dirList;
     private View nextButton0;
@@ -413,6 +419,7 @@ public class MainActivity extends Activity
         this.initializeSlider();
         this.initializeMenu();
 
+        this.pageIndex = 0;
         this.incomingMessenger = new Messenger(new IncomingHandler(this));
 
         Log.i(LOG_TAG, "Created.");
@@ -731,12 +738,14 @@ public class MainActivity extends Activity
         this.flipper.setInAnimation(this.leftInAnimation);
         this.flipper.setOutAnimation(this.rightOutAnimation);
         this.flipper.showPrevious();
+        this.pageIndex -= 1;
     }
 
     private void showNext() {
         this.flipper.setInAnimation(this.rightInAnimation);
         this.flipper.setOutAnimation(this.leftOutAnimation);
         this.flipper.showNext();
+        this.pageIndex += 1;
     }
 
     private abstract class ListListener implements AdapterView.OnItemClickListener {
@@ -871,6 +880,43 @@ public class MainActivity extends Activity
         this.unbindAudioService();
 
         Log.i(LOG_TAG, "Paused.");
+    }
+
+    private enum Key {
+        PAGE_INDEX,
+        DIR_LIST,
+        SELECTED_DIR,
+        FILE_LIST,
+        FILE_POSITION,
+        POSITION,
+        DURATION;
+
+        public String getKey() {
+            return this.name();
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        outState.putInt(Key.PAGE_INDEX.getKey(), this.pageIndex);
+
+        Log.i(LOG_TAG, "Instance state was saved.");
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+
+        this.pageIndex = savedInstanceState.getInt(Key.PAGE_INDEX.getKey());
+        for (int i = 0; i < this.pageIndex; i++) {
+            this.flipper.showNext();
+        }
+
+        // TODO
+
+        Log.i(LOG_TAG, "Instance state was restored.");
     }
 
     private void sendMessage(int what, Object o) {
