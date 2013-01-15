@@ -63,29 +63,79 @@ public class MainActivity extends Activity
         }
     }
 
-    private class DirectoryAdapter extends ArrayAdapter<String> {
+    private abstract class Adapter extends ArrayAdapter<String> {
+
+        protected LayoutInflater inflater;
+        protected MainActivity activity;
+
+        public Adapter(MainActivity activity, List<String> objects) {
+            super(activity, 0, objects);
+            this.initialize(activity);
+        }
+
+        public Adapter(MainActivity activity, String[] objects) {
+            super(activity, 0, objects);
+            this.initialize(activity);
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            return convertView == null ? this.getView(position, this.makeConvertView(parent), parent) : this.makeView(position, convertView);
+        }
+
+        protected abstract View makeConvertView(ViewGroup parent);
+        protected abstract View makeView(int position, View convertView);
+
+        private void initialize(MainActivity activity) {
+            this.activity = activity;
+            String service = Context.LAYOUT_INFLATER_SERVICE;
+            this.inflater = (LayoutInflater)activity.getSystemService(service);
+        }
+    }
+
+    private class FileAdapter extends Adapter {
+
+        private class Row {
+            ImageView playingIcon;
+            TextView name;
+        }
+
+        public FileAdapter(MainActivity activity, String[] objects) {
+            super(activity, objects);
+        }
+
+        protected View makeView(int position, View convertView) {
+            Row row = (Row)convertView.getTag();
+            String name = this.getItem(position);
+            String selectedFile = this.activity.getSelectedFile();
+            int src = name != selectedFile ? R.drawable.ic_blank : R.drawable.ic_playing;
+            row.playingIcon.setImageResource(src);
+            row.name.setText(name);
+            return convertView;
+        }
+
+        protected View makeConvertView(ViewGroup parent) {
+            View view = this.inflater.inflate(R.layout.file_row, parent, false);
+            Row row = new Row();
+            row.playingIcon = (ImageView)view.findViewById(R.id.playing_icon);
+            row.name = (TextView)view.findViewById(R.id.name);
+            view.setTag(row);
+            return view;
+        }
+    }
+
+    private class DirectoryAdapter extends Adapter {
 
         private class Row {
             ImageView playingIcon;
             TextView path;
         }
 
-        private LayoutInflater inflater;
-        private MainActivity activity;
-
-        public DirectoryAdapter(Context context, List<String> objects, MainActivity activity) {
-            super(context, 0, objects);
-
-            String service = Context.LAYOUT_INFLATER_SERVICE;
-            this.inflater = (LayoutInflater)context.getSystemService(service);
-            this.activity = activity;
+        public DirectoryAdapter(MainActivity activity, List<String> objects) {
+            super(activity, objects);
         }
 
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            if (convertView == null) {
-                return this.getView(position, this.makeConvertView(parent), parent);
-            }
+        protected View makeView(int position, View convertView) {
             Row row = (Row)convertView.getTag();
             String path = this.getItem(position);
             int src = path != this.activity.selectedDir ? R.drawable.ic_blank : R.drawable.ic_playing;
@@ -94,7 +144,7 @@ public class MainActivity extends Activity
             return convertView;
         }
 
-        private View makeConvertView(ViewGroup parent) {
+        protected View makeConvertView(ViewGroup parent) {
             View view = this.inflater.inflate(R.layout.dir_row, parent, false);
             Row row = new Row();
             row.playingIcon = (ImageView)view.findViewById(R.id.playing_icon);
@@ -394,6 +444,7 @@ public class MainActivity extends Activity
     }
 
     public static final String LOG_TAG = "anaudioplayer";
+    private static final int NO_FILES_SELECTED = -1;
 
     private ViewFlipper flipper;
     /*
@@ -421,7 +472,7 @@ public class MainActivity extends Activity
     private List<String> dirs = null;
     private String selectedDir = null;
     private String[] files = new String[0];
-    private int filePosition = -1;
+    private int filePosition = NO_FILES_SELECTED;
 
     private Animation leftInAnimation;
     private Animation leftOutAnimation;
@@ -588,7 +639,7 @@ public class MainActivity extends Activity
 
     private void showDirectories(List<String> dirs) {
         this.dirs = dirs;
-        this.dirList.setAdapter(new DirectoryAdapter(this, this.dirs, this));
+        this.dirList.setAdapter(new DirectoryAdapter(this, dirs));
     }
 
     private File[] listFiles(File dir, FilenameFilter filter) {
@@ -660,6 +711,7 @@ public class MainActivity extends Activity
         String[] files = dir.list(new Mp3Filter());
         Arrays.sort(files, new Mp3Comparator(dirPath));
         this.showFiles(files);
+        this.filePosition = NO_FILES_SELECTED;
 
         this.dirList.invalidateViews();
         this.nextButton0.setEnabled(true);
@@ -668,7 +720,7 @@ public class MainActivity extends Activity
 
     private void showFiles(String[] files) {
         this.files = files;
-        this.fileList.setAdapter(new ArrayAdapter<String>(this, R.layout.file_row, R.id.name, this.files));
+        this.fileList.setAdapter(new FileAdapter(this, files));
     }
 
     private void stopTimer() {
@@ -741,7 +793,7 @@ public class MainActivity extends Activity
     private String getSelectedFile() {
         int pos = this.filePosition;
         // Returning "" must be harmless.
-        return pos < 0 ? "" : this.files[pos];
+        return pos == NO_FILES_SELECTED ? "" : this.files[pos];
     }
 
     private String getSelectedPath() {
@@ -777,6 +829,7 @@ public class MainActivity extends Activity
         this.play();
         this.procAfterSeeking = new PlayAfterSeeking(this);
 
+        this.fileList.invalidateViews();
         this.nextButton1.setEnabled(true);
         String path = this.getSelectedPath();
         int duration = this.getDuration(path);
