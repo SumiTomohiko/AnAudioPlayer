@@ -413,6 +413,7 @@ public class MainActivity extends Activity
         this.findViews();
         this.initializeFlipButtonListener();
         this.initializeDirList();
+        this.initializeFileList();
         this.initializeAnimation();
         this.initializePlayButton();
         this.initializeTimer();
@@ -536,9 +537,14 @@ public class MainActivity extends Activity
     private void initializeDirList() {
         List<String> dirs = this.listMp3Dir(new File(MEDIA_PATH));
         Collections.sort(dirs);
+        this.showDirectries(dirs);
+
+        this.dirList.setOnItemClickListener(new DirectoryListListener(this));
+    }
+
+    private void showDirectries(List<String> dirs) {
         this.dirs = dirs;
         this.dirList.setAdapter(new ArrayAdapter<String>(this, R.layout.dir_row, R.id.path, this.dirs));
-        this.dirList.setOnItemClickListener(new DirectoryListListener(this));
     }
 
     private File[] listFiles(File dir, FilenameFilter filter) {
@@ -609,13 +615,15 @@ public class MainActivity extends Activity
         }
         String[] files = dir.list(new Mp3Filter());
         Arrays.sort(files, new Mp3Comparator(dirPath));
-        this.files = files;
-
-        this.fileList.setAdapter(new ArrayAdapter<String>(this, R.layout.file_row, R.id.name, this.files));
-        this.fileList.setOnItemClickListener(new FileListListener(this));
+        this.showFiles(files);
 
         this.nextButton0.setEnabled(true);
         this.showNext();
+    }
+
+    private void showFiles(String[] files) {
+        this.files = files;
+        this.fileList.setAdapter(new ArrayAdapter<String>(this, R.layout.file_row, R.id.name, this.files));
     }
 
     private void stopTimer() {
@@ -884,9 +892,8 @@ public class MainActivity extends Activity
 
     private enum Key {
         PAGE_INDEX,
-        DIR_LIST,
         SELECTED_DIR,
-        FILE_LIST,
+        FILES,
         FILE_POSITION,
         POSITION,
         DURATION;
@@ -901,6 +908,8 @@ public class MainActivity extends Activity
         super.onSaveInstanceState(outState);
 
         outState.putInt(Key.PAGE_INDEX.getKey(), this.pageIndex);
+        outState.putString(Key.SELECTED_DIR.getKey(), this.selectedDir);
+        outState.putStringArray(Key.FILES.getKey(), this.files);
 
         Log.i(LOG_TAG, "Instance state was saved.");
     }
@@ -913,8 +922,8 @@ public class MainActivity extends Activity
         for (int i = 0; i < this.pageIndex; i++) {
             this.flipper.showNext();
         }
-
-        // TODO
+        this.selectedDir = savedInstanceState.getString(Key.SELECTED_DIR.getKey());
+        this.showFiles(savedInstanceState.getStringArray(Key.FILES.getKey()));
 
         Log.i(LOG_TAG, "Instance state was restored.");
     }
@@ -974,6 +983,10 @@ public class MainActivity extends Activity
     private void onStartSliding() {
         this.stopTimer();
         this.sendMessage(AudioService.MSG_PAUSE);
+    }
+
+    private void initializeFileList() {
+        this.fileList.setOnItemClickListener(new FileListListener(this));
     }
 }
 
