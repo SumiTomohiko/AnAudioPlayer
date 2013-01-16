@@ -38,6 +38,7 @@ import android.view.animation.Interpolator;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -462,7 +463,7 @@ public class MainActivity extends Activity
     private View nextButton1;
 
     private View prevButton2;
-    private Button playButton;
+    private ImageButton playButton;
     private RotatingUzumakiSlider slider;
     private TextView title;
     private TextView currentTime;
@@ -565,7 +566,7 @@ public class MainActivity extends Activity
         this.nextButton1 = (View)this.findViewById(R.id.next1);
 
         this.prevButton2 = (View)this.findViewById(R.id.prev2);
-        this.playButton = (Button)this.findViewById(R.id.play);
+        this.playButton = (ImageButton)this.findViewById(R.id.play);
         this.slider = (RotatingUzumakiSlider)this.findViewById(R.id.slider);
 
         this.title = (TextView)this.findViewById(R.id.title);
@@ -730,7 +731,7 @@ public class MainActivity extends Activity
         this.stopAudioService();
 
         this.playButton.setOnClickListener(this.playListener);
-        this.playButton.setText(">");
+        //this.playButton.setText(">");
     }
 
     private class PlayerTask extends TimerTask {
@@ -777,7 +778,7 @@ public class MainActivity extends Activity
         this.bindAudioService(new PlayProcedureOnConnected(this));
 
         this.playButton.setOnClickListener(this.pauseListener);
-        this.playButton.setText("II");
+        //this.playButton.setText("II");
     }
 
     private void sendPlay() {
