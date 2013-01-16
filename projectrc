@@ -15,7 +15,7 @@ dex_path="${build_dir}/${app_name}.dex"
 dist_dir="${dirpath}/dist"
 
 if [ -f projectrc.local ]; then
-	. projectrc.local
+    . projectrc.local
 fi
 
-# vim: filetype=sh
+# vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4 filetype=sh
