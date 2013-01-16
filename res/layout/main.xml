@@ -74,12 +74,12 @@
                         android:layout_height="fill_parent"
                         android:background="@drawable/round_button"
                         android:textColor="#ff000000"/>
+                    <jp.ddo.neko_daisuki.android.widget.UzumakiImageHead
+                            android:id="@+id/head"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_launcher"/>
                 </jp.ddo.neko_daisuki.android.widget.RotatingUzumakiSlider>
-                <jp.ddo.neko_daisuki.android.widget.UzumakiImageHead
-                        android:id="@+id/head"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:src="@drawable/ic_launcher"/>
             </RelativeLayout>
             <LinearLayout
                 android:layout_width="fill_parent"

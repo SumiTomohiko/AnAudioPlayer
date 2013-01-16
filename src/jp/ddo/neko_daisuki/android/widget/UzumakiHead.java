@@ -2,8 +2,7 @@ package jp.ddo.neko_daisuki.android.widget;
 
 public interface UzumakiHead {
 
-    public void changePointerPosition(int pointerX, int pointerY);
-    public void setSlider(UzumakiSlider slider);
+    public void movePointer(int x, int y, int l, int t, int r, int b);
 }
 
 // vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4

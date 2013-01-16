@@ -464,7 +464,6 @@ public class MainActivity extends Activity
     private View prevButton2;
     private Button playButton;
     private RotatingUzumakiSlider slider;
-    private UzumakiHead head;
     private TextView title;
     private TextView currentTime;
     private TextView totalTime;
@@ -544,7 +543,6 @@ public class MainActivity extends Activity
     }
 
     private void initializeSlider() {
-        this.slider.attachHead(this.head);
         this.slider.addOnStartHeadMovingListener(new OnStartHeadMovingListener(this));
         this.slider.addOnStopHeadMovingListener(new OnStopHeadMovingListener(this));
         this.slider.addOnStartRotatingListener(new OnStartRotatingListener(this));
@@ -569,7 +567,6 @@ public class MainActivity extends Activity
         this.prevButton2 = (View)this.findViewById(R.id.prev2);
         this.playButton = (Button)this.findViewById(R.id.play);
         this.slider = (RotatingUzumakiSlider)this.findViewById(R.id.slider);
-        this.head = (UzumakiHead)this.findViewById(R.id.head);
 
         this.title = (TextView)this.findViewById(R.id.title);
         this.currentTime = (TextView)this.findViewById(R.id.current_time);

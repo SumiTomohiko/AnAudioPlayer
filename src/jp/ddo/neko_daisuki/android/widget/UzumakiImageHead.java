@@ -5,6 +5,7 @@ import java.util.Map;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -83,12 +84,11 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
         this.initialize();
     }
 
-    public void changePointerPosition(int pointerX, int pointerY) {
-        this.move(pointerX - this.getWidth() / 2, pointerY - this.getHeight());
-    }
-
-    public void setSlider(UzumakiSlider slider) {
-        this.slider = slider;
+    public void movePointer(int x, int y, int l, int t, int r, int b) {
+        Drawable d = this.getDrawable();
+        int width = d.getMinimumWidth();
+        int height = d.getMinimumHeight();
+        this.layout(x - width / 2, y - height, x + width / 2, y);
     }
 
     public boolean onTouchEvent(MotionEvent event) {
@@ -110,14 +110,14 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
     }
 
     private void onActionDown(MotionEvent event) {
-        this.slider.fireOnStartHeadMovingListeners();
+        this.slider.fireOnStartHeadMovingListeners(this);
         this.enableActionMove();
         this.xAtDown = this.getEventX(event);
         this.yAtDown = this.getEventY(event);
     }
 
     private void onActionUp(MotionEvent event) {
-        this.slider.fireOnStopHeadMovingListeners();
+        this.slider.fireOnStopHeadMovingListeners(this);
         this.disableActionMove();
     }
 
@@ -127,11 +127,6 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
 
     private float getEventY(MotionEvent event) {
         return event.getY(event.getPointerId(0));
-    }
-
-    private void move(int left, int top) {
-        // API level 11 has View.setX()/setY().
-        this.layout(left, top, left + this.getWidth(), top + this.getHeight());
     }
 
     private void onActionMove(MotionEvent event) {

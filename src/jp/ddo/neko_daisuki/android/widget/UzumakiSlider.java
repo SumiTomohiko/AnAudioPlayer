@@ -10,6 +10,7 @@ import android.graphics.Path;
 import android.graphics.Region;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.View;
 import android.view.ViewGroup;
 
 public abstract class UzumakiSlider extends ViewGroup {
@@ -34,17 +35,6 @@ public abstract class UzumakiSlider extends ViewGroup {
         public void log(String msg) {
         }
     }
-
-    private class FakeHead implements UzumakiHead {
-
-        public void changePointerPosition(int pointerX, int pointerY) {
-        }
-
-        public void setSlider(UzumakiSlider slider) {
-        }
-    }
-
-    protected UzumakiHead head;
 
     private int min;
     private int max;
@@ -91,7 +81,6 @@ public abstract class UzumakiSlider extends ViewGroup {
 
     public void setProgress(int progress) {
         this.progress = progress;
-        this.updateHead();
         this.invalidate();
     }
 
@@ -115,11 +104,6 @@ public abstract class UzumakiSlider extends ViewGroup {
         this.min = min;
     }
 
-    public void attachHead(UzumakiHead head) {
-        this.head = head;
-        head.setSlider(this);
-    }
-
     public int getAbsoluteOuterDiameter() {
         return this.computeDiameter(this.outerDiameterType, this.outerDiameter);
     }
@@ -138,8 +122,6 @@ public abstract class UzumakiSlider extends ViewGroup {
 
     private void initialize() {
         this.setWillNotDraw(false);
-
-        this.attachHead(new FakeHead());
 
         this.setMin(0);
         this.setMax(100);
@@ -257,15 +239,15 @@ public abstract class UzumakiSlider extends ViewGroup {
         this.outerDiameterType = type;
     }
 
-    public void fireOnStartHeadMovingListeners() {
+    public void fireOnStartHeadMovingListeners(UzumakiHead head) {
         for (OnStartHeadMovingListener listener: this.onStartHeadMovingListenerList) {
-            listener.onStartHeadMoving(this, this.head);
+            listener.onStartHeadMoving(this, head);
         }
     }
 
-    public void fireOnStopHeadMovingListeners() {
+    public void fireOnStopHeadMovingListeners(UzumakiHead head) {
         for (OnStopHeadMovingListener listener: this.onStopHeadMovingListenerList) {
-            listener.onStopHeadMoving(this, this.head);
+            listener.onStopHeadMoving(this, head);
         }
     }
 
@@ -288,6 +270,10 @@ public abstract class UzumakiSlider extends ViewGroup {
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        List<View> notHeadList = new ArrayList<View>();
+        List<View> headList = new ArrayList<View>();
+        this.groupChildren(notHeadList, headList);
+
         int width = r - l;
         int height = b - t;
         int diameter = this.outlineInnerDiameterType == SizeType.TYPE_PERCENT ? Math.min(width, height) * this.outlineInnerDiameter / 100 : this.outlineInnerDiameter;
@@ -295,12 +281,23 @@ public abstract class UzumakiSlider extends ViewGroup {
         int top = (height - diameter) / 2;
         int right = left + diameter;
         int bottom = top + diameter;
-        int nChildren = this.getChildCount();
+        int nChildren = notHeadList.size();
         for (int i = 0; i < nChildren; i++) {
-            this.getChildAt(i).layout(left, top, right, bottom);
+            notHeadList.get(i).layout(left, top, right, bottom);
         }
 
-        this.updateHead();
+        for (View head: headList) {
+            this.layoutHead(head, l, t, r, b);
+        }
+    }
+
+    private void groupChildren(List<View> notHeadList, List<View> headList) {
+        int nChildren = this.getChildCount();
+        for (int i = 0; i < nChildren; i++) {
+            View child = this.getChildAt(i);
+            List<View> l = child instanceof UzumakiHead ? headList : notHeadList;
+            l.add(child);
+        }
     }
 
     private void parseSize(String value, MemberSetter percentSetter, MemberSetter pixelSetter) {
@@ -375,7 +372,7 @@ public abstract class UzumakiSlider extends ViewGroup {
         uzumaki.draw(canvas);
     }
 
-    protected abstract void updateHead();
+    protected abstract void layoutHead(View head, int l, int t, int r, int b);
 }
 
 // vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
