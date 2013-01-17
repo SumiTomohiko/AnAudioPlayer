@@ -19,6 +19,7 @@
     </style>
     <style name="DisabledButton" parent="Button">
         <item name="android:clickable">false</item>
+        <item name="android:src">@drawable/ic_blank</item>
     </style>
     <style name="List">
         <item name="android:background">@color/background</item>

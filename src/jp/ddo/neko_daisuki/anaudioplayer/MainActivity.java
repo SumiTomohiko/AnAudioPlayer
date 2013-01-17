@@ -456,11 +456,11 @@ public class MainActivity extends Activity
     private int pageIndex;
 
     private ListView dirList;
-    private View nextButton0;
+    private ImageButton nextButton0;
 
     private View prevButton1;
     private ListView fileList;
-    private View nextButton1;
+    private ImageButton nextButton1;
 
     private View prevButton2;
     private ImageButton playButton;
@@ -559,11 +559,11 @@ public class MainActivity extends Activity
         this.flipper = (ViewFlipper)this.findViewById(R.id.flipper);
 
         this.dirList = (ListView)this.findViewById(R.id.dir_list);
-        this.nextButton0 = (View)this.findViewById(R.id.next0);
+        this.nextButton0 = (ImageButton)this.findViewById(R.id.next0);
 
         this.prevButton1 = (View)this.findViewById(R.id.prev1);
         this.fileList = (ListView)this.findViewById(R.id.file_list);
-        this.nextButton1 = (View)this.findViewById(R.id.next1);
+        this.nextButton1 = (ImageButton)this.findViewById(R.id.next1);
 
         this.prevButton2 = (View)this.findViewById(R.id.prev2);
         this.playButton = (ImageButton)this.findViewById(R.id.play);
@@ -690,10 +690,14 @@ public class MainActivity extends Activity
     }
 
     private void initializeFlipButtonListener() {
-        View[] next_buttons = { this.nextButton0, this.nextButton1 };
-        this.setClickListener(next_buttons, new NextButtonListener(this));
-        View[] previous_buttons = { this.prevButton1, this.prevButton2 };
-        this.setClickListener(previous_buttons, new PreviousButtonListener(this));
+        ImageButton[] nextButtons = { this.nextButton0, this.nextButton1 };
+        this.setClickListener(nextButtons, new NextButtonListener(this));
+        for (ImageButton button: nextButtons) {
+            this.enableButton(button, false);
+        }
+
+        View[] previousButtons = { this.prevButton1, this.prevButton2 };
+        this.setClickListener(previousButtons, new PreviousButtonListener(this));
     }
 
     private void selectDir(int position) {
@@ -712,7 +716,7 @@ public class MainActivity extends Activity
         this.filePosition = NO_FILES_SELECTED;
 
         this.dirList.invalidateViews();
-        this.nextButton0.setEnabled(true);
+        this.enableButton(this.nextButton0, true);
         this.showNext();
     }
 
@@ -820,6 +824,19 @@ public class MainActivity extends Activity
         view.setText(String.format("%02d:%02d", min, sec));
     }
 
+    private void enableButton(ImageButton button, boolean enabled) {
+        /*
+         * Why did not I use style?
+         * ========================
+         *
+         * I tryed to give the following settings only in *.xml, but it did not
+         * work. I do not know why still. So I give the settings at here.
+         */
+        button.setClickable(enabled);
+        int resourceId = enabled ? R.drawable.nav_right : R.drawable.ic_blank;
+        button.setImageResource(resourceId);
+    }
+
     private void selectFile(int position) {
         this.pause();
 
@@ -828,7 +845,7 @@ public class MainActivity extends Activity
         this.procAfterSeeking = new PlayAfterSeeking(this);
 
         this.fileList.invalidateViews();
-        this.nextButton1.setEnabled(true);
+        this.enableButton(this.nextButton1, true);
         String path = this.getSelectedPath();
         int duration = this.getDuration(path);
         this.slider.setMax(duration);
@@ -994,6 +1011,8 @@ public class MainActivity extends Activity
 
     private enum Key {
         PAGE_INDEX,
+        NEXT_BUTTON0_ENABLED,
+        NEXT_BUTTON1_ENABLED,
         SELECTED_DIR,
         FILES,
         FILE_POSITION,
@@ -1010,6 +1029,8 @@ public class MainActivity extends Activity
         super.onSaveInstanceState(outState);
 
         outState.putInt(Key.PAGE_INDEX.getKey(), this.pageIndex);
+        this.saveButton(outState, Key.NEXT_BUTTON0_ENABLED, this.nextButton0);
+        this.saveButton(outState, Key.NEXT_BUTTON1_ENABLED, this.nextButton1);
         outState.putString(Key.SELECTED_DIR.getKey(), this.selectedDir);
         outState.putStringArray(Key.FILES.getKey(), this.files);
         outState.putInt(Key.FILE_POSITION.getKey(), this.filePosition);
@@ -1027,6 +1048,8 @@ public class MainActivity extends Activity
         for (int i = 0; i < this.pageIndex; i++) {
             this.flipper.showNext();
         }
+        this.restoreButton(savedInstanceState, Key.NEXT_BUTTON0_ENABLED, this.nextButton0);
+        this.restoreButton(savedInstanceState, Key.NEXT_BUTTON1_ENABLED, this.nextButton1);
         this.selectedDir = savedInstanceState.getString(Key.SELECTED_DIR.getKey());
         this.showFiles(savedInstanceState.getStringArray(Key.FILES.getKey()));
         this.filePosition = savedInstanceState.getInt(Key.FILE_POSITION.getKey());
@@ -1035,6 +1058,15 @@ public class MainActivity extends Activity
         this.showPlayingFile();
 
         Log.i(LOG_TAG, "Instance state was restored.");
+    }
+
+    private void restoreButton(Bundle savedInstanceState, Key key, ImageButton button) {
+        boolean enabled = savedInstanceState.getBoolean(key.getKey());
+        this.enableButton(button, enabled);
+    }
+
+    private void saveButton(Bundle outState, Key key, ImageButton button) {
+        outState.putBoolean(key.getKey(), button.isClickable());
     }
 
     private void sendMessage(int what, Object o) {
