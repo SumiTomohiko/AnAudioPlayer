@@ -79,9 +79,11 @@ public class CircleImageButton extends ImageButton {
     private abstract class Drawer {
 
         protected CircleImageButton button;
+        protected int edgeWidth;
 
         public Drawer(CircleImageButton button) {
             this.button = button;
+            this.edgeWidth = 2;
         }
 
         public abstract void draw(Canvas canvas, int centerX, int centerY, int outerRadius);
@@ -127,37 +129,12 @@ public class CircleImageButton extends ImageButton {
             bottomTiePaint.setColor(this.button.shadowColor);
             canvas.drawPath(bottomTie, bottomTiePaint);
         }
-    }
 
-    private class NeutralDrawer extends Drawer {
-
-        public NeutralDrawer(CircleImageButton button) {
-            super(button);
-        }
-
-        public void draw(Canvas canvas, int centerX, int centerY, int outerRadius) {
-            this.drawButton(canvas, centerX, centerY, outerRadius);
-        }
-    }
-
-    private class PressedDrawer extends Drawer {
-
-        public PressedDrawer(CircleImageButton button) {
-            super(button);
-        }
-
-        public void draw(Canvas canvas, int centerX, int centerY, int outerRadius) {
-            int radius = (int)(0.99 * outerRadius);
-            this.drawButton(canvas, centerX, centerY, radius);
-            this.drawShadow(canvas, centerX, centerY, outerRadius);
-            this.drawEdge(canvas, centerX, centerY, outerRadius);
-        }
-
-        private void drawEdge(Canvas canvas, int centerX, int centerY, int radius) {
+        protected void drawEdge(Canvas canvas, int centerX, int centerY, int radius) {
             Paint paint = new Paint();
             paint.setAntiAlias(true);
             paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(2);
+            paint.setStrokeWidth(this.edgeWidth);
             RectF rect = new RectF(centerX - radius,
                                    centerY - radius,
                                    centerX + radius,
@@ -169,6 +146,32 @@ public class CircleImageButton extends ImageButton {
             //paint.setColor(this.button.brightColor);
             canvas.drawArc(rect, 0, 180, false, paint);
         }
+    }
+
+    private class NeutralDrawer extends Drawer {
+
+        public NeutralDrawer(CircleImageButton button) {
+            super(button);
+        }
+
+        public void draw(Canvas canvas, int centerX, int centerY, int outerRadius) {
+            this.drawButton(canvas, centerX, centerY, outerRadius - this.edgeWidth);
+            this.drawEdge(canvas, centerX, centerY, outerRadius);
+        }
+    }
+
+    private class PressedDrawer extends Drawer {
+
+        public PressedDrawer(CircleImageButton button) {
+            super(button);
+        }
+
+        public void draw(Canvas canvas, int centerX, int centerY, int outerRadius) {
+            int radius = (int)(0.99 * (outerRadius - this.edgeWidth));
+            this.drawButton(canvas, centerX, centerY, radius);
+            this.drawShadow(canvas, centerX, centerY, outerRadius);
+            this.drawEdge(canvas, centerX, centerY, outerRadius);
+        }
 
         private void drawShadow(Canvas canvas, int centerX, int centerY, int radius) {
             Path path = new Path();
@@ -178,9 +181,9 @@ public class CircleImageButton extends ImageButton {
                                    centerY + radius);
             path.addArc(rect, 0, -180);
             RectF rect2 = new RectF((float)(centerX - radius),
-                                    (float)(centerY - 0.98 * radius),
+                                    (float)(centerY - 0.96 * radius),
                                     (float)(centerX + radius),
-                                    (float)(centerY + 0.98 * radius));
+                                    (float)(centerY + 0.96 * radius));
             path.arcTo(rect2, -180, 180);
             Paint paint = new Paint();
             paint.setColor(0xff000000);
