@@ -128,6 +128,26 @@ public class CircleImageButton extends ImageButton {
             Paint bottomTiePaint = new Paint(paint);
             bottomTiePaint.setColor(this.button.shadowColor);
             canvas.drawPath(bottomTie, bottomTiePaint);
+
+            float radius = 0.86f * outerRadius;
+            RectF oval = new RectF(centerX - radius,
+                                   centerY - radius,
+                                   centerX + radius,
+                                   centerY + radius);
+            Path circle = new Path();
+            circle.addArc(oval, 0, -180);
+            Paint circlePaint = new Paint(paint);
+            circlePaint.setColor(this.button.brightColor);
+            circlePaint.setStrokeWidth(1);
+            circlePaint.setStyle(Paint.Style.STROKE);
+            canvas.drawPath(circle, circlePaint);
+            Path circle2 = new Path();
+            circle2.addArc(oval, 0, 180);
+            Paint circlePaint2 = new Paint(paint);
+            circlePaint2.setColor(this.button.shadowColor);
+            circlePaint2.setStrokeWidth(1);
+            circlePaint2.setStyle(Paint.Style.STROKE);
+            canvas.drawPath(circle2, circlePaint2);
         }
 
         protected void drawEdge(Canvas canvas, int centerX, int centerY, int radius) {
