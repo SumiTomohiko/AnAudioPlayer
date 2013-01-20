@@ -256,7 +256,7 @@ public class CircleImageButton extends ImageButton {
         Drawer drawer = isPressed ? new PressedDrawer(this) : new NeutralDrawer(this);
         drawer.draw(canvas, centerX, centerY, this.getRadius());
 
-        //super.onDraw(canvas);
+        super.onDraw(canvas);
     }
 
     private int getRadius() {

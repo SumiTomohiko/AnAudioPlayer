@@ -735,7 +735,7 @@ public class MainActivity extends Activity
         this.stopAudioService();
 
         this.playButton.setOnClickListener(this.playListener);
-        //this.playButton.setText(">");
+        this.playButton.setImageResource(R.drawable.ic_play);
     }
 
     private class PlayerTask extends TimerTask {
@@ -782,7 +782,7 @@ public class MainActivity extends Activity
         this.bindAudioService(new PlayProcedureOnConnected(this));
 
         this.playButton.setOnClickListener(this.pauseListener);
-        //this.playButton.setText("II");
+        this.playButton.setImageResource(R.drawable.ic_pause);
     }
 
     private void sendPlay() {
