@@ -66,8 +66,7 @@
                     android:id="@+id/play"
                     android:layout_width="fill_parent"
                     android:layout_height="fill_parent"
-                    android:background="@drawable/round_button"
-                    android:textColor="#ff000000"/>
+                    android:background="@drawable/round_button"/>
                 <jp.ddo.neko_daisuki.android.widget.UzumakiImageHead
                         android:id="@+id/head"
                         android:layout_width="wrap_content"
