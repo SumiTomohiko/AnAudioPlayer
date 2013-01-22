@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
@@ -48,10 +49,22 @@ public class UzumakiArmHead extends ViewGroup implements UzumakiHead {
         head.layout(l, b - height, l + width, b);
     }
 
+    private int getBackgroundWidth(View view) {
+        /*
+         * What is this?
+         * =============
+         *
+         * View.getBackground() returns null at first. Android must delay
+         * reading background resource. This method was added for this case with
+         * returning zero. Width of zero is harmless.
+         */
+        Drawable drawable = view.getBackground();
+        return drawable != null ? drawable.getMinimumWidth() : 0;
+    }
+
     private void layoutArm(int l, int t, int r, int b) {
-        ImageView arm = this.getArm();
-        Drawable drawable = arm.getDrawable();
-        int width = drawable.getMinimumWidth();
+        View arm = this.getArm();
+        int width = this.getBackgroundWidth(arm);
         int left = l + this.getHalfOfHeadWidth() - width / 2;
         int bottom = b - this.getHalfOfHeadHeight();
         arm.layout(left, t, r, bottom);
@@ -69,8 +82,8 @@ public class UzumakiArmHead extends ViewGroup implements UzumakiHead {
         return this.getDrawableOfHead().getMinimumHeight() / 2;
     }
 
-    private ImageView getArm() {
-        return (ImageView)this.getChildAt(1);
+    private View getArm() {
+        return this.getChildAt(1);
     }
 
     private ImageView getHead() {
