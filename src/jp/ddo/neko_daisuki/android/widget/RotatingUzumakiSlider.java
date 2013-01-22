@@ -126,7 +126,7 @@ public class RotatingUzumakiSlider extends UzumakiSlider {
         super.onDraw(canvas);
         this.drawTie(canvas);
         this.drawRotatingUzumaki(canvas);
-        this.drawHeader(canvas);
+        //this.drawHeader(canvas);
     }
 
     protected void layoutHead(View head, int l, int t, int r, int b) {
@@ -136,6 +136,10 @@ public class RotatingUzumakiSlider extends UzumakiSlider {
     }
 
     private void drawHeader(Canvas canvas) {
+        /*
+         * I do not remove this unused method because this is useful in
+         * debugging.
+         */
         Path path = new Path();
         path.moveTo(this.computeHeadPosition(), this.getHeight() / 2);
         path.rLineTo(this.headerSize, - this.headerSize);
