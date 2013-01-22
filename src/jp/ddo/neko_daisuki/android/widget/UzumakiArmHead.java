@@ -10,7 +10,7 @@ import android.widget.ImageView;
 
 /**
  * An instance of this class must have two children. The first child is assumed
- * as a head. The second child is an arm.
+ * as an arm. The second child is a head.
  */
 public class UzumakiArmHead extends ViewGroup implements UzumakiHead {
 
@@ -83,11 +83,11 @@ public class UzumakiArmHead extends ViewGroup implements UzumakiHead {
     }
 
     private View getArm() {
-        return this.getChildAt(1);
+        return this.getChildAt(0);
     }
 
     private ImageView getHead() {
-        return (ImageView)this.getChildAt(0);
+        return (ImageView)this.getChildAt(1);
     }
 
     private void debug(String msg) {

@@ -70,15 +70,15 @@
                 <jp.ddo.neko_daisuki.android.widget.UzumakiArmHead
                     android:layout_width="fill_parent"
                     android:layout_height="fill_parent">
-                    <ImageView
-                        android:id="@+id/head"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:src="@drawable/ic_launcher"/>
                     <View
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:background="@drawable/arm"/>
+                    <ImageView
+                        android:id="@+id/head"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:src="@drawable/head"/>
                 </jp.ddo.neko_daisuki.android.widget.UzumakiArmHead>
             </jp.ddo.neko_daisuki.android.widget.RotatingUzumakiSlider>
             <LinearLayout
