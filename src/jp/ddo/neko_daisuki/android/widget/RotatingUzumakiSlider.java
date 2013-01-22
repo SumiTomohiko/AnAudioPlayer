@@ -130,7 +130,6 @@ public class RotatingUzumakiSlider extends UzumakiSlider {
     }
 
     protected void layoutHead(View head, int l, int t, int r, int b) {
-        Log.d(LOG_TAG, String.format("layoutHead(%s, %d, %d, %d, %d)", head.toString(), l, t, r, b));
         int x = this.computeHeadPosition();
         int y = this.getHeight() / 2;
         ((UzumakiHead)head).movePointer(l + x, t + y, l, t, r, b);
