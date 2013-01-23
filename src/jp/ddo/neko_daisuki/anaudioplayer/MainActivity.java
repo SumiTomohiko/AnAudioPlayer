@@ -625,7 +625,7 @@ public class MainActivity extends Activity
         this.rightOutAnimation = this.loadAnimation(R.anim.anim_right_out, interp);
     }
 
-    private static final String MEDIA_PATH = "/sdcard/u1";
+    private static final String MEDIA_PATH = "/sdcard";
 
     private void initializeDirList() {
         List<String> dirs = this.listMp3Dir(new File(MEDIA_PATH));
