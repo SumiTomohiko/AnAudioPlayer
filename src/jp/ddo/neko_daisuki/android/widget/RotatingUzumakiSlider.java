@@ -191,19 +191,11 @@ public class RotatingUzumakiSlider extends UzumakiSlider {
         }
     }
 
-    private float getEventX(MotionEvent event) {
-        return event.getX(event.getPointerId(0));
-    }
-
-    private float getEventY(MotionEvent event) {
-        return event.getY(event.getPointerId(0));
-    }
-
     private boolean onActionDown(MotionEvent event) {
         int centerX = this.getWidth() / 2;
         int centerY = this.getHeight() / 2;
-        float x = this.getEventX(event);
-        float y = this.getEventY(event);
+        float x = event.getX();
+        float y = event.getY();
         float deltaX = x - centerX;
         float deltaY = y - centerY;
         double len = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -239,8 +231,8 @@ public class RotatingUzumakiSlider extends UzumakiSlider {
     }
 
     private boolean onActionMove(MotionEvent event) {
-        float x = this.getEventX(event);
-        float y = this.getEventY(event);
+        float x = event.getX();
+        float y = event.getY();
         double angle = this.computeRotationAngle(x, y);
         double angleDelta = angle - this.rotationAngle;
         double absDelta = Math.abs(angleDelta);
