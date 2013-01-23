@@ -166,6 +166,18 @@ public abstract class UzumakiSlider extends ViewGroup {
         this.logger = logger;
     }
 
+    protected void onFinishInflate() {
+        super.onFinishInflate();
+
+        List<View> _ = new ArrayList<View>();
+        List<View> headList = new ArrayList<View>();
+        this.groupChildren(_, headList);
+        for (View view: headList) {
+            UzumakiHead head = (UzumakiHead)view;
+            head.setSlider(this);
+        }
+    }
+
     protected void log(String msg) {
         this.logger.log(msg);
     }

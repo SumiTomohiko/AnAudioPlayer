@@ -28,6 +28,10 @@ public class UzumakiArmHead extends ViewGroup implements UzumakiHead {
         super(context, attrs, defStyle);
     }
 
+    public void setSlider(UzumakiSlider slider) {
+        this.getHead().setSlider(slider);
+    }
+
     public void movePointer(int x, int y, int l, int t, int r, int b) {
         int width = this.getHead().getDrawable().getMinimumWidth();
         this.layout(x - width / 2, t, r, y);
@@ -86,8 +90,8 @@ public class UzumakiArmHead extends ViewGroup implements UzumakiHead {
         return this.getChildAt(0);
     }
 
-    private ImageView getHead() {
-        return (ImageView)this.getChildAt(1);
+    private UzumakiImageHead getHead() {
+        return (UzumakiImageHead)this.getChildAt(1);
     }
 
     private void debug(String msg) {
