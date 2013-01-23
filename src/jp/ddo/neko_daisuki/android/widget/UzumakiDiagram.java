@@ -47,7 +47,8 @@ public class UzumakiDiagram
          */
         int resolution = 4;
         int direction = 0 < this.sweepAngle ? 1 : -1;
-        for (int angle = 0; angle < sweepAngle; angle += resolution) {
+        int lastAngle = sweepAngle + resolution;
+        for (int angle = 0; angle < lastAngle; angle += resolution) {
             this.computePoint(p, this.startAngle + direction * angle);
             path.lineTo(p.x, p.y);
         }
