@@ -841,7 +841,6 @@ public class MainActivity extends Activity
         this.pause();
 
         this.filePosition = position;
-        this.play();    // This must be at end.
         this.procAfterSeeking = new PlayAfterSeeking(this);
 
         this.fileList.invalidateViews();
@@ -851,8 +850,9 @@ public class MainActivity extends Activity
         this.slider.setMax(duration);
         this.slider.setProgress(0);
         this.showPlayingFile();
-
         this.showNext();
+
+        this.play();
     }
 
     private void showPlayingFile() {
