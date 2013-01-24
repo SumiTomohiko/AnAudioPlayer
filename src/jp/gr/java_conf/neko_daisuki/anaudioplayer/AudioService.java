@@ -1,4 +1,4 @@
-package jp.ddo.neko_daisuki.anaudioplayer;
+package jp.gr.java_conf.neko_daisuki.anaudioplayer;
 
 import java.io.IOException;
 import java.util.HashMap;

@@ -1,4 +1,4 @@
-package jp.ddo.neko_daisuki.android.widget;
+package jp.gr.java_conf.neko_daisuki.android.widget;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -11,7 +11,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.widget.ImageButton;
 
-import jp.ddo.neko_daisuki.android.view.MotionEventDispatcher;
+import jp.gr.java_conf.neko_daisuki.android.view.MotionEventDispatcher;
 
 public class CircleImageButton extends ImageButton {
 

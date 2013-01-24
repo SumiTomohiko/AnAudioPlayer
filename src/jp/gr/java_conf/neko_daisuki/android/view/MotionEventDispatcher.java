@@ -1,4 +1,4 @@
-package jp.ddo.neko_daisuki.android.view;
+package jp.gr.java_conf.neko_daisuki.android.view;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package jp.ddo.neko_daisuki.android.widget;
+package jp.gr.java_conf.neko_daisuki.android.widget;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +12,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 
-import jp.ddo.neko_daisuki.android.view.MotionEventDispatcher;
+import jp.gr.java_conf.neko_daisuki.android.view.MotionEventDispatcher;
 
 public class UzumakiImageHead extends ImageView implements UzumakiHead {
 

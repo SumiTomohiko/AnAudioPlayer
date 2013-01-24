@@ -1,4 +1,4 @@
-package jp.ddo.neko_daisuki.android.widget;
+package jp.gr.java_conf.neko_daisuki.android.widget;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;

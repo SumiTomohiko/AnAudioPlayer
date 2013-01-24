@@ -1,4 +1,4 @@
-package jp.ddo.neko_daisuki.anaudioplayer;
+package jp.gr.java_conf.neko_daisuki.anaudioplayer;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -44,14 +44,14 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
 
-import jp.ddo.neko_daisuki.android.widget.RotatingUzumakiSlider;
-import jp.ddo.neko_daisuki.android.widget.UzumakiHead;
+import jp.gr.java_conf.neko_daisuki.android.widget.RotatingUzumakiSlider;
+import jp.gr.java_conf.neko_daisuki.android.widget.UzumakiHead;
 /*
  * UzumakiImageHead is referred only from main.xml. So if without the following import statment,
  * UzumakiImageHead.java will be out of compile targets.
  */
-import jp.ddo.neko_daisuki.android.widget.UzumakiImageHead;
-import jp.ddo.neko_daisuki.android.widget.UzumakiSlider;
+import jp.gr.java_conf.neko_daisuki.android.widget.UzumakiImageHead;
+import jp.gr.java_conf.neko_daisuki.android.widget.UzumakiSlider;
 
 public class MainActivity extends Activity
 {

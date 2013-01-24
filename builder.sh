@@ -36,7 +36,7 @@ cd "${src_dir}"
 #Now compile - note the use of a seperate lib (in non-dex format!)
 echo Compile the java code
 cmd="javac ${javac_opt} -d ${classes_dir}"
-widget_dir="jp/ddo/neko_daisuki/android/widget"
+widget_dir="jp/gr/java_conf/neko_daisuki/android/widget"
 zod ${cmd} "${widget_dir}/RotatingUzumakiSlider.java" "${widget_dir}/CircleImageButton.java" "${widget_dir}/UzumakiArmHead.java"
 jar="${libs_dir}/uzumaki.jar"
 (cd ${classes_dir} && jar cf "${jar}" "${widget_dir}")
