@@ -80,7 +80,8 @@ public abstract class UzumakiSlider extends ViewGroup {
     }
 
     public void setProgress(int progress) {
-        this.progress = progress;
+        this.progress = Math.min(Math.max(this.getMin(), progress), this.getMax());
+        this.requestLayout();
         this.invalidate();
     }
 
@@ -263,7 +264,7 @@ public abstract class UzumakiSlider extends ViewGroup {
         }
     }
 
-    public abstract void placeHead(float pointerX, float pointerY);
+    public abstract void slideHead(int progressOld, float deltaX, float deltaY);
 
     @Override
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {

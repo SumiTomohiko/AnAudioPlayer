@@ -111,21 +111,22 @@ public class RotatingUzumakiSlider extends UzumakiSlider {
         this.onStopRotatingListeners.add(listener);
     }
 
-    public void placeHead(float pointerX, float pointerY) {
+    public void slideHead(int progressOld, float deltaX, float deltaY) {
         int outerRadius = this.getAbsoluteOuterDiameter() / 2;
-        float len = this.getWidth() / 2 + outerRadius - pointerX;
         int innerRadius = this.getAbsoluteInnerDiameter() / 2;
         int maxLen = outerRadius - innerRadius;
-        int min = this.getMin();
-        float progress = len * this.getSize() / maxLen + min;
-        int n = (int)Math.max(Math.min(progress, this.getMax()), min);
-        this.setProgress(n);
+        int range = this.getMax() - this.getMin();
+        float ratio = (float)range / maxLen;
+        float deltaProgress = (-1) * deltaX * ratio;
+        this.setProgress(progressOld + (int)deltaProgress);
     }
 
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         this.drawTie(canvas);
         this.drawRotatingUzumaki(canvas);
+
+        // The following statement is useful in debug.
         //this.drawHeader(canvas);
     }
 

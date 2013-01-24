@@ -9,6 +9,7 @@ import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.View;
 import android.widget.ImageView;
 
 import jp.ddo.neko_daisuki.android.view.MotionEventDispatcher;
@@ -68,6 +69,7 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
     private UzumakiSlider slider;
     private float xAtDown;
     private float yAtDown;
+    private int progressAtDown;
 
     public UzumakiImageHead(Context context) {
         super(context);
@@ -113,11 +115,31 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
         this.dispatcher.setUpProc(new ActionUpProc(this));
     }
 
+    private float convertToSliderAxisX(float x) {
+        View view = this;
+        float parentX = x + view.getLeft();
+        while ((view = (View)view.getParent()) != this.slider) {
+            parentX += view.getLeft();
+        }
+
+        return parentX;
+    }
+
+    private float convertToSliderAxisY(float y) {
+        /*
+         * The return value of this method is not used in current applications.
+         * So I cannot test this method. I cannot commit code which was not
+         * tested. This is why I did not implement this method.
+         */
+        return 0.0f;
+    }
+
     private void onActionDown(MotionEvent event) {
         this.slider.fireOnStartHeadMovingListeners(this);
         this.enableActionMove();
-        this.xAtDown = event.getX();
-        this.yAtDown = event.getY();
+        this.xAtDown = this.convertToSliderAxisX(event.getX());
+        this.yAtDown = this.convertToSliderAxisY(event.getY());
+        this.progressAtDown = this.slider.getProgress();
     }
 
     private void onActionUp(MotionEvent event) {
@@ -126,9 +148,11 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
     }
 
     private void onActionMove(MotionEvent event) {
-        float x = event.getX() - this.xAtDown + this.getLeft() - this.slider.getLeft();
-        float y = event.getY() - this.yAtDown + this.getTop() - this.slider.getTop();
-        this.slider.placeHead(x + this.getWidth() / 2, y + this.getHeight());
+        float x = this.convertToSliderAxisX(event.getX());
+        float y = this.convertToSliderAxisY(event.getY());
+        float deltaX = x - this.xAtDown;
+        float deltaY = y - this.yAtDown;
+        this.slider.slideHead(this.progressAtDown, deltaX, deltaY);
     }
 }
 

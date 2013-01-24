@@ -841,7 +841,7 @@ public class MainActivity extends Activity
         this.pause();
 
         this.filePosition = position;
-        this.play();
+        this.play();    // This must be at end.
         this.procAfterSeeking = new PlayAfterSeeking(this);
 
         this.fileList.invalidateViews();
@@ -1083,10 +1083,6 @@ public class MainActivity extends Activity
 
     private void sendMessage(int what) {
         this.sendMessage(what, null);
-    }
-
-    private void seekTo(int msec) {
-        //this.player.seekTo(msec);
     }
 
     private void log(String msg) {
