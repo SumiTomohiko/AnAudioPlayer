@@ -1,10 +1,6 @@
 package jp.gr.java_conf.neko_daisuki.android.widget;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import android.content.Context;
-import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.util.Log;
