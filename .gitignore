@@ -1,5 +1,9 @@
+.settings
 _build
+bin
 dist
+gen
 libs
+project.properties
 projectrc.local
 src/jp/gr/java_conf/neko_daisuki/anaudioplayer/R.java
