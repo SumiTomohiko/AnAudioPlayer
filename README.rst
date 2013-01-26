@@ -24,7 +24,26 @@ AAP is an open source software on MIT lisence. See COPYING.rst.
 How to Build/Install
 ====================
 
-Run builder.sh/install.sh.
+AAP can be built with three ways; Eclipse, Ant or TerminalIDE.
+
+Eclipse
+-------
+
+AAP uses no special method in Eclipse.
+
+Ant
+---
+
+Run::
+
+  $ ant debug
+
+TerminalIDE
+-----------
+
+Run::
+
+  $ ./builder.sh && ./install.sh
 
 Author
 ======
