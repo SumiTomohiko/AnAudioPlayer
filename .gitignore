@@ -4,6 +4,7 @@ bin
 dist
 gen
 libs
+local.properties
 project.properties
 projectrc.local
 src/jp/gr/java_conf/neko_daisuki/anaudioplayer/R.java
