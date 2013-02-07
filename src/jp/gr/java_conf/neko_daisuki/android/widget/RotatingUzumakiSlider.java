@@ -9,7 +9,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -75,8 +74,6 @@ public class RotatingUzumakiSlider extends UzumakiSlider {
         }
     }
 
-    private static final String LOG_TAG = "RotatingUzumakiSlider";
-
     private List<OnStartRotatingListener> onStartRotatingListeners;
     private List<OnStopRotatingListener> onStopRotatingListeners;
     private MotionEventDispatcher dispatcher;
@@ -136,6 +133,7 @@ public class RotatingUzumakiSlider extends UzumakiSlider {
         ((UzumakiHead)head).movePointer(l + x, t + y, l, t, r, b);
     }
 
+    @SuppressWarnings("unused")
     private void drawHeader(Canvas canvas) {
         /*
          * I do not remove this unused method because this is useful in
@@ -226,7 +224,7 @@ public class RotatingUzumakiSlider extends UzumakiSlider {
         /*
          * Return value's type of this method must be void. But to make the
          * last expression of onActionDown() simple, this method always returns
-         * true. This is a bad way exactlly.
+         * true. This is a bad way exactly.
          */
         return true;
     }

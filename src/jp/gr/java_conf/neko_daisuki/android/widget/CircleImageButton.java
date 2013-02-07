@@ -7,7 +7,6 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.widget.ImageButton;
 
@@ -218,6 +217,8 @@ public class CircleImageButton extends ImageButton {
     private int brightColor;
     private int shadowColor;
     private MotionEventDispatcher motionEventDispatcher;
+    private Drawer neutralDrawer;
+    private Drawer pressedDrawer;
 
     public CircleImageButton(Context context) {
         super(context);
@@ -253,7 +254,7 @@ public class CircleImageButton extends ImageButton {
         int centerX = this.getCenterX();
         int centerY = this.getCenterY();
         boolean isPressed = this.isPressed();
-        Drawer drawer = isPressed ? new PressedDrawer(this) : new NeutralDrawer(this);
+        Drawer drawer = isPressed ? this.pressedDrawer : this.neutralDrawer;
         drawer.draw(canvas, centerX, centerY, this.getRadius());
 
         super.onDraw(canvas);
@@ -279,6 +280,8 @@ public class CircleImageButton extends ImageButton {
         this.motionEventDispatcher = new MotionEventDispatcher();
         this.motionEventDispatcher.setDownProc(new ActionDownEventProc(this));
         this.motionEventDispatcher.setUpProc(new ActionUpEventProc(this));
+        this.neutralDrawer = new NeutralDrawer(this);
+        this.pressedDrawer = new PressedDrawer(this);
     }
 }
 

@@ -7,9 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -20,12 +18,14 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.media.MediaMetadataRetriever;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -37,7 +37,6 @@ import android.view.animation.AnimationUtils;
 import android.view.animation.Interpolator;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -46,16 +45,11 @@ import android.widget.ViewFlipper;
 
 import jp.gr.java_conf.neko_daisuki.android.widget.RotatingUzumakiSlider;
 import jp.gr.java_conf.neko_daisuki.android.widget.UzumakiHead;
-/*
- * UzumakiImageHead is referred only from main.xml. So if without the following import statment,
- * UzumakiImageHead.java will be out of compile targets.
- */
-import jp.gr.java_conf.neko_daisuki.android.widget.UzumakiImageHead;
 import jp.gr.java_conf.neko_daisuki.android.widget.UzumakiSlider;
 
 public class MainActivity extends Activity
 {
-    private class ActivityHolder {
+    private static class ActivityHolder {
 
         protected MainActivity activity;
 
@@ -409,7 +403,7 @@ public class MainActivity extends Activity
         }
     }
 
-    private class IncomingHandler extends Handler {
+    private static class IncomingHandler extends Handler {
 
         private abstract class MessageHandler extends ActivityHolder {
 
@@ -431,10 +425,10 @@ public class MainActivity extends Activity
             }
         }
 
-        private Map<Integer, MessageHandler> handlers;
+        private SparseArray<MessageHandler> handlers;
 
         public IncomingHandler(MainActivity activity) {
-            this.handlers = new HashMap<Integer, MessageHandler>();
+            this.handlers = new SparseArray<MessageHandler>();
             this.handlers.put(AudioService.MSG_WHAT_TIME, new WhatTimeHandler(activity));
         }
 
@@ -469,6 +463,7 @@ public class MainActivity extends Activity
     private TextView currentTime;
     private TextView totalTime;
 
+    private File mediaDir;
     private List<String> dirs = null;
     private String selectedDir = null;
     private String[] files = new String[0];
@@ -485,7 +480,7 @@ public class MainActivity extends Activity
     private FakeTimer fakeTimer;
     private Runnable procAfterSeeking;
 
-    private Map<Integer, MenuDispatcher> menuDispatchers = new HashMap<Integer, MenuDispatcher>();
+    private SparseArray<MenuDispatcher> menuDispatchers = new SparseArray<MenuDispatcher>();
 
     private ServiceStarter serviceStarter;
     private ServiceStopper serviceStopper;
@@ -515,6 +510,7 @@ public class MainActivity extends Activity
         this.initializeSlider();
         this.initializeMenu();
 
+        this.mediaDir = Environment.getExternalStorageDirectory();
         this.pageIndex = 0;
         this.incomingMessenger = new Messenger(new IncomingHandler(this));
 
@@ -625,10 +621,8 @@ public class MainActivity extends Activity
         this.rightOutAnimation = this.loadAnimation(R.anim.anim_right_out, interp);
     }
 
-    private static final String MEDIA_PATH = "/sdcard";
-
     private void initializeDirList() {
-        List<String> dirs = this.listMp3Dir(new File(MEDIA_PATH));
+        List<String> dirs = this.listMp3Dir(this.mediaDir);
         Collections.sort(dirs);
         this.showDirectories(dirs);
 

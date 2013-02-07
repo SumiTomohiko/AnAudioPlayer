@@ -3,7 +3,6 @@ package jp.gr.java_conf.neko_daisuki.android.widget;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -13,8 +12,6 @@ import android.widget.ImageView;
  * as an arm. The second child is a head.
  */
 public class UzumakiArmHead extends ViewGroup implements UzumakiHead {
-
-    private static final String LOG_TAG = "UzumakiArmHead";
 
     public UzumakiArmHead(Context context) {
         super(context);
@@ -92,10 +89,6 @@ public class UzumakiArmHead extends ViewGroup implements UzumakiHead {
 
     private UzumakiImageHead getHead() {
         return (UzumakiImageHead)this.getChildAt(1);
-    }
-
-    private void debug(String msg) {
-        Log.d(LOG_TAG, msg);
     }
 }
 

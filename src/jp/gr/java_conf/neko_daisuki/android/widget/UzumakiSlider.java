@@ -9,7 +9,6 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.Region;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -43,7 +42,6 @@ public abstract class UzumakiSlider extends ViewGroup {
     private int startAngle;
     private int sweepAngle;
     private enum SizeType { TYPE_PIXEL, TYPE_PERCENT };
-    private int outlineOuterDiameter;
     private SizeType outerDiameterType;
     private int outerDiameter;
     private SizeType innerDiameterType;
@@ -57,6 +55,13 @@ public abstract class UzumakiSlider extends ViewGroup {
     private List<OnStopHeadMovingListener> onStopHeadMovingListenerList;
 
     private Logger logger;
+
+    /*
+     * These two objects are reused in layout operation. Eclipse warns to avoid
+     * allocations in every draw/layout operations.
+     */
+    private List<View> notHeadList;
+    private List<View> headList;
 
     public UzumakiSlider(Context context) {
         super(context);
@@ -145,6 +150,9 @@ public abstract class UzumakiSlider extends ViewGroup {
         this.onStopHeadMovingListenerList = new ArrayList<OnStopHeadMovingListener>();
 
         this.setLogger(new FakeLogger());
+
+        this.notHeadList = new ArrayList<View>();
+        this.headList = new ArrayList<View>();
     }
 
     public void addOnStartHeadMovingListener(OnStartHeadMovingListener listener) {
@@ -270,9 +278,6 @@ public abstract class UzumakiSlider extends ViewGroup {
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
-        int width = MeasureSpec.getSize(widthMeasureSpec);
-        int height = MeasureSpec.getSize(heightMeasureSpec);
-        int outlineOuterDiameter = Math.min(width, height);
         int outlineInnerDiameter = this.getAbsoluteOutlineInnerDiameter();
         int spec = MeasureSpec.makeMeasureSpec(outlineInnerDiameter, MeasureSpec.EXACTLY);
         int nChildren = this.getChildCount();
@@ -283,9 +288,9 @@ public abstract class UzumakiSlider extends ViewGroup {
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        List<View> notHeadList = new ArrayList<View>();
-        List<View> headList = new ArrayList<View>();
-        this.groupChildren(notHeadList, headList);
+        this.notHeadList.clear();
+        this.headList.clear();
+        this.groupChildren(this.notHeadList, this.headList);
 
         int width = r - l;
         int height = b - t;
@@ -294,9 +299,9 @@ public abstract class UzumakiSlider extends ViewGroup {
         int top = (height - diameter) / 2;
         int right = left + diameter;
         int bottom = top + diameter;
-        int nChildren = notHeadList.size();
+        int nChildren = this.notHeadList.size();
         for (int i = 0; i < nChildren; i++) {
-            notHeadList.get(i).layout(left, top, right, bottom);
+            this.notHeadList.get(i).layout(left, top, right, bottom);
         }
 
         for (View head: headList) {
@@ -327,7 +332,6 @@ public abstract class UzumakiSlider extends ViewGroup {
         this.startAngle = attrs.getAttributeIntValue(null, "start_angle", this.startAngle);
         this.sweepAngle = attrs.getAttributeIntValue(null, "sweep_angle", this.sweepAngle);
 
-        this.outlineOuterDiameter = attrs.getAttributeIntValue(null, "outline_outer_diameter", 0);
         this.parseSize(attrs.getAttributeValue(null, "outline_inner_diameter"), new OutlineInnerDiameterPercentSetter(), new OutlineInnerDiameterPixelSetter());
         this.parseSize(attrs.getAttributeValue(null, "outer_diameter"), new OuterDiameterPercentSetter(), new OuterDiameterPixelSetter());
         this.parseSize(attrs.getAttributeValue(null, "inner_diameter"), new InnerDiameterPercentSetter(), new InnerDiameterPixelSetter());
