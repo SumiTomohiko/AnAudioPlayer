@@ -500,6 +500,8 @@ public class MainActivity extends Activity
         super.onCreate(savedInstanceState);
         this.setContentView(R.layout.main);
 
+        this.mediaDir = Environment.getExternalStorageDirectory();
+
         this.findViews();
         this.initializeFlipButtonListener();
         this.initializeDirList();
@@ -510,7 +512,6 @@ public class MainActivity extends Activity
         this.initializeSlider();
         this.initializeMenu();
 
-        this.mediaDir = Environment.getExternalStorageDirectory();
         this.pageIndex = 0;
         this.incomingMessenger = new Messenger(new IncomingHandler(this));
 
