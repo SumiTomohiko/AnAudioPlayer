@@ -91,8 +91,9 @@ public class MainActivity extends Activity
     private class FileAdapter extends Adapter {
 
         private class Row {
-            ImageView playingIcon;
-            TextView name;
+
+            public ImageView playingIcon;
+            public TextView name;
         }
 
         public FileAdapter(MainActivity activity, String[] objects) {
@@ -122,8 +123,9 @@ public class MainActivity extends Activity
     private class DirectoryAdapter extends Adapter {
 
         private class Row {
-            ImageView playingIcon;
-            TextView path;
+
+            public ImageView playingIcon;
+            public TextView path;
         }
 
         public DirectoryAdapter(MainActivity activity, List<String> objects) {
