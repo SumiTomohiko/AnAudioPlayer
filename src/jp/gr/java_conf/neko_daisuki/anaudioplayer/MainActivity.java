@@ -445,44 +445,16 @@ public class MainActivity extends Activity
         }
     }
 
-    private static class DatabaseTask extends AsyncTask<Void, Void, List<String>> {
+    private static abstract class ContentTask extends AsyncTask<Void, Void, List<String>> {
 
-        private MainActivity activity;
+        protected MainActivity activity;
 
-        public DatabaseTask(MainActivity activity) {
-            super();
+        public ContentTask(MainActivity activity) {
             this.activity = activity;
         }
 
-        @Override
-        protected void onPostExecute(List<String> directories) {
-            this.activity.showDirectories(directories);
-        }
-
-        @Override
-        protected List<String> doInBackground(Void... voids) {
-            Log.i(LOG_TAG, "DatabaseTask started.");
-
-            List<String> files = this.selectFiles(this.queryFiles());
-            List<String> directories = this.listDirectories(files);
-
-            Log.i(LOG_TAG, "DatabaseTask ended.");
-            return directories;
-        }
-
-        private List<String> listDirectories(List<String> files) {
-            Set<String> set = new HashSet<String>();
-            for (String path: files) {
-                File file = new File(path);
-                set.add(file.getParent());
-            }
-
-            List<String> directories = new ArrayList<String>();
-            for (String path: set) {
-                directories.add(path);
-            }
-
-            return directories;
+        protected List<String> queryExistingFiles() {
+            return this.selectFiles(this.queryFiles());
         }
 
         private void addExistingFile(List<String> l, String path) {
@@ -528,6 +500,87 @@ public class MainActivity extends Activity
             }
 
             return l;
+        }
+    }
+
+    private static class FileListingTask extends ContentTask {
+
+        private String path;
+
+        public FileListingTask(MainActivity activity, String path) {
+            super(activity);
+            this.path = path;
+        }
+
+        @Override
+        protected void onPostExecute(List<String> files) {
+            this.activity.showFiles(files);
+        }
+
+        @Override
+        protected List<String> doInBackground(Void... voids) {
+            Log.i(LOG_TAG, "FileListingTask started.");
+
+            List<String> files = this.selectFiles(this.queryExistingFiles());
+
+            Log.i(LOG_TAG, "FileListingTask ended.");
+            return files;
+        }
+
+        private void addFile(List<String> l, String file) {
+            if (!file.startsWith(this.path)) {
+                return;
+            }
+            File f = new File(file);
+            l.add(f.getName());
+        }
+
+        private List<String> selectFiles(List<String> files) {
+            List<String> l = new ArrayList<String>();
+
+            for (String file: files) {
+                this.addFile(l, file);
+            }
+
+            return l;
+        }
+    }
+
+    private static class DirectoryListingTask extends ContentTask {
+
+        public DirectoryListingTask(MainActivity activity) {
+            super(activity);
+        }
+
+        @Override
+        protected void onPostExecute(List<String> directories) {
+            this.activity.showDirectories(directories);
+        }
+
+        @Override
+        protected List<String> doInBackground(Void... voids) {
+            Log.i(LOG_TAG, "DirectoryListingTask started.");
+
+            List<String> files = this.queryExistingFiles();
+            List<String> directories = this.listDirectories(files);
+
+            Log.i(LOG_TAG, "DirectoryListingTask ended.");
+            return directories;
+        }
+
+        private List<String> listDirectories(List<String> files) {
+            Set<String> set = new HashSet<String>();
+            for (String path: files) {
+                File file = new File(path);
+                set.add(file.getParent());
+            }
+
+            List<String> directories = new ArrayList<String>();
+            for (String path: set) {
+                directories.add(path);
+            }
+
+            return directories;
         }
     }
 
@@ -586,7 +639,7 @@ public class MainActivity extends Activity
     public void onStart() {
         super.onStart();
 
-        new DatabaseTask(this).execute();
+        new DirectoryListingTask(this).execute();
     }
 
     @Override
@@ -798,6 +851,7 @@ public class MainActivity extends Activity
 
     private void selectDir(int position) {
         this.selectedDir = this.dirs.get(position);
+        /*
         File dir = new File(this.selectedDir);
         String dirPath;
         try {
@@ -809,11 +863,17 @@ public class MainActivity extends Activity
         String[] files = dir.list(new Mp3Filter());
         Arrays.sort(files, new Mp3Comparator(dirPath));
         this.showFiles(files);
+        */
+        new FileListingTask(this, this.selectedDir).execute();
         this.filePosition = NO_FILES_SELECTED;
 
         this.dirList.invalidateViews();
         this.enableButton(this.nextButton0, true);
         this.showNext();
+    }
+
+    private void showFiles(List<String> files) {
+        this.showFiles(files.toArray(new String[0]));
     }
 
     private void showFiles(String[] files) {
