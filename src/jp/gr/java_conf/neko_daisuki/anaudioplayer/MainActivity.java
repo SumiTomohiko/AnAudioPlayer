@@ -7,7 +7,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -16,7 +18,9 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.database.Cursor;
 import android.media.MediaMetadataRetriever;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -24,6 +28,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
@@ -91,8 +96,9 @@ public class MainActivity extends Activity
     private class FileAdapter extends Adapter {
 
         private class Row {
-            ImageView playingIcon;
-            TextView name;
+
+            public ImageView playingIcon;
+            public TextView name;
         }
 
         public FileAdapter(MainActivity activity, String[] objects) {
@@ -122,8 +128,9 @@ public class MainActivity extends Activity
     private class DirectoryAdapter extends Adapter {
 
         private class Row {
-            ImageView playingIcon;
-            TextView path;
+
+            public ImageView playingIcon;
+            public TextView path;
         }
 
         public DirectoryAdapter(MainActivity activity, List<String> objects) {
@@ -438,6 +445,92 @@ public class MainActivity extends Activity
         }
     }
 
+    private static class DatabaseTask extends AsyncTask<Void, Void, List<String>> {
+
+        private MainActivity activity;
+
+        public DatabaseTask(MainActivity activity) {
+            super();
+            this.activity = activity;
+        }
+
+        @Override
+        protected void onPostExecute(List<String> directories) {
+            this.activity.showDirectories(directories);
+        }
+
+        @Override
+        protected List<String> doInBackground(Void... voids) {
+            Log.i(LOG_TAG, "DatabaseTask started.");
+
+            List<String> files = this.selectFiles(this.queryFiles());
+            List<String> directories = this.listDirectories(files);
+
+            Log.i(LOG_TAG, "DatabaseTask ended.");
+            return directories;
+        }
+
+        private List<String> listDirectories(List<String> files) {
+            Set<String> set = new HashSet<String>();
+            for (String path: files) {
+                File file = new File(path);
+                set.add(file.getParent());
+            }
+
+            List<String> directories = new ArrayList<String>();
+            for (String path: set) {
+                directories.add(path);
+            }
+
+            return directories;
+        }
+
+        private void addExistingFile(List<String> l, String path) {
+            File file = new File(path);
+            if (!file.exists()) {
+                return;
+            }
+            l.add(path);
+        }
+
+        private List<String> selectFiles(List<String> files) {
+            List<String> list = new ArrayList<String>();
+
+            for (String path: files) {
+                /*
+                 *  TODO: The content provider includes non-mp3 files. They must
+                 *  be dropped.
+                 */
+                this.addExistingFile(list, path);
+            }
+
+            return list;
+        }
+
+        private List<String> queryFiles() {
+            List<String> l = new ArrayList<String>();
+
+            String[] cols = { MediaStore.MediaColumns.DATA };
+            Cursor c = this.activity.getContentResolver().query(
+                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                    cols,
+                    null,   // selection
+                    null,   // selection arguments
+                    null);  // order
+            try {
+                int index = c.getColumnIndex(MediaStore.MediaColumns.DATA);
+                while (c.moveToNext()) {
+                    l.add(c.getString(index));
+                }
+            }
+            finally {
+                c.close();
+            }
+
+            return l;
+        }
+    }
+
     public static final String LOG_TAG = "anaudioplayer";
     private static final int NO_FILES_SELECTED = -1;
 
@@ -490,15 +583,23 @@ public class MainActivity extends Activity
     private Messenger incomingMessenger;
 
     @Override
+    public void onStart() {
+        super.onStart();
+
+        new DatabaseTask(this).execute();
+    }
+
+    @Override
     public Object onRetainNonConfigurationInstance() {
         return this.connection;
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState)
-    {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.setContentView(R.layout.main);
+
+        this.mediaDir = Environment.getExternalStorageDirectory();
 
         this.findViews();
         this.initializeFlipButtonListener();
@@ -510,7 +611,6 @@ public class MainActivity extends Activity
         this.initializeSlider();
         this.initializeMenu();
 
-        this.mediaDir = Environment.getExternalStorageDirectory();
         this.pageIndex = 0;
         this.incomingMessenger = new Messenger(new IncomingHandler(this));
 
@@ -622,9 +722,11 @@ public class MainActivity extends Activity
     }
 
     private void initializeDirList() {
+        /*
         List<String> dirs = this.listMp3Dir(this.mediaDir);
         Collections.sort(dirs);
         this.showDirectories(dirs);
+        */
 
         this.dirList.setOnItemClickListener(new DirectoryListListener(this));
     }
