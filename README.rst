@@ -51,29 +51,26 @@ Run::
 Known problems and bugs
 =======================
 
-1.  Listing directories takes too long time. The author has 3,090 directories
-    under `/sdcard`, searching mp3 files under it needs about 20 seconds. Future
-    version will use Android's content provider to shorten it.
-2.  Listing files takes long time. The author has about 100 files in one
+1.  Listing files takes long time. The author has about 100 files in one
     directory, AAP takes about 10 seconds to list it.
-3.  AAP does not play next music automatically after current music ends. Users
+2.  AAP does not play next music automatically after current music ends. Users
     must start manually.
-4.  AAP cannot handle tablet's rotation completely. If a user rotates his/her
+3.  AAP cannot handle tablet's rotation completely. If a user rotates his/her
     tablet, some information will be lost.
-5.  There are some critical bugs. The author does not know them still strictly
+4.  There are some critical bugs. The author does not know them still strictly
     (the author guesses that they are problems around activity's lifecycle).
-6.  Staff icon shows which directory is listed. It must tell a user which music
+5.  Staff icon shows which directory is listed. It must tell a user which music
     is playing.
-7.  A user must press the play button for more than one times when he/she plays
+6.  A user must press the play button for more than one times when he/she plays
     second music. Because AAP does not handle music's stopping.
-8.  The player does not show timestamp in sliding the record or the head.
-9.  When a user comes back to the directory/file list, the list does not show
+7.  The player does not show timestamp in sliding the record or the head.
+8.  When a user comes back to the directory/file list, the list does not show
     which entry is selected by pink background.
-10. AAP cannot handle portrait mode well. AAP must have a special layout for
+9.  AAP cannot handle portrait mode well. AAP must have a special layout for
     portrait mode.
-11. Staff icon is not cool.
-12. Buttons' background is not cool.
-13. The arm's curve is not cool. Radius must be larger.
+10. Staff icon is not cool.
+11. Buttons' background is not cool.
+12. The arm's curve is not cool. Radius must be larger.
 
 Author
 ======
