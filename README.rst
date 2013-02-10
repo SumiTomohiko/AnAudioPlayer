@@ -41,13 +41,6 @@ Run::
 
   $ ant debug
 
-TerminalIDE
------------
-
-Run::
-
-  $ ./builder.sh && ./install.sh
-
 Known problems and bugs
 =======================
 
