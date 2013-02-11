@@ -448,49 +448,58 @@ public class MainActivity extends Activity
     private static abstract class ContentTask extends AsyncTask<Void, Void, List<String>> {
 
         protected MainActivity activity;
+        protected List<String> emptyList;
 
         public ContentTask(MainActivity activity) {
             this.activity = activity;
+            this.emptyList = new ArrayList<String>();
         }
 
-        protected List<String> queryExistingFiles() {
-            return this.selectFiles(this.queryFiles());
+        protected List<String> queryExistingMp3() {
+            return this.selectMp3(this.queryAudio());
         }
 
-        private void addExistingFile(List<String> l, String path) {
+        protected List<String> makeList(String s) {
+            List<String> l = new ArrayList<String>();
+            l.add(s);
+            return l;
+        }
+
+        private boolean isMp3(String path) {
             File file = new File(path);
-            if (!file.exists()) {
-                return;
-            }
-            l.add(path);
+            /*
+             * The second expression is for rejecting non-mp3 files. This way is
+             * not strict, because there might be a non-mp3 file with ".mp3"
+             * extension.
+             */
+            return file.exists() && path.endsWith(".mp3");
         }
 
-        private List<String> selectFiles(List<String> files) {
-            List<String> list = new ArrayList<String>();
-
-            for (String path: files) {
-                /*
-                 *  TODO: The content provider includes non-mp3 files. They must
-                 *  be dropped.
-                 */
-                this.addExistingFile(list, path);
-            }
-
-            return list;
-        }
-
-        private List<String> queryFiles() {
+        private List<String> selectMp3(List<String> files) {
             List<String> l = new ArrayList<String>();
 
-            String[] cols = { MediaStore.MediaColumns.DATA };
+            for (String file: files) {
+                boolean pred = this.isMp3(file);
+                l.addAll(pred ? this.makeList(file) : this.emptyList);
+            }
+
+            return l;
+        }
+
+        private List<String> queryAudio() {
+            List<String> l = new ArrayList<String>();
+
+            String trackColumn = MediaStore.Audio.AudioColumns.TRACK;
+            String pathColumn = MediaStore.MediaColumns.DATA;
+            String order = String.format("%s, %s", trackColumn, pathColumn);
             Cursor c = this.activity.getContentResolver().query(
                     MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                    cols,
+                    new String[] { pathColumn },
                     null,   // selection
                     null,   // selection arguments
-                    null);  // order
+                    order); // order
             try {
-                int index = c.getColumnIndex(MediaStore.MediaColumns.DATA);
+                int index = c.getColumnIndex(pathColumn);
                 while (c.moveToNext()) {
                     l.add(c.getString(index));
                 }
@@ -521,18 +530,18 @@ public class MainActivity extends Activity
         protected List<String> doInBackground(Void... voids) {
             Log.i(LOG_TAG, "FileListingTask started.");
 
-            List<String> files = this.selectFiles(this.queryExistingFiles());
+            List<String> files = this.selectFiles(this.queryExistingMp3());
 
             Log.i(LOG_TAG, "FileListingTask ended.");
             return files;
         }
 
-        private void addFile(List<String> l, String file) {
-            if (!file.startsWith(this.path)) {
+        private void addFile(List<String> l, String path) {
+            File file = new File(path);
+            if (!file.getParent().equals(this.path)) {
                 return;
             }
-            File f = new File(file);
-            l.add(f.getName());
+            l.add(file.getName());
         }
 
         private List<String> selectFiles(List<String> files) {
@@ -561,16 +570,16 @@ public class MainActivity extends Activity
         protected List<String> doInBackground(Void... voids) {
             Log.i(LOG_TAG, "DirectoryListingTask started.");
 
-            List<String> files = this.queryExistingFiles();
-            List<String> directories = this.listDirectories(files);
+            List<String> audio = this.queryExistingMp3();
+            List<String> directories = this.listDirectories(audio);
 
             Log.i(LOG_TAG, "DirectoryListingTask ended.");
             return directories;
         }
 
-        private List<String> listDirectories(List<String> files) {
+        private List<String> listDirectories(List<String> audio) {
             Set<String> set = new HashSet<String>();
-            for (String path: files) {
+            for (String path: audio) {
                 File file = new File(path);
                 set.add(file.getParent());
             }
