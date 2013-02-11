@@ -1,12 +1,8 @@
 package jp.gr.java_conf.neko_daisuki.anaudioplayer;
 
 import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -22,7 +18,6 @@ import android.database.Cursor;
 import android.media.MediaMetadataRetriever;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -265,44 +260,6 @@ public class MainActivity extends Activity
 
         public void onServiceDisconnected(ComponentName className) {
             Log.i(LOG_TAG, "MainActivity disconnected from AudioService.");
-        }
-    }
-
-    private class Mp3Comparator implements Comparator<String> {
-
-        private String dir;
-
-        public Mp3Comparator(String dir) {
-            this.dir = dir;
-        }
-
-        public int compare(String name1, String name2) {
-            String path1 = this.dir + File.separator + name1;
-            String path2 = this.dir + File.separator + name2;
-            int trackNo1 = this.extractTrackNumber(path1);
-            int trackNo2 = this.extractTrackNumber(path2);
-            return trackNo1 != trackNo2 ?  trackNo1 - trackNo2 : path1.compareTo(path2);
-        }
-
-        private int extractTrackNumber(String path) {
-            MediaMetadataRetriever meta = new MediaMetadataRetriever();
-            meta.setDataSource(path);
-            int key = MediaMetadataRetriever.METADATA_KEY_CD_TRACK_NUMBER;
-            String datum = meta.extractMetadata(key);
-            return datum != null ? this.getTrackNumber(datum) : 0;
-        }
-
-        private int getTrackNumber(String datum) {
-            // Track number is stored in format of "Num/Total".
-            int pos = datum.indexOf('/');
-            String s = pos < 0 ? datum : datum.substring(0, pos);
-            try {
-                return Integer.parseInt(s);
-            }
-            catch (NumberFormatException e) {
-                e.printStackTrace();
-            }
-            return 0;
         }
     }
 
@@ -619,7 +576,6 @@ public class MainActivity extends Activity
     private TextView currentTime;
     private TextView totalTime;
 
-    private File mediaDir;
     private List<String> dirs = null;
     private String selectedDir = null;
     private String[] files = new String[0];
@@ -661,8 +617,6 @@ public class MainActivity extends Activity
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.setContentView(R.layout.main);
-
-        this.mediaDir = Environment.getExternalStorageDirectory();
 
         this.findViews();
         this.initializeFlipButtonListener();
@@ -785,67 +739,12 @@ public class MainActivity extends Activity
     }
 
     private void initializeDirList() {
-        /*
-        List<String> dirs = this.listMp3Dir(this.mediaDir);
-        Collections.sort(dirs);
-        this.showDirectories(dirs);
-        */
-
         this.dirList.setOnItemClickListener(new DirectoryListListener(this));
     }
 
     private void showDirectories(List<String> dirs) {
         this.dirs = dirs;
         this.dirList.setAdapter(new DirectoryAdapter(this, dirs));
-    }
-
-    private File[] listFiles(File dir, FilenameFilter filter) {
-        File[] files;
-        try {
-            files = dir.listFiles(filter);
-        }
-        catch (SecurityException _) {
-            files = null;
-        }
-        return files != null ? files : (new File[0]);
-    }
-
-    private List<String> listMp3Dir(File dir) {
-        List<String> list = new ArrayList<String>();
-
-        for (File d: this.listFiles(dir, new DirectoryFilter())) {
-            list.addAll(this.listMp3Dir(d));
-        }
-        if (0 < this.listFiles(dir, new Mp3Filter()).length) {
-            try {
-                list.add(dir.getCanonicalPath());
-            }
-            catch (IOException _) {
-            }
-        }
-
-        return list;
-    }
-
-    private class Mp3Filter implements FilenameFilter {
-
-        public boolean accept(File dir, String name) {
-            return name.endsWith(".mp3");
-        }
-    }
-
-    private class DirectoryFilter implements FilenameFilter {
-
-        public boolean accept(File dir, String name) {
-            String path;
-            try {
-                path = dir.getCanonicalPath() + File.separator + name;
-            }
-            catch (IOException _) {
-                return false;
-            }
-            return (new File(path)).isDirectory();
-        }
     }
 
     private void initializeFlipButtonListener() {
@@ -861,19 +760,6 @@ public class MainActivity extends Activity
 
     private void selectDir(int position) {
         this.selectedDir = this.dirs.get(position);
-        /*
-        File dir = new File(this.selectedDir);
-        String dirPath;
-        try {
-            dirPath = dir.getCanonicalPath();
-        }
-        catch (IOException _) {
-            dirPath = "";
-        }
-        String[] files = dir.list(new Mp3Filter());
-        Arrays.sort(files, new Mp3Comparator(dirPath));
-        this.showFiles(files);
-        */
         new FileListingTask(this, this.selectedDir).execute();
         this.filePosition = NO_FILES_SELECTED;
 
