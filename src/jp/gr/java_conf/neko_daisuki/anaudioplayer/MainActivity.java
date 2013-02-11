@@ -572,6 +572,7 @@ public class MainActivity extends Activity
 
             List<String> audio = this.queryExistingMp3();
             List<String> directories = this.listDirectories(audio);
+            Collections.sort(directories);
 
             Log.i(LOG_TAG, "DirectoryListingTask ended.");
             return directories;
