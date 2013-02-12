@@ -378,6 +378,17 @@ public class MainActivity extends Activity
             public abstract void handle(Message msg);
         }
 
+        private class CompletionHandler extends MessageHandler {
+
+            public CompletionHandler(MainActivity activity) {
+                super(activity);
+            }
+
+            public void handle(Message msg) {
+                this.activity.pause();
+            }
+        }
+
         private class WhatTimeHandler extends MessageHandler {
 
             public WhatTimeHandler(MainActivity activity) {
@@ -394,6 +405,7 @@ public class MainActivity extends Activity
         public IncomingHandler(MainActivity activity) {
             this.handlers = new SparseArray<MessageHandler>();
             this.handlers.put(AudioService.MSG_WHAT_TIME, new WhatTimeHandler(activity));
+            this.handlers.put(AudioService.MSG_COMPLETION, new CompletionHandler(activity));
         }
 
         @Override

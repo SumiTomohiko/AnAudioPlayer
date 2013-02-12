@@ -1,8 +1,6 @@
 package jp.gr.java_conf.neko_daisuki.anaudioplayer;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 import android.app.Service;
 import android.content.Intent;
@@ -13,6 +11,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
+import android.util.SparseArray;
 
 public class AudioService extends Service {
 
@@ -28,6 +27,7 @@ public class AudioService extends Service {
         public void pause();
         public int getCurrentPosition();
         public void release();
+        public void setOnCompletionListener(MediaPlayer.OnCompletionListener listener);
     }
 
     private class TruePlayer implements Player {
@@ -53,6 +53,10 @@ public class AudioService extends Service {
         public void release() {
             this.mp.release();
         }
+
+        public void setOnCompletionListener(MediaPlayer.OnCompletionListener listener) {
+            this.mp.setOnCompletionListener(listener);
+        }
     }
 
     private class FakePlayer implements Player {
@@ -75,9 +79,26 @@ public class AudioService extends Service {
 
         public void release() {
         }
+
+        public void setOnCompletionListener(MediaPlayer.OnCompletionListener listener) {
+        }
     }
 
-    private class IncomingHandler extends Handler {
+    private static class CompletionListener implements MediaPlayer.OnCompletionListener {
+
+        private AudioService service;
+
+        public CompletionListener(AudioService service) {
+            this.service = service;
+        }
+
+        @Override
+        public void onCompletion(MediaPlayer _) {
+            this.service.handler.complete();
+        }
+    }
+
+    private static class IncomingHandler extends Handler {
 
         private abstract class MessageHandler {
 
@@ -101,6 +122,23 @@ public class AudioService extends Service {
             }
         }
 
+        private class WhatTimeCompletionHandler extends MessageHandler {
+
+            public WhatTimeCompletionHandler(AudioService service) {
+                super(service);
+            }
+
+            public void handle(Message msg) {
+                Message reply = Message.obtain(null, MSG_COMPLETION);
+                try {
+                    msg.replyTo.send(reply);
+                }
+                catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
         private class WhatTimeHandler extends MessageHandler {
 
             public WhatTimeHandler(AudioService service) {
@@ -108,9 +146,8 @@ public class AudioService extends Service {
             }
 
             public void handle(Message msg) {
-                int what = MSG_WHAT_TIME;
                 int pos = this.service.player.getCurrentPosition();
-                Message reply = Message.obtain(null, what, pos, 0, null);
+                Message reply = Message.obtain(null, MSG_WHAT_TIME, pos, 0);
                 try {
                     msg.replyTo.send(reply);
                 }
@@ -138,11 +175,13 @@ public class AudioService extends Service {
                     return;
                 }
 
-                Log.i(LOG_TAG, String.format("Play: %s from %d", a.path, a.offset));
+                String fmt = "Play: %s from %d";
+                Log.i(LOG_TAG, String.format(fmt, a.path, a.offset));
             }
         }
 
-        private Map<Integer, MessageHandler> handlers;
+        private AudioService service;
+        private SparseArray<MessageHandler> handlers;
 
         public IncomingHandler(AudioService service) {
             super();
@@ -154,20 +193,30 @@ public class AudioService extends Service {
             this.handlers.get(msg.what).handle(msg);
         }
 
+        public void complete() {
+            MessageHandler h = new WhatTimeCompletionHandler(this.service);
+            this.handlers.put(MSG_WHAT_TIME, h);
+        }
+
         private void initializeHandlers(AudioService service) {
-            this.handlers = new HashMap<Integer, MessageHandler>();
+            this.service = service;
+            this.handlers = new SparseArray<MessageHandler>();
             this.handlers.put(MSG_PLAY, new PlayHandler(service));
             this.handlers.put(MSG_PAUSE, new PauseHandler(service));
             this.handlers.put(MSG_WHAT_TIME, new WhatTimeHandler(service));
         }
     }
 
-    public static final int MSG_PLAY = 3;
-    public static final int MSG_PAUSE = 4;
-    public static final int MSG_WHAT_TIME = 6;
+    // Message to the service.
+    public static final int MSG_PLAY = 0x00;
+    public static final int MSG_PAUSE = 0x01;
+    public static final int MSG_WHAT_TIME = 0x02;
+    // Message from the service.
+    public static final int MSG_COMPLETION = 0x10;
 
     private static final String LOG_TAG = MainActivity.LOG_TAG;
 
+    private IncomingHandler handler;
     private Messenger messenger;
     private Player player;
 
@@ -193,8 +242,10 @@ public class AudioService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        this.messenger = new Messenger(new IncomingHandler(this));
+        this.handler = new IncomingHandler(this);
+        this.messenger = new Messenger(this.handler);
         this.player = new TruePlayer();
+        this.player.setOnCompletionListener(new CompletionListener(this));
         Log.i(LOG_TAG, "AudioService was created.");
     }
 
@@ -202,12 +253,12 @@ public class AudioService extends Service {
     public void onDestroy() {
         super.onDestroy();
 
-        /*
-         * MSG_WHAT_TIME message comes even after onDestroy().
-         * So I placed FakePlayer to handle MSG_WHAT_TIME.
-         */
         Player player = this.player;
         player.pause();
+        /*
+         * MSG_WHAT_TIME message comes even after onDestroy(). So I placed
+         * FakePlayer to handle MSG_WHAT_TIME.
+         */
         this.player = new FakePlayer(player.getCurrentPosition());
         player.release();
 
