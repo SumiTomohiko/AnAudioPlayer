@@ -47,8 +47,8 @@ import jp.gr.java_conf.neko_daisuki.android.widget.RotatingUzumakiSlider;
 import jp.gr.java_conf.neko_daisuki.android.widget.UzumakiHead;
 import jp.gr.java_conf.neko_daisuki.android.widget.UzumakiSlider;
 
-public class MainActivity extends Activity
-{
+public class MainActivity extends Activity {
+
     private static class ActivityHolder {
 
         protected MainActivity activity;
@@ -893,7 +893,7 @@ public class MainActivity extends Activity
          * Why did not I use style?
          * ========================
          *
-         * I tryed to give the following settings only in *.xml, but it did not
+         * I tried to give the following settings only in *.xml, but it did not
          * work. I do not know why still. So I give the settings at here.
          */
         button.setClickable(enabled);
