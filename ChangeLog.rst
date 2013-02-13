@@ -2,6 +2,11 @@
 ChangeLog
 *********
 
+1.0.0dev6 (2013-mm-dd)
+======================
+
+* Enhanced to play next music when another one ended.
+
 1.0.0dev5 (2013-02-13)
 ======================
 
