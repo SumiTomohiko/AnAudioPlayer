@@ -44,22 +44,20 @@ Run::
 Known problems and bugs
 =======================
 
-1.  AAP does not play next music automatically after current music ends. Users
-    must start manually.
-2.  AAP cannot handle tablet's rotation completely. If a user rotates his/her
+1.  AAP cannot handle tablet's rotation completely. If a user rotates his/her
     tablet, some information will be lost.
-3.  There are some critical bugs. The author does not know them still strictly
+2.  There are some critical bugs. The author does not know them still strictly
     (the author guesses that they are problems around activity's lifecycle).
-4.  Staff icon shows which directory is listed. It must tell a user which music
+3.  Staff icon shows which directory is listed. It must tell a user which music
     is playing.
-5.  The player does not show timestamp in sliding the record or the head.
-6.  When a user comes back to the directory/file list, the list does not show
+4.  The player does not show timestamp in sliding the record or the head.
+5.  When a user comes back to the directory/file list, the list does not show
     which entry is selected by pink background.
-7.  AAP cannot handle portrait mode well. AAP must have a special layout for
+6.  AAP cannot handle portrait mode well. AAP must have a special layout for
     portrait mode.
-8.  Staff icon is not cool.
-9.  Buttons' background is not cool.
-10. The arm's curve is not cool. Radius must be larger.
+7.  Staff icon is not cool.
+8.  Buttons' background is not cool.
+9.  The arm's curve is not cool. Radius must be larger.
 
 Author
 ======
