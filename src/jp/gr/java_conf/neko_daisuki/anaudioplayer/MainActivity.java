@@ -385,7 +385,7 @@ public class MainActivity extends Activity {
             }
 
             public void handle(Message msg) {
-                this.activity.pause();
+                this.activity.nextProc.run();
             }
         }
 
@@ -420,21 +420,24 @@ public class MainActivity extends Activity {
             }
 
             public void handle(Message _) {
-                this.handler.enableWhatTime();
+                this.handler.enableResponse();
             }
         }
 
         private SparseArray<MessageHandler> handlers;
         private MessageHandler whatTimeHandler;
+        private MessageHandler completionHandler;
         private MessageHandler nopHandler;
 
         public IncomingHandler(MainActivity activity) {
             this.handlers = new SparseArray<MessageHandler>();
-            this.handlers.put(AudioService.MSG_COMPLETION, new CompletionHandler(activity));
             this.handlers.put(AudioService.MSG_PLAY, new PlayHandler(this));
+
             this.whatTimeHandler = new WhatTimeHandler(activity);
+            this.completionHandler = new CompletionHandler(activity);
             this.nopHandler = new NopHandler();
-            this.ignoreWhatTimeUntilPlay();
+
+            this.ignoreResponseUntilPlay();
         }
 
         @Override
@@ -443,27 +446,40 @@ public class MainActivity extends Activity {
         }
 
         /**
-         * Orders to ignore MSG_WHAT_TIME messages until a next MSG_PLAY.
+         * Orders to ignore MSG_WHAT_TIME/MSG_COMPLETION messages until a next
+         * MSG_PLAY.
          *
          * When a user selects a new music in playing another one, some
          * MSG_WHAT_TIME messages may be included in the message queue. These
          * messages will change time before starting to play the new music. So,
          * MSG_WHAT_TIME must be ignored until a next MSG_PLAY response.
          *
-         * Once I tried to use a new messenger and a handler, but they did not
-         * work expectedly. I guess that a singleton message queue must be
-         * included in messengers.
+         * Same case is on MSG_COMPLETION. If a music finished, AudioService
+         * send back MSG_COMPLETION for each MSG_WHAT_TIME message in the queue.
+         * These responses start playing a next music (finally, no music but
+         * last one will be skipped). This is a reason why I must drop
+         * MSG_COMPLETION responses once I accepted first one.
+         *
+         * NOTE: At first, I tried to use a new messenger and a handler, but
+         * they did not work expectedly. I guess that all messengers must share
+         * one singleton message queue.
          */
-        public void ignoreWhatTimeUntilPlay() {
+        public void ignoreResponseUntilPlay() {
             this.setWhatTimeHandler(this.nopHandler);
+            this.setCompletionHandler(this.nopHandler);
         }
 
-        private void enableWhatTime() {
+        private void enableResponse() {
             this.setWhatTimeHandler(this.whatTimeHandler);
+            this.setCompletionHandler(this.completionHandler);
         }
 
         private void setWhatTimeHandler(MessageHandler handler) {
             this.handlers.put(AudioService.MSG_WHAT_TIME, handler);
+        }
+
+        private void setCompletionHandler(MessageHandler handler) {
+            this.handlers.put(AudioService.MSG_COMPLETION, handler);
         }
     }
 
@@ -616,6 +632,39 @@ public class MainActivity extends Activity {
         }
     }
 
+    private abstract static class NextProc implements Runnable {
+
+        protected MainActivity activity;
+
+        public NextProc(MainActivity activity) {
+            this.activity = activity;
+        }
+
+        public abstract void run();
+    }
+
+    private static class PlayNothingProc extends NextProc {
+
+        public PlayNothingProc(MainActivity activity) {
+            super(activity);
+        }
+
+        public void run() {
+            this.activity.pause();
+        }
+    }
+
+    private static class PlayNextProc extends NextProc {
+
+        public PlayNextProc(MainActivity activity) {
+            super(activity);
+        }
+
+        public void run() {
+            this.activity.playNextAudio();
+        }
+    }
+
     public static final String LOG_TAG = "anaudioplayer";
     private static final int NO_FILES_SELECTED = -1;
 
@@ -656,6 +705,7 @@ public class MainActivity extends Activity {
     private TimerInterface timer;
     private FakeTimer fakeTimer;
     private Runnable procAfterSeeking;
+    private NextProc nextProc;
 
     private SparseArray<MenuDispatcher> menuDispatchers = new SparseArray<MenuDispatcher>();
 
@@ -956,23 +1006,34 @@ public class MainActivity extends Activity {
         button.setImageResource(resourceId);
     }
 
-    private void selectFile(int position) {
+    private void playNextAudio() {
+        this.playNewAudio(this.filePosition + 1);
+    }
+
+    private void playNewAudio(int position) {
         this.pause();
-        this.incomingHandler.ignoreWhatTimeUntilPlay();
+        this.incomingHandler.ignoreResponseUntilPlay();
 
         this.filePosition = position;
         this.procAfterSeeking = new PlayAfterSeeking(this);
+        int last = this.files.length - 1;
+        this.nextProc = position < last ? new PlayNextProc(this) : new PlayNothingProc(this);
 
-        this.fileList.invalidateViews();
-        this.enableButton(this.nextButton1, true);
         String path = this.getSelectedPath();
         int duration = this.getDuration(path);
         this.slider.setMax(duration);
         this.slider.setProgress(0);
         this.showPlayingFile();
-        this.showNext();
 
         this.play();
+    }
+
+    private void selectFile(int position) {
+        this.fileList.invalidateViews();
+        this.enableButton(this.nextButton1, true);
+        this.showNext();
+
+        this.playNewAudio(position);
     }
 
     private void showPlayingFile() {
