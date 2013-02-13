@@ -2,10 +2,12 @@
 ChangeLog
 *********
 
-1.0.0dev5 (2013-mm-dd)
+1.0.0dev5 (2013-02-13)
 ======================
 
 * Fixed to pause when music ends.
+* Fixed not to change time before starting to play a new music, when a user
+  selects.
 
 1.0.0dev4 (2013-02-11)
 ======================
