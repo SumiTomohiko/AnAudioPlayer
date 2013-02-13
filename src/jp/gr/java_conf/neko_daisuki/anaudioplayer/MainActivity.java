@@ -941,7 +941,10 @@ public class MainActivity extends Activity {
 
     private void startTimer() {
         this.timer = new TrueTimer();
-        // Each Timer requests new TimerTask object (Timers cannot share one task).
+        /*
+         * Each Timer requests new TimerTask object (Timers cannot share one
+         * task).
+         */
         this.timer.scheduleAtFixedRate(new PlayerTask(this), 0, 10);
     }
 
