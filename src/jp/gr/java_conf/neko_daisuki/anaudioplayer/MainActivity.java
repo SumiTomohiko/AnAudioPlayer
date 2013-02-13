@@ -400,17 +400,70 @@ public class MainActivity extends Activity {
             }
         }
 
+        private class NopHandler extends MessageHandler {
+
+            public NopHandler() {
+                super(null);
+            }
+
+            public void handle(Message _) {
+            }
+        }
+
+        private class PlayHandler extends MessageHandler {
+
+            private IncomingHandler handler;
+
+            public PlayHandler(IncomingHandler handler) {
+                super(null);
+                this.handler = handler;
+            }
+
+            public void handle(Message _) {
+                this.handler.enableWhatTime();
+            }
+        }
+
         private SparseArray<MessageHandler> handlers;
+        private MessageHandler whatTimeHandler;
+        private MessageHandler nopHandler;
 
         public IncomingHandler(MainActivity activity) {
             this.handlers = new SparseArray<MessageHandler>();
-            this.handlers.put(AudioService.MSG_WHAT_TIME, new WhatTimeHandler(activity));
             this.handlers.put(AudioService.MSG_COMPLETION, new CompletionHandler(activity));
+            this.handlers.put(AudioService.MSG_PLAY, new PlayHandler(this));
+            this.whatTimeHandler = new WhatTimeHandler(activity);
+            this.nopHandler = new NopHandler();
+            this.ignoreWhatTimeUntilPlay();
         }
 
         @Override
         public void handleMessage(Message msg) {
             this.handlers.get(msg.what).handle(msg);
+        }
+
+        /**
+         * Orders to ignore MSG_WHAT_TIME messages until a next MSG_PLAY.
+         *
+         * When a user selects a new music in playing another one, some
+         * MSG_WHAT_TIME messages may be included in the message queue. These
+         * messages will change time before starting to play the new music. So,
+         * MSG_WHAT_TIME must be ignored until a next MSG_PLAY response.
+         *
+         * Once I tried to use a new messenger and a handler, but they did not
+         * work expectedly. I guess that a singleton message queue must be
+         * included in messengers.
+         */
+        public void ignoreWhatTimeUntilPlay() {
+            this.setWhatTimeHandler(this.nopHandler);
+        }
+
+        private void enableWhatTime() {
+            this.setWhatTimeHandler(this.whatTimeHandler);
+        }
+
+        private void setWhatTimeHandler(MessageHandler handler) {
+            this.handlers.put(AudioService.MSG_WHAT_TIME, handler);
         }
     }
 
@@ -612,6 +665,7 @@ public class MainActivity extends Activity {
     private ServiceConnection connection;
     private Messenger outgoingMessenger;
     private Messenger incomingMessenger;
+    private IncomingHandler incomingHandler;
 
     @Override
     public void onStart() {
@@ -641,7 +695,8 @@ public class MainActivity extends Activity {
         this.initializeMenu();
 
         this.pageIndex = 0;
-        this.incomingMessenger = new Messenger(new IncomingHandler(this));
+        this.incomingHandler = new IncomingHandler(this);
+        this.incomingMessenger = new Messenger(this.incomingHandler);
 
         Log.i(LOG_TAG, "Created.");
     }
@@ -903,6 +958,7 @@ public class MainActivity extends Activity {
 
     private void selectFile(int position) {
         this.pause();
+        this.incomingHandler.ignoreWhatTimeUntilPlay();
 
         this.filePosition = position;
         this.procAfterSeeking = new PlayAfterSeeking(this);
@@ -1134,7 +1190,7 @@ public class MainActivity extends Activity {
     }
 
     private void sendMessage(int what, Object o) {
-        Message msg = Message.obtain(null, what, 0, 0, o);
+        Message msg = Message.obtain(null, what, o);
         msg.replyTo = this.incomingMessenger;
         try {
             this.outgoingMessenger.send(msg);

@@ -109,6 +109,15 @@ public class AudioService extends Service {
             }
 
             public abstract void handle(Message msg);
+
+            protected void reply(Message msg, Message res) {
+                try {
+                    msg.replyTo.send(res);
+                }
+                catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         private class PauseHandler extends MessageHandler {
@@ -146,14 +155,10 @@ public class AudioService extends Service {
             }
 
             public void handle(Message msg) {
+                int what = MSG_WHAT_TIME;
                 int pos = this.service.player.getCurrentPosition();
-                Message reply = Message.obtain(null, MSG_WHAT_TIME, pos, 0);
-                try {
-                    msg.replyTo.send(reply);
-                }
-                catch (RemoteException e) {
-                    e.printStackTrace();
-                }
+                Message reply = Message.obtain(null, what, pos, 0, msg.obj);
+                this.reply(msg,  reply);
             }
         }
 
@@ -164,8 +169,17 @@ public class AudioService extends Service {
             }
 
             public void handle(Message msg) {
-                PlayArgument a = (PlayArgument)msg.obj;
+                /*
+                 * I hoped to echo back msg simply, but Android rejected it with
+                 * android.util.AndroidRuntimeException of "This message is
+                 * already in use".
+                 *
+                 * My Android is Acer A500 (Android 3.2).
+                 */
+                Message reply = Message.obtain(null, MSG_PLAY);
+                this.reply(msg, reply);
 
+                PlayArgument a = (PlayArgument)msg.obj;
                 try {
                     this.service.player.play(a.path, a.offset);
                 }
@@ -208,11 +222,12 @@ public class AudioService extends Service {
     }
 
     // Message to the service.
-    public static final int MSG_PLAY = 0x00;
     public static final int MSG_PAUSE = 0x01;
-    public static final int MSG_WHAT_TIME = 0x02;
     // Message from the service.
     public static final int MSG_COMPLETION = 0x10;
+    // Message from/to the service.
+    public static final int MSG_PLAY = 0x00;
+    public static final int MSG_WHAT_TIME = 0x02;
 
     private static final String LOG_TAG = MainActivity.LOG_TAG;
 
