@@ -48,16 +48,14 @@ Known problems and bugs
     tablet, some information will be lost.
 2.  There are some critical bugs. The author does not know them still strictly
     (the author guesses that they are problems around activity's lifecycle).
-3.  Staff icon shows which directory is listed. It must tell a user which music
-    is playing.
-4.  The player does not show timestamp in sliding the record or the head.
-5.  When a user comes back to the directory/file list, the list does not show
+3.  The player does not show timestamp in sliding the record or the head.
+4.  When a user comes back to the directory/file list, the list does not show
     which entry is selected by pink background.
-6.  AAP cannot handle portrait mode well. AAP must have a special layout for
+5.  AAP cannot handle portrait mode well. AAP must have a special layout for
     portrait mode.
-7.  Staff icon is not cool.
-8.  Buttons' background is not cool.
-9.  The arm's curve is not cool. Radius must be larger.
+6.  Staff icon is not cool.
+7.  Buttons' background is not cool.
+8.  The arm's curve is not cool. Radius must be larger.
 
 Author
 ======

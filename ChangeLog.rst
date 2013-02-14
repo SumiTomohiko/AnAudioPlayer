@@ -6,6 +6,7 @@ ChangeLog
 ======================
 
 * Enhanced to play next music when another one ended.
+* Fixed the staff icon to show which file is on air.
 
 1.0.0dev5 (2013-02-13)
 ======================
