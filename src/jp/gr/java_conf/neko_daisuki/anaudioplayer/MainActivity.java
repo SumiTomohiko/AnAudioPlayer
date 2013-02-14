@@ -1032,6 +1032,7 @@ public class MainActivity extends Activity {
 
     private void playNextAudio() {
         this.playNewAudio(this.filePosition + 1);
+        this.fileList.invalidateViews();
     }
 
     private void playNewAudio(int position) {
