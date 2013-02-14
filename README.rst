@@ -24,22 +24,13 @@ License
 
 AAP is an open source software on MIT lisence. See COPYING.rst.
 
-How to Build/Install
-====================
+How to build
+============
 
-AAP can be built in three ways; Eclipse, Ant or TerminalIDE.
+AAP can be built on::
 
-Eclipse
--------
-
-AAP uses no special methods in Eclipse.
-
-Ant
----
-
-Run::
-
-  $ ant debug
+* Eclipse Juno Service Release 1
+* JDK 1.7.0
 
 Known problems and bugs
 =======================
