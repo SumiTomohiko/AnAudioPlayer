@@ -49,6 +49,12 @@ import jp.gr.java_conf.neko_daisuki.android.widget.UzumakiSlider;
 
 public class MainActivity extends Activity {
 
+    private static class FileSystem {
+
+        int directoryPosition = UNSELECTED;
+        String[] files;
+    }
+
     private static class ActivityHolder {
 
         protected MainActivity activity;
@@ -100,16 +106,19 @@ public class MainActivity extends Activity {
             super(activity, objects);
         }
 
+        @Override
         protected View makeView(int position, View convertView) {
             Row row = (Row)convertView.getTag();
-            String name = this.getItem(position);
-            String selectedFile = this.activity.getSelectedFile();
-            int src = name != selectedFile ? R.drawable.ic_blank : R.drawable.ic_playing;
+            MainActivity activity = this.activity;
+            boolean isPlaying = this.isPlayingDirectoryShown() && (position == activity.filePosition);
+            int src = isPlaying ? R.drawable.ic_playing : R.drawable.ic_blank;
             row.playingIcon.setImageResource(src);
-            row.name.setText(name);
+            row.name.setText(this.getItem(position));
+
             return convertView;
         }
 
+        @Override
         protected View makeConvertView(ViewGroup parent) {
             View view = this.inflater.inflate(R.layout.file_row, parent, false);
             Row row = new Row();
@@ -117,6 +126,12 @@ public class MainActivity extends Activity {
             row.name = (TextView)view.findViewById(R.id.name);
             view.setTag(row);
             return view;
+        }
+
+        private boolean isPlayingDirectoryShown() {
+            MainActivity activity = this.activity;
+            int dirPos = activity.playingFile.directoryPosition;
+            return dirPos == activity.selectedFile.directoryPosition;
         }
     }
 
@@ -132,15 +147,17 @@ public class MainActivity extends Activity {
             super(activity, objects);
         }
 
+        @Override
         protected View makeView(int position, View convertView) {
             Row row = (Row)convertView.getTag();
-            String path = this.getItem(position);
-            int src = path != this.activity.selectedDir ? R.drawable.ic_blank : R.drawable.ic_playing;
+            int src = position != this.activity.playingFile.directoryPosition ? R.drawable.ic_blank : R.drawable.ic_playing;
             row.playingIcon.setImageResource(src);
-            row.path.setText(path);
+            row.path.setText(this.getItem(position));
+
             return convertView;
         }
 
+        @Override
         protected View makeConvertView(ViewGroup parent) {
             View view = this.inflater.inflate(R.layout.dir_row, parent, false);
             Row row = new Row();
@@ -666,7 +683,7 @@ public class MainActivity extends Activity {
     }
 
     public static final String LOG_TAG = "anaudioplayer";
-    private static final int NO_FILES_SELECTED = -1;
+    private static final int UNSELECTED = -1;
 
     private ViewFlipper flipper;
     /*
@@ -691,9 +708,9 @@ public class MainActivity extends Activity {
     private TextView totalTime;
 
     private List<String> dirs = null;
-    private String selectedDir = null;
-    private String[] files = new String[0];
-    private int filePosition = NO_FILES_SELECTED;
+    private FileSystem selectedFile = new FileSystem();
+    private FileSystem playingFile = new FileSystem();
+    private int filePosition = UNSELECTED;
 
     private Animation leftInAnimation;
     private Animation leftOutAnimation;
@@ -875,10 +892,13 @@ public class MainActivity extends Activity {
         this.setClickListener(previousButtons, new PreviousButtonListener(this));
     }
 
+    private String getSelectedDirectory() {
+        return this.dirs.get(this.selectedFile.directoryPosition);
+    }
+
     private void selectDir(int position) {
-        this.selectedDir = this.dirs.get(position);
-        new FileListingTask(this, this.selectedDir).execute();
-        this.filePosition = NO_FILES_SELECTED;
+        this.selectedFile.directoryPosition = position;
+        new FileListingTask(this, this.getSelectedDirectory()).execute();
 
         this.dirList.invalidateViews();
         this.enableButton(this.nextButton0, true);
@@ -890,7 +910,7 @@ public class MainActivity extends Activity {
     }
 
     private void showFiles(String[] files) {
-        this.files = files;
+        this.selectedFile.files = files;
         this.fileList.setAdapter(new FileAdapter(this, files));
     }
 
@@ -964,11 +984,12 @@ public class MainActivity extends Activity {
     private String getSelectedFile() {
         int pos = this.filePosition;
         // Returning "" must be harmless.
-        return pos == NO_FILES_SELECTED ? "" : this.files[pos];
+        return pos == UNSELECTED ? "" : this.selectedFile.files[pos];
     }
 
     private String getSelectedPath() {
-        return this.selectedDir + File.separator + this.getSelectedFile();
+        String dir = this.getSelectedDirectory();
+        return dir + File.separator + this.getSelectedFile();
     }
 
     private int getDuration(String path) {
@@ -1016,7 +1037,7 @@ public class MainActivity extends Activity {
 
         this.filePosition = position;
         this.procAfterSeeking = new PlayAfterSeeking(this);
-        int last = this.files.length - 1;
+        int last = this.playingFile.files.length - 1;
         this.nextProc = position < last ? new PlayNextProc(this) : new PlayNothingProc(this);
 
         String path = this.getSelectedPath();
@@ -1029,6 +1050,11 @@ public class MainActivity extends Activity {
     }
 
     private void selectFile(int position) {
+        FileSystem fs = this.playingFile;
+        fs.directoryPosition = this.selectedFile.directoryPosition;
+        fs.files = this.selectedFile.files;
+        this.filePosition = position;
+
         this.fileList.invalidateViews();
         this.enableButton(this.nextButton1, true);
         this.showNext();
@@ -1212,8 +1238,11 @@ public class MainActivity extends Activity {
         outState.putInt(Key.PAGE_INDEX.getKey(), this.pageIndex);
         this.saveButton(outState, Key.NEXT_BUTTON0_ENABLED, this.nextButton0);
         this.saveButton(outState, Key.NEXT_BUTTON1_ENABLED, this.nextButton1);
+        /*
+         * TODO: Implement here.
         outState.putString(Key.SELECTED_DIR.getKey(), this.selectedDir);
         outState.putStringArray(Key.FILES.getKey(), this.files);
+        */
         outState.putInt(Key.FILE_POSITION.getKey(), this.filePosition);
         outState.putInt(Key.PROGRESS.getKey(), this.slider.getProgress());
         outState.putInt(Key.DURATION.getKey(), this.slider.getMax());
@@ -1231,7 +1260,8 @@ public class MainActivity extends Activity {
         }
         this.restoreButton(savedInstanceState, Key.NEXT_BUTTON0_ENABLED, this.nextButton0);
         this.restoreButton(savedInstanceState, Key.NEXT_BUTTON1_ENABLED, this.nextButton1);
-        this.selectedDir = savedInstanceState.getString(Key.SELECTED_DIR.getKey());
+        // TODO: Implement here.
+        //this.selectedDir = savedInstanceState.getString(Key.SELECTED_DIR.getKey());
         this.showFiles(savedInstanceState.getStringArray(Key.FILES.getKey()));
         this.filePosition = savedInstanceState.getInt(Key.FILE_POSITION.getKey());
         this.slider.setProgress(savedInstanceState.getInt(Key.PROGRESS.getKey()));
