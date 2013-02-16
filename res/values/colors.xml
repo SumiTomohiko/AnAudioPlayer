@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE resources>
 <resources>
     <color name="selected">#f4a0bd</color>      <!-- pastel pink -->
     <color name="neutral">#ffffff</color>
