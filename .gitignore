@@ -5,7 +5,6 @@ bin
 dist
 gen
 libs
-lint.xml
 local.properties
 project.properties
 projectrc.local
