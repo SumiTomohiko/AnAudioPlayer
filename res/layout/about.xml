@@ -48,6 +48,7 @@
     <EditText
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:inputType="none"
         android:focusable="false"
         android:typeface="monospace"
         android:text="@string/license"/>
