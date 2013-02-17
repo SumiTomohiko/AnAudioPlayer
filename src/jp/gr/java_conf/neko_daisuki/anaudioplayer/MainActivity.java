@@ -688,7 +688,7 @@ public class MainActivity extends Activity {
     private ViewFlipper flipper;
     /*
      * pageIndex is needed for save/restore instance state. I tried some ways
-     * to get current page index on runtime, but I did not find the way useful
+     * to know current page index on runtime, but I did not find a useful way
      * in any cases. Counting manually is easiest.
      */
     private int pageIndex;
@@ -892,13 +892,20 @@ public class MainActivity extends Activity {
         this.setClickListener(previousButtons, new PreviousButtonListener(this));
     }
 
+    private String getPlayingDirectory() {
+        int pos = this.playingFile.directoryPosition;
+        return this.dirs.get(pos);
+    }
+
     private String getSelectedDirectory() {
-        return this.dirs.get(this.selectedFile.directoryPosition);
+        int pos = this.selectedFile.directoryPosition;
+        return this.dirs.get(pos);
     }
 
     private void selectDir(int position) {
         this.selectedFile.directoryPosition = position;
-        new FileListingTask(this, this.getSelectedDirectory()).execute();
+        String dir = this.getSelectedDirectory();
+        new FileListingTask(this, dir).execute();
 
         this.dirList.invalidateViews();
         this.enableButton(this.nextButton0, true);
@@ -978,21 +985,22 @@ public class MainActivity extends Activity {
     }
 
     private void sendPlay() {
-        String path = this.getSelectedPath();
+        String path = this.getPlayingPath();
         int offset = this.slider.getProgress();
         Object a = AudioService.makePlayArgument(path, offset);
         this.sendMessage(AudioService.MSG_PLAY, a);
     }
 
-    private String getSelectedFile() {
+    private String getPlayingFile() {
         int pos = this.filePosition;
+        boolean pred = pos == UNSELECTED;
         // Returning "" must be harmless.
-        return pos == UNSELECTED ? "" : this.selectedFile.files[pos];
+        return pred ? "" : this.playingFile.files[pos];
     }
 
-    private String getSelectedPath() {
-        String dir = this.getSelectedDirectory();
-        return dir + File.separator + this.getSelectedFile();
+    private String getPlayingPath() {
+        String dir = this.getPlayingDirectory();
+        return dir + File.separator + this.getPlayingFile();
     }
 
     private int getDuration(String path) {
@@ -1044,7 +1052,7 @@ public class MainActivity extends Activity {
         int last = this.playingFile.files.length - 1;
         this.nextProc = position < last ? new PlayNextProc(this) : new PlayNothingProc(this);
 
-        String path = this.getSelectedPath();
+        String path = this.getPlayingPath();
         int duration = this.getDuration(path);
         this.slider.setMax(duration);
         this.slider.setProgress(0);
@@ -1067,7 +1075,7 @@ public class MainActivity extends Activity {
     }
 
     private void showPlayingFile() {
-        this.title.setText(this.getSelectedFile());
+        this.title.setText(this.getPlayingFile());
         this.showTime(this.currentTime, this.slider.getProgress());
         this.showTime(this.totalTime, this.slider.getMax());
     }
