@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE ImageButton>
+<ImageButton
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/prev1"
+    android:contentDescription="@string/navigator_button_desc"
+    style="@style/NavLeftButton"/>
+<!--
+vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
+-->

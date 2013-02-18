@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE jp.gr.java_conf.neko_daisuki.android.widget.RotatingUzumakiSlider>
+<jp.gr.java_conf.neko_daisuki.android.widget.RotatingUzumakiSlider
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/slider"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:layout_weight="1">
+    <jp.gr.java_conf.neko_daisuki.android.widget.CircleImageButton
+        android:id="@+id/play"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:background="@drawable/round_button"/>
+    <jp.gr.java_conf.neko_daisuki.android.widget.UzumakiArmHead
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+        <View
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/arm"/>
+        <jp.gr.java_conf.neko_daisuki.android.widget.UzumakiImageHead
+            android:id="@+id/head"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/head"/>
+    </jp.gr.java_conf.neko_daisuki.android.widget.UzumakiArmHead>
+</jp.gr.java_conf.neko_daisuki.android.widget.RotatingUzumakiSlider>
+<!--
+vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
+-->
