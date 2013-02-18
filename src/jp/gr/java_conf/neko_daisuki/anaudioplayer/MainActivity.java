@@ -52,7 +52,7 @@ public class MainActivity extends Activity {
     private static class FileSystem {
 
         int directoryPosition = UNSELECTED;
-        String[] files;
+        String[] files = new String[0];
     }
 
     private static class ActivityHolder {
@@ -68,11 +68,6 @@ public class MainActivity extends Activity {
 
         protected LayoutInflater inflater;
         protected MainActivity activity;
-
-        public Adapter(MainActivity activity, List<String> objects) {
-            super(activity, 0, objects);
-            this.initialize(activity);
-        }
 
         public Adapter(MainActivity activity, String[] objects) {
             super(activity, 0, objects);
@@ -143,7 +138,7 @@ public class MainActivity extends Activity {
             public TextView path;
         }
 
-        public DirectoryAdapter(MainActivity activity, List<String> objects) {
+        public DirectoryAdapter(MainActivity activity, String[] objects) {
             super(activity, objects);
         }
 
@@ -176,7 +171,7 @@ public class MainActivity extends Activity {
 
         public void run() {
             this.activity.sendPlay();
-            this.activity.startTimer();
+            this.activity.onConnectedWithService();
         }
     }
 
@@ -187,7 +182,7 @@ public class MainActivity extends Activity {
         }
 
         public void run() {
-            this.activity.startTimer();
+            this.activity.onConnectedWithService();
         }
     }
 
@@ -618,7 +613,7 @@ public class MainActivity extends Activity {
 
         @Override
         protected void onPostExecute(List<String> directories) {
-            this.activity.showDirectories(directories);
+            this.activity.showDirectories(directories.toArray(new String[0]));
         }
 
         @Override
@@ -685,8 +680,9 @@ public class MainActivity extends Activity {
     public static final String LOG_TAG = "anaudioplayer";
     private static final int UNSELECTED = -1;
 
+    // Widgets
     private ViewFlipper flipper;
-    /*
+    /**
      * pageIndex is needed for save/restore instance state. I tried some ways
      * to know current page index on runtime, but I did not find a useful way
      * in any cases. Counting manually is easiest.
@@ -707,24 +703,34 @@ public class MainActivity extends Activity {
     private TextView currentTime;
     private TextView totalTime;
 
-    private List<String> dirs = null;
-    private FileSystem selectedFile = new FileSystem();
-    private FileSystem playingFile = new FileSystem();
-    private int filePosition = UNSELECTED;
-
+    // Objects supporting any widgets. They are stateless.
     private Animation leftInAnimation;
     private Animation leftOutAnimation;
     private Animation rightInAnimation;
     private Animation rightOutAnimation;
-
     private View.OnClickListener pauseListener;
     private View.OnClickListener playListener;
+    private SparseArray<MenuDispatcher> menuDispatchers = new SparseArray<MenuDispatcher>();
+
+    /**
+     * Timer. This is stateful, but it is configured automatically.
+     */
     private TimerInterface timer;
-    private FakeTimer fakeTimer;
+
+    // Stateful internal data
+    private String[] dirs = new String[0];
+    private FileSystem selectedFile = new FileSystem();
+    private FileSystem playingFile = new FileSystem();
+    private int filePosition = UNSELECTED;
+
+    /**
+     * <code>state</code> tells which playing or paused the player is. I tried
+     * to reuse other objects to indicate this, but such design cannot tell what
+     * I do strongly. Using a special variable is most simple.
+     */
+    private PlayerState state = PlayerState.PAUSED;
     private Runnable procAfterSeeking;
     private NextProc nextProc;
-
-    private SparseArray<MenuDispatcher> menuDispatchers = new SparseArray<MenuDispatcher>();
 
     private ServiceStarter serviceStarter;
     private ServiceStopper serviceStopper;
@@ -733,6 +739,9 @@ public class MainActivity extends Activity {
     private Messenger outgoingMessenger;
     private Messenger incomingMessenger;
     private IncomingHandler incomingHandler;
+
+    // Stateless internal data (reusable)
+    private TimerInterface fakeTimer;
 
     @Override
     public void onStart() {
@@ -835,7 +844,6 @@ public class MainActivity extends Activity {
 
         @Override
         public void onClick(View view) {
-            this.activity.procAfterSeeking = new StayAfterSeeking();
             this.activity.pause();
         }
     }
@@ -848,7 +856,6 @@ public class MainActivity extends Activity {
 
         @Override
         public void onClick(View view) {
-            this.activity.procAfterSeeking = new PlayAfterSeeking(this.activity);
             this.activity.play();
         }
     }
@@ -876,7 +883,7 @@ public class MainActivity extends Activity {
         this.dirList.setOnItemClickListener(new DirectoryListListener(this));
     }
 
-    private void showDirectories(List<String> dirs) {
+    private void showDirectories(String[] dirs) {
         this.dirs = dirs;
         this.dirList.setAdapter(new DirectoryAdapter(this, dirs));
     }
@@ -894,12 +901,12 @@ public class MainActivity extends Activity {
 
     private String getPlayingDirectory() {
         int pos = this.playingFile.directoryPosition;
-        return this.dirs.get(pos);
+        return this.dirs[pos];
     }
 
     private String getSelectedDirectory() {
         int pos = this.selectedFile.directoryPosition;
-        return this.dirs.get(pos);
+        return this.dirs[pos];
     }
 
     private void selectDir(int position) {
@@ -927,11 +934,11 @@ public class MainActivity extends Activity {
     }
 
     private void pause() {
+        this.procAfterSeeking = new StayAfterSeeking();
+        this.state = PlayerState.PAUSED;
         this.stopTimer();
         this.stopAudioService();
-
-        this.playButton.setOnClickListener(this.playListener);
-        this.playButton.setImageResource(R.drawable.ic_play);
+        this.changePauseButtonToPlayButton();
     }
 
     private class PlayerTask extends TimerTask {
@@ -975,13 +982,32 @@ public class MainActivity extends Activity {
         this.timer.scheduleAtFixedRate(new PlayerTask(this), 0, 10);
     }
 
-    private void play() {
-        this.stopTimer();
-        this.startAudioService();
-        this.bindAudioService(new PlayProcedureOnConnected(this));
-
+    private void changePlayButtonToPauseButton() {
         this.playButton.setOnClickListener(this.pauseListener);
         this.playButton.setImageResource(R.drawable.ic_pause);
+    }
+
+    private void changePauseButtonToPlayButton() {
+        this.playButton.setOnClickListener(this.playListener);
+        this.playButton.setImageResource(R.drawable.ic_play);
+    }
+
+    private void onConnectedWithService() {
+        this.startTimer();
+        this.procAfterSeeking = new PlayAfterSeeking(this);
+        this.state = PlayerState.PLAYING;
+        this.changePlayButtonToPauseButton();
+    }
+
+    private void play() {
+        /*
+         * Stops the current timer. New timer will start by
+         * PlayProcedureOnConnected later.
+         */
+        this.stopTimer();
+
+        this.startAudioService();
+        this.bindAudioService(new PlayProcedureOnConnected(this));
     }
 
     private void sendPlay() {
@@ -1043,14 +1069,17 @@ public class MainActivity extends Activity {
         this.fileList.invalidateViews();
     }
 
+    private void updateNextProcedure() {
+        int last = this.playingFile.files.length - 1;
+        this.nextProc = this.filePosition < last ? new PlayNextProc(this) : new PlayNothingProc(this);
+    }
+
     private void playNewAudio(int position) {
         this.pause();
         this.incomingHandler.ignoreResponseUntilPlay();
 
         this.filePosition = position;
-        this.procAfterSeeking = new PlayAfterSeeking(this);
-        int last = this.playingFile.files.length - 1;
-        this.nextProc = position < last ? new PlayNextProc(this) : new PlayNothingProc(this);
+        this.updateNextProcedure();
 
         String path = this.getPlayingPath();
         int duration = this.getDuration(path);
@@ -1200,19 +1229,50 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
 
-        Intent intent = this.makeAudioServiceIntent();
-        Connection conn = new Connection(this, new ResumeProcedureOnConnected(this));
-        if (this.bindService(intent, conn, 0)) {
+        /*
+         * I wondered if here is better than onRestoreInstanceState() to restore
+         * members for the service, but I believe so now. Because:
+         *
+         * 1. Here is symmetric with onPause(). onPause() disconnects the
+         * service, so reconnecting at here is beautiful.
+         *
+         * 2. onResume() is called always. Android does not call
+         * onRestoreInstanceState() when this activity is newly created,
+         * although I must initialize some members with non-null. onResume() is
+         * called even in this case. I can think onResume() as a stateful
+         * constructor (onCreate() is a stateless constructor. Because there are
+         * no information about application's state when onCreate() is called).
+         */
+        if (this.state == PlayerState.PLAYING){
+            Intent intent = this.makeAudioServiceIntent();
+
+            Runnable proc = new ResumeProcedureOnConnected(this);
+            Connection conn = new Connection(this, proc);
+
+            this.bindService(intent, conn, 0);
             this.serviceStarter = new FakeServiceStarter();
             this.serviceStopper = new TrueServiceStopper(this);
             this.serviceUnbinder = new TrueServiceUnbinder(this);
             this.connection = conn;
+            this.incomingHandler.enableResponse();
+
+            /*
+             * You may notice that some members (timer, the play button, etc)
+             * are not initialized even at here. Don't worry, they will be
+             * initialized through ResumeProcedureOnConnected, which will call
+             * onConnectedWithService() finally.
+             */
         }
         else {
             this.serviceStarter = new TrueServiceStarter(this);
             this.serviceStopper = new FakeServiceStopper();
             this.serviceUnbinder = new FakeServiceUnbinder();
             this.connection = null;
+            /*
+             * To initialize other members (timer, the play button, etc),
+             * pause() is called.
+             */
+            this.pause();
         }
 
         Log.i(LOG_TAG, "Resumed.");
@@ -1228,36 +1288,33 @@ public class MainActivity extends Activity {
         Log.i(LOG_TAG, "Paused.");
     }
 
-    private enum Key {
-        PAGE_INDEX,
-        NEXT_BUTTON0_ENABLED,
-        NEXT_BUTTON1_ENABLED,
-        SELECTED_DIR,
-        FILES,
-        FILE_POSITION,
-        PROGRESS,
-        DURATION;
-
-        public String getKey() {
-            return this.name();
-        }
-    }
-
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
 
+        // widgets' states
         outState.putInt(Key.PAGE_INDEX.getKey(), this.pageIndex);
         this.saveButton(outState, Key.NEXT_BUTTON0_ENABLED, this.nextButton0);
         this.saveButton(outState, Key.NEXT_BUTTON1_ENABLED, this.nextButton1);
-        /*
-         * TODO: Implement here.
-        outState.putString(Key.SELECTED_DIR.getKey(), this.selectedDir);
-        outState.putStringArray(Key.FILES.getKey(), this.files);
-        */
-        outState.putInt(Key.FILE_POSITION.getKey(), this.filePosition);
-        outState.putInt(Key.PROGRESS.getKey(), this.slider.getProgress());
+        this.savePlayerState(outState);
         outState.putInt(Key.DURATION.getKey(), this.slider.getMax());
+        outState.putInt(Key.PROGRESS.getKey(), this.slider.getProgress());
+        this.saveTextView(outState, Key.TITLE, this.title);
+        this.saveTextView(outState, Key.CURRENT_TIME, this.currentTime);
+        this.saveTextView(outState, Key.TOTAL_TIME, this.totalTime);
+
+        // internal data
+        outState.putStringArray(Key.DIRS.getKey(), this.dirs);
+        this.saveFileSystem(outState,
+                            this.selectedFile,
+                            Key.SELECTED_FILE_DIRECTORY_POSITION,
+                            Key.SELECTED_FILE_FILES);
+        this.saveFileSystem(outState,
+                            this.playingFile,
+                            Key.PLAYING_FILE_DIRECTORY_POSITION,
+                            Key.PLAYING_FILE_FILES);
+        outState.putInt(Key.FILE_POSITION.getKey(),
+                        this.filePosition);
 
         Log.i(LOG_TAG, "Instance state was saved.");
     }
@@ -1266,21 +1323,111 @@ public class MainActivity extends Activity {
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
 
+        // Widgets
         this.pageIndex = savedInstanceState.getInt(Key.PAGE_INDEX.getKey());
         for (int i = 0; i < this.pageIndex; i++) {
             this.flipper.showNext();
         }
-        this.restoreButton(savedInstanceState, Key.NEXT_BUTTON0_ENABLED, this.nextButton0);
-        this.restoreButton(savedInstanceState, Key.NEXT_BUTTON1_ENABLED, this.nextButton1);
-        // TODO: Implement here.
-        //this.selectedDir = savedInstanceState.getString(Key.SELECTED_DIR.getKey());
-        this.showFiles(savedInstanceState.getStringArray(Key.FILES.getKey()));
-        this.filePosition = savedInstanceState.getInt(Key.FILE_POSITION.getKey());
-        this.slider.setProgress(savedInstanceState.getInt(Key.PROGRESS.getKey()));
+        this.restoreButton(savedInstanceState,
+                           Key.NEXT_BUTTON0_ENABLED,
+                           this.nextButton0);
+        this.restoreButton(savedInstanceState,
+                           Key.NEXT_BUTTON1_ENABLED,
+                           this.nextButton1);
         this.slider.setMax(savedInstanceState.getInt(Key.DURATION.getKey()));
-        this.showPlayingFile();
+        this.slider.setProgress(savedInstanceState.getInt(Key.PROGRESS.getKey()));
+        this.restorePlayerState(savedInstanceState);
+        this.restoreTextView(savedInstanceState, Key.TITLE, this.title);
+        this.restoreTextView(savedInstanceState,
+                             Key.CURRENT_TIME,
+                             this.currentTime);
+        this.restoreTextView(savedInstanceState, Key.TOTAL_TIME, this.totalTime);
+
+        // Internal data
+        this.dirs = savedInstanceState.getStringArray(Key.DIRS.getKey());
+        this.restoreFileSystem(savedInstanceState,
+                               this.selectedFile,
+                               Key.SELECTED_FILE_DIRECTORY_POSITION,
+                               Key.SELECTED_FILE_FILES);
+        this.restoreFileSystem(savedInstanceState,
+                               this.playingFile,
+                               Key.PLAYING_FILE_DIRECTORY_POSITION,
+                               Key.PLAYING_FILE_FILES);
+        String key = Key.FILE_POSITION.getKey();
+        this.filePosition = savedInstanceState.getInt(key);
+        this.updateNextProcedure();
+
+        // Restores UI.
+        this.showDirectories(this.dirs);
+        this.showFiles(this.selectedFile.files);
 
         Log.i(LOG_TAG, "Instance state was restored.");
+    }
+
+    private enum PlayerState {
+        PLAYING,
+        PAUSED
+    }
+
+    private enum Key {
+        PAGE_INDEX,
+        NEXT_BUTTON0_ENABLED,
+        NEXT_BUTTON1_ENABLED,
+        DURATION,
+        PROGRESS,
+        PLAYER_STATE,
+        TITLE,
+        CURRENT_TIME,
+        TOTAL_TIME,
+
+        DIRS,
+        SELECTED_FILE_DIRECTORY_POSITION,
+        SELECTED_FILE_FILES,
+        PLAYING_FILE_DIRECTORY_POSITION,
+        PLAYING_FILE_FILES,
+        FILE_POSITION;
+
+        public String getKey() {
+            return this.name();
+        }
+    }
+
+    private void saveTextView(Bundle outState, Key key, TextView view) {
+        outState.putCharSequence(key.getKey(), view.getText());
+    }
+
+    private void restoreTextView(Bundle savedInstanceState, Key key, TextView view) {
+        view.setText(savedInstanceState.getCharSequence(key.name()));
+    }
+
+    private void savePlayerState(Bundle outState) {
+        outState.putString(Key.PLAYER_STATE.getKey(), this.state.name());
+    }
+
+    private PlayerState getPlayerStateOfString(String s) {
+        String paused = PlayerState.PAUSED.name();
+        return s.equals(paused) ? PlayerState.PAUSED : PlayerState.PLAYING;
+    }
+
+    private void restorePlayerState(Bundle savedInstanceState) {
+        String value = savedInstanceState.getString(Key.PLAYER_STATE.getKey());
+        this.state = this.getPlayerStateOfString(value);
+    }
+
+    private void saveFileSystem(Bundle outState,
+                                FileSystem fs,
+                                Key dirKey,
+                                Key filesKey) {
+        outState.putInt(dirKey.getKey(), fs.directoryPosition);
+        outState.putStringArray(filesKey.getKey(), fs.files);
+    }
+
+    private void restoreFileSystem(Bundle savedInstanceState,
+                                   FileSystem fs,
+                                   Key dirKey,
+                                   Key filesKey) {
+        fs.directoryPosition = savedInstanceState.getInt(dirKey.getKey());
+        fs.files = savedInstanceState.getStringArray(filesKey.getKey());
     }
 
     private void restoreButton(Bundle savedInstanceState, Key key, ImageButton button) {
