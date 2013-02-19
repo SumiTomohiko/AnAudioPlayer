@@ -255,6 +255,30 @@ public class MainActivity extends Activity {
         }
     }
 
+    private interface MessengerWrapper {
+
+        public void send(Message msg) throws RemoteException;
+    }
+
+    private static class TrueMessenger implements MessengerWrapper {
+
+        private Messenger messenger;
+
+        public TrueMessenger(Messenger messenger) {
+            this.messenger = messenger;
+        }
+
+        public void send(Message msg) throws RemoteException {
+            this.messenger.send(msg);
+        }
+    }
+
+    private static class FakeMessenger implements MessengerWrapper {
+
+        public void send(Message _) throws RemoteException {
+        }
+    }
+
     private class Connection extends ActivityHolder implements ServiceConnection {
 
         private Runnable procedureOnConnected;
@@ -265,8 +289,11 @@ public class MainActivity extends Activity {
         }
 
         public void onServiceConnected(ComponentName className, IBinder service) {
-            this.activity.outgoingMessenger = new Messenger(service);
+            Messenger messenger = new Messenger(service);
+            this.activity.outgoingMessenger = new TrueMessenger(messenger);
+
             this.procedureOnConnected.run();
+
             Log.i(LOG_TAG, "MainActivity conneted to AudioService.");
         }
 
@@ -736,12 +763,13 @@ public class MainActivity extends Activity {
     private ServiceStopper serviceStopper;
     private ServiceUnbinder serviceUnbinder;
     private ServiceConnection connection;
-    private Messenger outgoingMessenger;
+    private MessengerWrapper outgoingMessenger;
     private Messenger incomingMessenger;
     private IncomingHandler incomingHandler;
 
     // Stateless internal data (reusable)
     private TimerInterface fakeTimer;
+    private MessengerWrapper fakeOutgoingMessenger;
 
     @Override
     public void onStart() {
@@ -773,6 +801,7 @@ public class MainActivity extends Activity {
         this.pageIndex = 0;
         this.incomingHandler = new IncomingHandler(this);
         this.incomingMessenger = new Messenger(this.incomingHandler);
+        this.fakeOutgoingMessenger = new FakeMessenger();
 
         Log.i(LOG_TAG, "Created.");
     }
@@ -939,6 +968,7 @@ public class MainActivity extends Activity {
         this.stopTimer();
         this.stopAudioService();
         this.changePauseButtonToPlayButton();
+        this.outgoingMessenger = this.fakeOutgoingMessenger;
     }
 
     private class PlayerTask extends TimerTask {
@@ -1257,9 +1287,10 @@ public class MainActivity extends Activity {
             this.incomingHandler.enableResponse();
 
             /*
-             * You may notice that some members (timer, the play button, etc)
-             * are not initialized even at here. Don't worry, they will be
-             * initialized through ResumeProcedureOnConnected, which will call
+             * You may notice that some members (timer, the play button,
+             * outgoing messenger, etc) are not initialized even at here. Don't
+             * worry, they will be initialized through
+             * ResumeProcedureOnConnected, which will call
              * onConnectedWithService() finally.
              */
         }
@@ -1269,8 +1300,8 @@ public class MainActivity extends Activity {
             this.serviceUnbinder = new FakeServiceUnbinder();
             this.connection = null;
             /*
-             * To initialize other members (timer, the play button, etc),
-             * pause() is called.
+             * To initialize other members (timer, the play button, outgoing
+             * messenger, etc), pause() is called.
              */
             this.pause();
         }
