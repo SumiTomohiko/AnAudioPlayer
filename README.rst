@@ -4,9 +4,6 @@ An Audio Player
 
 An Audio Player (AAP) is an audio player for Android.
 
-Current version has many critical bugs. READ "Known problems and bugs" SECTION
-BEFORE USING.
-
 Requirements
 ============
 
@@ -35,18 +32,9 @@ AAP can be built on::
 Known problems and bugs
 =======================
 
-1.  AAP cannot handle tablet's rotation completely. If a user rotates his/her
-    tablet, some information will be lost.
-2.  There are some critical bugs. The author does not know them still strictly
-    (the author guesses that they are problems around activity's lifecycle).
-3.  The player does not show timestamp in sliding the record or the head.
-4.  When a user comes back to the directory/file list, the list does not show
-    which entry is selected by pink background.
-5.  AAP cannot handle portrait mode well. AAP must have a special layout for
-    portrait mode.
-6.  Staff icon is not cool.
-7.  Buttons' background is not cool.
-8.  The arm's curve is not cool. Radius must be larger.
+1.  Staff icon is not cool.
+2.  Buttons' background is not cool.
+3.  The arm's curve is not cool. Radius must be larger.
 
 Author
 ======

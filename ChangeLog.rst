@@ -2,6 +2,15 @@
 ChangeLog
 *********
 
+1.0.0beta1 (2013-02-19)
+=======================
+
+* Fixed to play the next correct music even when a user is listing another
+  directory.
+* Fixed to handle tablet's rotation.
+* Fixed to show timestamp in sliding the record.
+* Enhanced to have a special layout for portrait mode.
+
 1.0.0dev6 (2013-02-14)
 ======================
 
