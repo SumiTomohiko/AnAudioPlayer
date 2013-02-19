@@ -704,6 +704,23 @@ public class MainActivity extends Activity {
         }
     }
 
+    private static class TrueSliderListener extends ActivityHolder implements UzumakiSlider.OnSliderChangeListener {
+
+        public TrueSliderListener(MainActivity activity) {
+            super(activity);
+        }
+
+        public void onProgressChanged(UzumakiSlider _) {
+            this.activity.showCurrentTime();
+        }
+    }
+
+    private static class FakeSliderListener implements UzumakiSlider.OnSliderChangeListener {
+
+        public void onProgressChanged(UzumakiSlider _) {
+        }
+    }
+
     public static final String LOG_TAG = "anaudioplayer";
     private static final int UNSELECTED = -1;
 
@@ -769,6 +786,8 @@ public class MainActivity extends Activity {
 
     // Stateless internal data (reusable)
     private TimerInterface fakeTimer;
+    private UzumakiSlider.OnSliderChangeListener trueSliderListener;
+    private UzumakiSlider.OnSliderChangeListener fakeSliderListener;
     private MessengerWrapper fakeOutgoingMessenger;
 
     @Override
@@ -834,6 +853,9 @@ public class MainActivity extends Activity {
         this.slider.addOnStartRotatingListener(new OnStartRotatingListener(this));
         this.slider.addOnStopRotatingListener(new OnStopRotatingListener(this));
         this.slider.setLogger(new SliderLogger(this));
+
+        this.trueSliderListener = new TrueSliderListener(this);
+        this.fakeSliderListener = new FakeSliderListener();
     }
 
     private void initializeTimer() {
@@ -962,12 +984,26 @@ public class MainActivity extends Activity {
         this.timer = this.fakeTimer;
     }
 
+    private void setSliderChangeListener(UzumakiSlider.OnSliderChangeListener l) {
+        this.slider.clearOnSliderChangeListeners();
+        this.slider.addOnSliderChangeListener(l);
+    }
+
+    private void enableSliderChangeListener() {
+        this.setSliderChangeListener(this.trueSliderListener);
+    }
+
+    private void disableSliderChangeListener() {
+        this.setSliderChangeListener(this.fakeSliderListener);
+    }
+
     private void pause() {
         this.procAfterSeeking = new StayAfterSeeking();
         this.state = PlayerState.PAUSED;
         this.stopTimer();
         this.stopAudioService();
         this.changePauseButtonToPlayButton();
+        this.enableSliderChangeListener();
         this.outgoingMessenger = this.fakeOutgoingMessenger;
     }
 
@@ -998,9 +1034,13 @@ public class MainActivity extends Activity {
         private Runnable proc;
     }
 
+    private void showCurrentTime() {
+        this.showTime(this.currentTime, this.slider.getProgress());
+    }
+
     private void updateCurrentTime(int position) {
         this.slider.setProgress(position);
-        this.showTime(this.currentTime, position);
+        this.showCurrentTime();
     }
 
     private void startTimer() {
@@ -1027,6 +1067,7 @@ public class MainActivity extends Activity {
         this.procAfterSeeking = new PlayAfterSeeking(this);
         this.state = PlayerState.PLAYING;
         this.changePlayButtonToPauseButton();
+        this.disableSliderChangeListener();
     }
 
     private void play() {
@@ -1520,6 +1561,7 @@ public class MainActivity extends Activity {
 
     private void onStartSliding() {
         this.stopTimer();
+        this.enableSliderChangeListener();
         this.sendMessage(AudioService.MSG_PAUSE);
     }
 

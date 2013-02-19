@@ -14,6 +14,11 @@ import android.view.ViewGroup;
 
 public abstract class UzumakiSlider extends ViewGroup {
 
+    public interface OnSliderChangeListener {
+
+        public void onProgressChanged(UzumakiSlider slider);
+    };
+
     public interface Logger {
 
         public void log(String msg);
@@ -35,13 +40,17 @@ public abstract class UzumakiSlider extends ViewGroup {
         }
     }
 
+    private enum SizeType {
+        TYPE_PIXEL,
+        TYPE_PERCENT
+    };
+
     private int min;
     private int max;
     private int progress;
 
     private int startAngle;
     private int sweepAngle;
-    private enum SizeType { TYPE_PIXEL, TYPE_PERCENT };
     private SizeType outerDiameterType;
     private int outerDiameter;
     private SizeType innerDiameterType;
@@ -53,6 +62,7 @@ public abstract class UzumakiSlider extends ViewGroup {
 
     private List<OnStartHeadMovingListener> onStartHeadMovingListenerList;
     private List<OnStopHeadMovingListener> onStopHeadMovingListenerList;
+    private List<OnSliderChangeListener> onSliderChangeListenerList;
 
     private Logger logger;
 
@@ -85,7 +95,11 @@ public abstract class UzumakiSlider extends ViewGroup {
     }
 
     public void setProgress(int progress) {
-        this.progress = Math.min(Math.max(this.getMin(), progress), this.getMax());
+        int min = this.getMin();
+        int max = this.getMax();
+        this.progress = Math.min(Math.max(min, progress), max);
+
+        this.fireOnSliderChangeListeners();
         this.requestLayout();
         this.invalidate();
     }
@@ -129,13 +143,11 @@ public abstract class UzumakiSlider extends ViewGroup {
     private void initialize() {
         this.setWillNotDraw(false);
 
-        this.setMin(0);
-        this.setMax(100);
-        this.setProgress(0);
+        this.min = this.progress = 0;
+        this.max = 100;
 
         this.startAngle = 0;
         this.sweepAngle = - (10 * 360 + 180);
-        //this.sweepAngle = - 2 * 360;
 
         this.outerDiameter = 95;
         this.outerDiameterType = SizeType.TYPE_PERCENT;
@@ -148,11 +160,16 @@ public abstract class UzumakiSlider extends ViewGroup {
 
         this.onStartHeadMovingListenerList = new ArrayList<OnStartHeadMovingListener>();
         this.onStopHeadMovingListenerList = new ArrayList<OnStopHeadMovingListener>();
+        this.onSliderChangeListenerList = new ArrayList<OnSliderChangeListener>();
 
         this.setLogger(new FakeLogger());
 
         this.notHeadList = new ArrayList<View>();
         this.headList = new ArrayList<View>();
+    }
+
+    public void addOnSliderChangeListener(OnSliderChangeListener listener) {
+        this.onSliderChangeListenerList.add(listener);
     }
 
     public void addOnStartHeadMovingListener(OnStartHeadMovingListener listener) {
@@ -242,6 +259,10 @@ public abstract class UzumakiSlider extends ViewGroup {
             slider.setOutlineInnerDiameter(value);
             slider.setOutlineInnerDiameterType(SizeType.TYPE_PIXEL);
         }
+    }
+
+    public void clearOnSliderChangeListeners() {
+        this.onSliderChangeListenerList.clear();
     }
 
     public void setOutlineInnerDiameter(int value) {
@@ -390,6 +411,12 @@ public abstract class UzumakiSlider extends ViewGroup {
     }
 
     protected abstract void layoutHead(View head, int l, int t, int r, int b);
+
+    private void fireOnSliderChangeListeners() {
+        for (OnSliderChangeListener l: this.onSliderChangeListenerList) {
+            l.onProgressChanged(this);
+        }
+    }
 }
 
 // vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
