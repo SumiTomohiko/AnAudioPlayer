@@ -144,6 +144,12 @@ public class MainActivity extends Activity {
 
         @Override
         protected View makeView(int position, View convertView) {
+            int dirPos = this.activity.selectedFile.directoryPosition;
+            int selectedColor = 0xfff4a0bd; // TODO: Remove magic number.
+            int unSelectedColor = android.R.color.transparent;
+            int color = dirPos == position ? selectedColor : unSelectedColor;
+            convertView.setBackgroundColor(color);
+
             Row row = (Row)convertView.getTag();
             int src = position != this.activity.playingFile.directoryPosition ? R.drawable.ic_blank : R.drawable.ic_playing;
             row.playingIcon.setImageResource(src);
