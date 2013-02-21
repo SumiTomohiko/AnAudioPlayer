@@ -2,6 +2,12 @@
 ChangeLog
 *********
 
+1.0.0beta2 (2013-02-21)
+=======================
+
+* Redesigned the arm.
+* Redesigned the staff icon.
+
 1.0.0beta1 (2013-02-19)
 =======================
 
