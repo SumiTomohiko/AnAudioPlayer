@@ -29,13 +29,6 @@ AAP can be built on::
 * Eclipse Juno Service Release 1
 * JDK 1.7.0
 
-Known problems and bugs
-=======================
-
-1.  Staff icon is not cool.
-2.  Buttons' background is not cool.
-3.  The arm's curve is not cool. Radius must be larger.
-
 Author
 ======
 
