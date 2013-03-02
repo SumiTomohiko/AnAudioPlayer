@@ -569,9 +569,23 @@ public class MainActivity extends Activity {
             return l;
         }
 
-        private List<String> queryAudio() {
-            List<String> l = new ArrayList<String>();
+        private List<String> fetchRecord(Cursor c) {
+            try {
+                List<String> l = new ArrayList<String>();
 
+                int index = c.getColumnIndex(MediaStore.MediaColumns.DATA);
+                while (c.moveToNext()) {
+                    l.add(c.getString(index));
+                }
+
+                return l;
+            }
+            finally {
+                c.close();
+            }
+        }
+
+        private List<String> queryAudio() {
             String trackColumn = MediaStore.Audio.AudioColumns.TRACK;
             String pathColumn = MediaStore.MediaColumns.DATA;
             String order = String.format("%s, %s", trackColumn, pathColumn);
@@ -581,17 +595,7 @@ public class MainActivity extends Activity {
                     null,   // selection
                     null,   // selection arguments
                     order); // order
-            try {
-                int index = c.getColumnIndex(pathColumn);
-                while (c.moveToNext()) {
-                    l.add(c.getString(index));
-                }
-            }
-            finally {
-                c.close();
-            }
-
-            return l;
+            return c != null ? this.fetchRecord(c) : new ArrayList<String>();
         }
     }
 
