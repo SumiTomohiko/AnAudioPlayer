@@ -15,7 +15,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.Cursor;
-import android.media.MediaMetadataRetriever;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -1111,18 +1110,21 @@ public class MainActivity extends Activity {
     }
 
     private int getDuration(String path) {
-        // MediaMetadataRetriever is not reusable.
-        MediaMetadataRetriever meta = new MediaMetadataRetriever();
-        meta.setDataSource(path);
-        int key = MediaMetadataRetriever.METADATA_KEY_DURATION;
-        String datum;
+        String col = MediaStore.Audio.AudioColumns.DURATION;
+        Cursor c = this.getContentResolver().query(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                new String[] { col },
+                String.format("%s=?", MediaStore.Audio.Media.DATA),
+                new String[] { path },
+                null);  // order
         try {
-            datum = meta.extractMetadata(key);
+            // FIXME: This code crashes when no record is found.
+            c.moveToNext();
+            return c.getInt(c.getColumnIndex(col));
         }
         finally {
-            meta.release();
+            c.close();
         }
-        return Integer.parseInt(datum);
     }
 
     private void showTime(TextView view, int time_msec) {
