@@ -2,7 +2,7 @@
 ChangeLog
 *********
 
-1.0.0beta3 (2013-03-05)
+1.0.0beta3 (2013-03-06)
 =======================
 
 * Enhanced to work on Android 2.2 (API level 8).
