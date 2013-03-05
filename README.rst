@@ -9,7 +9,7 @@ Requirements
 
 AAP works on::
 
-* Android 3.0 (API level 11) or later
+* Android 2.2 (API level 8) or later
 
 The author tested AAP on Acer A500. Features of A500 are::
 
