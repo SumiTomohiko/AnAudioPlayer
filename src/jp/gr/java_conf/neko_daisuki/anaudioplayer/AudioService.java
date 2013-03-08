@@ -244,13 +244,13 @@ public class AudioService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        Log.i(LOG_TAG, "Bound.");
+        Log.i(LOG_TAG, "One client was bound with AudioService.");
         return this.messenger.getBinder();
     }
 
     @Override
     public boolean onUnbind(Intent intent) {
-        Log.i(LOG_TAG, "onUnbind");
+        Log.i(LOG_TAG, "The client was unbound of AudioService.");
         return super.onUnbind(intent);
     }
 

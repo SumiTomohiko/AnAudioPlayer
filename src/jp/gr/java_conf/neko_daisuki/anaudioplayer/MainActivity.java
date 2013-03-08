@@ -429,6 +429,7 @@ public class MainActivity extends Activity {
             }
 
             public void handle(Message msg) {
+                Log.i(LOG_TAG, "Music ended. CompletionHandler is fired.");
                 this.activity.nextProc.run();
             }
         }
@@ -831,7 +832,7 @@ public class MainActivity extends Activity {
         this.incomingMessenger = new Messenger(this.incomingHandler);
         this.fakeOutgoingMessenger = new FakeMessenger();
 
-        Log.i(LOG_TAG, "Created.");
+        Log.i(LOG_TAG, "MainActivity was created.");
     }
 
     @Override
@@ -1359,7 +1360,7 @@ public class MainActivity extends Activity {
             this.pause();
         }
 
-        Log.i(LOG_TAG, "Resumed.");
+        Log.i(LOG_TAG, "MainActivity was resumed.");
     }
 
     @Override
@@ -1369,7 +1370,7 @@ public class MainActivity extends Activity {
         this.stopTimer();
         this.unbindAudioService();
 
-        Log.i(LOG_TAG, "Paused.");
+        Log.i(LOG_TAG, "MainActivity was paused.");
     }
 
     @Override
