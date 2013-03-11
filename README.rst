@@ -29,6 +29,8 @@ AAP can be built on::
 * Eclipse Juno Service Release 1
 * JDK 1.7.0
 
+You can also use Ant.
+
 Author
 ======
 
