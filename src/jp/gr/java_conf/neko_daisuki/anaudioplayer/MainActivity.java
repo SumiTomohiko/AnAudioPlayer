@@ -183,7 +183,7 @@ public class MainActivity extends Activity {
             boolean isShown = path.equals(this.activity.shownFiles.directory);
 
             int selectedColor = 0xfff4a0bd; // TODO: Remove magic number.
-            int unSelectedColor = android.R.color.transparent;
+            int unSelectedColor = 0;
             int color = isShown ? selectedColor : unSelectedColor;
 
             view.setBackgroundColor(color);
