@@ -15,7 +15,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.Cursor;
-import android.graphics.drawable.ColorDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -148,21 +147,13 @@ public class MainActivity extends Activity {
             public TextView path;
         }
 
-        private ColorDrawable defaultBackground;
-        private ColorDrawable selectedBackground;
-
         public DirectoryAdapter(MainActivity activity, String[] objects) {
             super(activity, objects);
-
-            this.defaultBackground = new ColorDrawable(0);
-            // TODO: Remove the following magic number.
-            this.selectedBackground = new ColorDrawable(0xfff4a0bd);
         }
 
         @Override
         protected View makeView(int position, View convertView) {
             String path = this.activity.directories[position];
-            this.setBackgroundColor(path, convertView);
             this.setPlayingIcon(path, convertView);
 
             return convertView;
@@ -185,25 +176,6 @@ public class MainActivity extends Activity {
             Row row = (Row)view.getTag();
             row.playingIcon.setImageResource(src);
             row.path.setText(path);
-        }
-
-        private void setBackgroundColor(String path, View view) {
-            boolean isShown = path.equals(this.activity.shownFiles.directory);
-            ColorDrawable d = isShown ? this.selectedBackground : this.defaultBackground;
-            /*
-             * Why does not here use View.setBackgroundColor()?
-             * ================================================
-             *
-             * Because View.setBackgroundColor() includes a bug, which was
-             * reported at Google Code[1].
-             *
-             * [1] http://code.google.com/p/android/issues/detail?id=25266
-             *
-             * This bug sometimes changes background color of the button or the
-             * icon in the action bar to the selected color. My tablet is Acer
-             * A500 (Android 3.2.1).
-             */
-            view.setBackgroundDrawable(d);
         }
     }
 
@@ -777,6 +749,7 @@ public class MainActivity extends Activity {
     private ImageButton nextButton0;
 
     private View prevButton1;
+    private TextView dirLabel;
     private ListView fileList;
     private ImageButton nextButton1;
 
@@ -908,6 +881,7 @@ public class MainActivity extends Activity {
         this.nextButton0 = (ImageButton)this.findViewById(R.id.next0);
 
         this.prevButton1 = (View)this.findViewById(R.id.prev1);
+        this.dirLabel = (TextView)this.findViewById(R.id.dir_label);
         this.fileList = (ListView)this.findViewById(R.id.file_list);
         this.nextButton1 = (ImageButton)this.findViewById(R.id.next1);
 
@@ -995,9 +969,10 @@ public class MainActivity extends Activity {
 
     private void selectDirectory(String directory) {
         this.shownFiles.directory = directory;
+
         new FileListingTask(this, directory).execute();
 
-        this.dirList.invalidateViews();
+        this.dirLabel.setText(directory);
         this.enableButton(this.nextButton0, true);
         this.showNext();
     }
@@ -1403,6 +1378,7 @@ public class MainActivity extends Activity {
         this.saveInt(outState, Key.PAGE_INDEX, this.pageIndex);
         this.saveButton(outState, Key.NEXT_BUTTON0_ENABLED, this.nextButton0);
         this.saveButton(outState, Key.NEXT_BUTTON1_ENABLED, this.nextButton1);
+        this.saveTextView(outState, Key.DIRECTORY_LABEL, this.dirLabel);
         this.saveInt(outState, Key.DURATION, this.slider.getMax());
         this.saveInt(outState, Key.PROGRESS, this.slider.getProgress());
         this.saveTextView(outState, Key.TITLE, this.title);
@@ -1442,6 +1418,9 @@ public class MainActivity extends Activity {
         this.restoreButton(savedInstanceState,
                            Key.NEXT_BUTTON1_ENABLED,
                            this.nextButton1);
+        this.restoreTextView(savedInstanceState,
+                             Key.DIRECTORY_LABEL,
+                             this.dirLabel);
         this.restoreSlider(savedInstanceState);
         this.restoreTextView(savedInstanceState, Key.TITLE, this.title);
         this.restoreTextView(savedInstanceState,
@@ -1479,6 +1458,7 @@ public class MainActivity extends Activity {
         PAGE_INDEX,
         NEXT_BUTTON0_ENABLED,
         NEXT_BUTTON1_ENABLED,
+        DIRECTORY_LABEL,
         DURATION,
         PROGRESS,
         TITLE,
