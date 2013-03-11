@@ -15,6 +15,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.Cursor;
+import android.graphics.drawable.ColorDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -147,8 +148,15 @@ public class MainActivity extends Activity {
             public TextView path;
         }
 
+        private ColorDrawable defaultBackground;
+        private ColorDrawable selectedBackground;
+
         public DirectoryAdapter(MainActivity activity, String[] objects) {
             super(activity, objects);
+
+            this.defaultBackground = new ColorDrawable(0);
+            // TODO: Remove the following magic number.
+            this.selectedBackground = new ColorDrawable(0xfff4a0bd);
         }
 
         @Override
@@ -181,12 +189,21 @@ public class MainActivity extends Activity {
 
         private void setBackgroundColor(String path, View view) {
             boolean isShown = path.equals(this.activity.shownFiles.directory);
-
-            int selectedColor = 0xfff4a0bd; // TODO: Remove magic number.
-            int unSelectedColor = 0;
-            int color = isShown ? selectedColor : unSelectedColor;
-
-            view.setBackgroundColor(color);
+            ColorDrawable d = isShown ? this.selectedBackground : this.defaultBackground;
+            /*
+             * Why does not here use View.setBackgroundColor()?
+             * ================================================
+             *
+             * Because View.setBackgroundColor() includes a bug, which was
+             * reported at Google Code[1].
+             *
+             * [1] http://code.google.com/p/android/issues/detail?id=25266
+             *
+             * This bug sometimes changes background color of the button or the
+             * icon in the action bar to the selected color. My tablet is Acer
+             * A500 (Android 3.2.1).
+             */
+            view.setBackgroundDrawable(d);
         }
     }
 
