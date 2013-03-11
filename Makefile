@@ -1,3 +1,8 @@
 
+ANT=	ant
+
 all:
-	@ant
+	@$(ANT)
+
+install:
+	@$(ANT) installd
