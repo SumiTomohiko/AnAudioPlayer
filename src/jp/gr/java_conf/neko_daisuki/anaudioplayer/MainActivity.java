@@ -50,8 +50,17 @@ public class MainActivity extends Activity {
 
     private static class FileSystem {
 
-        int directoryPosition = UNSELECTED;
-        String[] files = new String[0];
+        public String directory;
+
+        /**
+         * An array of files' name. This must be non-null.
+         */
+        public String[] files = new String[0];
+
+        public void copyFrom(FileSystem src) {
+            this.directory = src.directory;
+            this.files = src.files;
+        }
     }
 
     private static class ActivityHolder {
@@ -88,13 +97,13 @@ public class MainActivity extends Activity {
         }
     }
 
+    private class FileListRow {
+
+        public ImageView playingIcon;
+        public TextView name;
+    }
+
     private class FileAdapter extends Adapter {
-
-        private class Row {
-
-            public ImageView playingIcon;
-            public TextView name;
-        }
 
         public FileAdapter(MainActivity activity, String[] objects) {
             super(activity, objects);
@@ -102,10 +111,10 @@ public class MainActivity extends Activity {
 
         @Override
         protected View makeView(int position, View convertView) {
-            Row row = (Row)convertView.getTag();
-            MainActivity activity = this.activity;
-            boolean isPlaying = this.isPlayingDirectoryShown() && (position == activity.filePosition);
+            String file = this.activity.getPlayingFile();
+            boolean isPlaying = this.isPlayingDirectoryShown() && this.activity.shownFiles.files[position].equals(file);
             int src = isPlaying ? R.drawable.ic_playing : R.drawable.ic_blank;
+            FileListRow row = (FileListRow)convertView.getTag();
             row.playingIcon.setImageResource(src);
             row.name.setText(this.getItem(position));
 
@@ -115,7 +124,7 @@ public class MainActivity extends Activity {
         @Override
         protected View makeConvertView(ViewGroup parent) {
             View view = this.inflater.inflate(R.layout.file_row, parent, false);
-            Row row = new Row();
+            FileListRow row = new FileListRow();
             row.playingIcon = (ImageView)view.findViewById(R.id.playing_icon);
             row.name = (TextView)view.findViewById(R.id.name);
             view.setTag(row);
@@ -124,18 +133,19 @@ public class MainActivity extends Activity {
 
         private boolean isPlayingDirectoryShown() {
             MainActivity activity = this.activity;
-            int dirPos = activity.playingFile.directoryPosition;
-            return dirPos == activity.selectedFile.directoryPosition;
+            String shown = activity.shownFiles.directory;
+            String playing = activity.playingFiles.directory;
+            return (shown != null) && shown.equals(playing);
         }
     }
 
+    private class DirectoryListRow {
+
+        public ImageView playingIcon;
+        public TextView path;
+    }
+
     private class DirectoryAdapter extends Adapter {
-
-        private class Row {
-
-            public ImageView playingIcon;
-            public TextView path;
-        }
 
         public DirectoryAdapter(MainActivity activity, String[] objects) {
             super(activity, objects);
@@ -143,16 +153,9 @@ public class MainActivity extends Activity {
 
         @Override
         protected View makeView(int position, View convertView) {
-            int dirPos = this.activity.selectedFile.directoryPosition;
-            int selectedColor = 0xfff4a0bd; // TODO: Remove magic number.
-            int unSelectedColor = android.R.color.transparent;
-            int color = dirPos == position ? selectedColor : unSelectedColor;
-            convertView.setBackgroundColor(color);
-
-            Row row = (Row)convertView.getTag();
-            int src = position != this.activity.playingFile.directoryPosition ? R.drawable.ic_blank : R.drawable.ic_playing;
-            row.playingIcon.setImageResource(src);
-            row.path.setText(this.getItem(position));
+            String path = this.activity.directories[position];
+            this.setBackgroundColor(path, convertView);
+            this.setPlayingIcon(path, convertView);
 
             return convertView;
         }
@@ -160,33 +163,63 @@ public class MainActivity extends Activity {
         @Override
         protected View makeConvertView(ViewGroup parent) {
             View view = this.inflater.inflate(R.layout.dir_row, parent, false);
-            Row row = new Row();
+            DirectoryListRow row = new DirectoryListRow();
             row.playingIcon = (ImageView)view.findViewById(R.id.playing_icon);
             row.path = (TextView)view.findViewById(R.id.path);
             view.setTag(row);
             return view;
         }
+
+        private void setPlayingIcon(String path, View view) {
+            String directory = this.activity.getPlayingDirectory();
+            boolean isPlaying = path.equals(directory);
+            int src = isPlaying ? R.drawable.ic_playing : R.drawable.ic_blank;
+            DirectoryListRow row = (DirectoryListRow)view.getTag();
+            row.playingIcon.setImageResource(src);
+            row.path.setText(path);
+        }
+
+        private void setBackgroundColor(String path, View view) {
+            boolean isShown = path.equals(this.activity.shownFiles.directory);
+
+            int selectedColor = 0xfff4a0bd; // TODO: Remove magic number.
+            int unSelectedColor = android.R.color.transparent;
+            int color = isShown ? selectedColor : unSelectedColor;
+
+            view.setBackgroundColor(color);
+        }
     }
 
-    private class PlayProcedureOnConnected extends ActivityHolder implements Runnable {
+    private abstract static class ProcedureOnConnected extends ActivityHolder implements Runnable {
+
+        public ProcedureOnConnected(MainActivity activity) {
+            super(activity);
+        }
+
+        public abstract void run();
+    }
+
+    private static class PlayProcedureOnConnected extends ProcedureOnConnected {
 
         public PlayProcedureOnConnected(MainActivity activity) {
             super(activity);
         }
 
         public void run() {
+            this.activity.sendInit();
             this.activity.sendPlay();
             this.activity.onConnectedWithService();
         }
     }
 
-    private class ResumeProcedureOnConnected extends ActivityHolder implements Runnable {
+    private static class ResumeProcedureOnConnected extends ProcedureOnConnected {
 
         public ResumeProcedureOnConnected(MainActivity activity) {
             super(activity);
         }
 
         public void run() {
+            this.activity.sendWhatFile();
             this.activity.onConnectedWithService();
         }
     }
@@ -429,8 +462,21 @@ public class MainActivity extends Activity {
             }
 
             public void handle(Message msg) {
-                Log.i(LOG_TAG, "Music ended. CompletionHandler is fired.");
-                this.activity.nextProc.run();
+                this.completeSlider();
+                this.activity.pause();
+            }
+
+            /**
+             * Moves the slider head to the last.
+             *
+             * During AAP is on background, UI is not updated. UI is updated
+             * when AAP comes back to foreground. If music is on air,
+             * MSG_WHAT_TIME message updates the slider. Similaly,
+             * MSG_COMPLETION must update UI.
+             */
+            private void completeSlider() {
+                RotatingUzumakiSlider slider = this.activity.slider;
+                slider.setProgress(slider.getMax());
             }
         }
 
@@ -455,17 +501,18 @@ public class MainActivity extends Activity {
             }
         }
 
-        private class PlayHandler extends MessageHandler {
+        private class PlayingHandler extends MessageHandler {
 
-            private IncomingHandler handler;
-
-            public PlayHandler(IncomingHandler handler) {
-                super(null);
-                this.handler = handler;
+            public PlayingHandler(MainActivity activity) {
+                super(activity);
             }
 
-            public void handle(Message _) {
-                this.handler.enableResponse();
+            public void handle(Message msg) {
+                AudioService.PlayingArgument a = (AudioService.PlayingArgument)msg.obj;
+                this.activity.playingFilePosition = a.position;
+                this.activity.showPlayingFile();
+
+                this.activity.incomingHandler.enableResponse();
             }
         }
 
@@ -476,13 +523,13 @@ public class MainActivity extends Activity {
 
         public IncomingHandler(MainActivity activity) {
             this.handlers = new SparseArray<MessageHandler>();
-            this.handlers.put(AudioService.MSG_PLAY, new PlayHandler(this));
+            this.handlers.put(AudioService.MSG_PLAYING, new PlayingHandler(activity));
 
             this.whatTimeHandler = new WhatTimeHandler(activity);
             this.completionHandler = new CompletionHandler(activity);
             this.nopHandler = new NopHandler();
 
-            this.ignoreResponseUntilPlay();
+            this.ignoreResponseUntilPlaying();
         }
 
         @Override
@@ -492,7 +539,7 @@ public class MainActivity extends Activity {
 
         /**
          * Orders to ignore MSG_WHAT_TIME/MSG_COMPLETION messages until a next
-         * MSG_PLAY.
+         * MSG_PLAYING.
          *
          * When a user selects a new music in playing another one, some
          * MSG_WHAT_TIME messages may be included in the message queue. These
@@ -509,7 +556,7 @@ public class MainActivity extends Activity {
          * they did not work expectedly. I guess that all messengers must share
          * one singleton message queue.
          */
-        public void ignoreResponseUntilPlay() {
+        public void ignoreResponseUntilPlaying() {
             this.setWhatTimeHandler(this.nopHandler);
             this.setCompletionHandler(this.nopHandler);
         }
@@ -681,39 +728,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    private abstract static class NextProc implements Runnable {
-
-        protected MainActivity activity;
-
-        public NextProc(MainActivity activity) {
-            this.activity = activity;
-        }
-
-        public abstract void run();
-    }
-
-    private static class PlayNothingProc extends NextProc {
-
-        public PlayNothingProc(MainActivity activity) {
-            super(activity);
-        }
-
-        public void run() {
-            this.activity.pause();
-        }
-    }
-
-    private static class PlayNextProc extends NextProc {
-
-        public PlayNextProc(MainActivity activity) {
-            super(activity);
-        }
-
-        public void run() {
-            this.activity.playNextAudio();
-        }
-    }
-
     private static class TrueSliderListener extends ActivityHolder implements UzumakiSlider.OnSliderChangeListener {
 
         public TrueSliderListener(MainActivity activity) {
@@ -732,7 +746,6 @@ public class MainActivity extends Activity {
     }
 
     public static final String LOG_TAG = "anaudioplayer";
-    private static final int UNSELECTED = -1;
 
     // Widgets
     private ViewFlipper flipper;
@@ -772,10 +785,10 @@ public class MainActivity extends Activity {
     private TimerInterface timer;
 
     // Stateful internal data
-    private String[] dirs = new String[0];
-    private FileSystem selectedFile = new FileSystem();
-    private FileSystem playingFile = new FileSystem();
-    private int filePosition = UNSELECTED;
+    private String[] directories;
+    private FileSystem shownFiles = new FileSystem();
+    private FileSystem playingFiles = new FileSystem();
+    private int playingFilePosition;
 
     /**
      * <code>state</code> tells which playing or paused the player is. I tried
@@ -784,7 +797,6 @@ public class MainActivity extends Activity {
      */
     private PlayerState state = PlayerState.PAUSED;
     private Runnable procAfterSeeking;
-    private NextProc nextProc;
 
     private ServiceStarter serviceStarter;
     private ServiceStopper serviceStopper;
@@ -945,7 +957,7 @@ public class MainActivity extends Activity {
     }
 
     private void showDirectories(String[] dirs) {
-        this.dirs = dirs;
+        this.directories = dirs;
         this.dirList.setAdapter(new DirectoryAdapter(this, dirs));
     }
 
@@ -961,19 +973,12 @@ public class MainActivity extends Activity {
     }
 
     private String getPlayingDirectory() {
-        int pos = this.playingFile.directoryPosition;
-        return this.dirs[pos];
+        return this.playingFiles.directory;
     }
 
-    private String getSelectedDirectory() {
-        int pos = this.selectedFile.directoryPosition;
-        return this.dirs[pos];
-    }
-
-    private void selectDir(int position) {
-        this.selectedFile.directoryPosition = position;
-        String dir = this.getSelectedDirectory();
-        new FileListingTask(this, dir).execute();
+    private void selectDirectory(String directory) {
+        this.shownFiles.directory = directory;
+        new FileListingTask(this, directory).execute();
 
         this.dirList.invalidateViews();
         this.enableButton(this.nextButton0, true);
@@ -985,7 +990,7 @@ public class MainActivity extends Activity {
     }
 
     private void showFiles(String[] files) {
-        this.selectedFile.files = files;
+        this.shownFiles.files = files;
         this.fileList.setAdapter(new FileAdapter(this, files));
     }
 
@@ -1091,18 +1096,29 @@ public class MainActivity extends Activity {
         this.bindAudioService(new PlayProcedureOnConnected(this));
     }
 
+    private void sendWhatFile() {
+        this.sendMessage(AudioService.MSG_WHAT_FILE);
+    }
+
+    private void sendInit() {
+        AudioService.InitArgument a = new AudioService.InitArgument();
+        a.directory = this.playingFiles.directory;
+        a.files = this.playingFiles.files;
+        a.position = this.playingFilePosition;
+        this.sendMessage(AudioService.MSG_INIT, a);
+    }
+
     private void sendPlay() {
-        String path = this.getPlayingPath();
-        int offset = this.slider.getProgress();
-        Object a = AudioService.makePlayArgument(path, offset);
+        AudioService.PlayArgument a = new AudioService.PlayArgument();
+        a.offset = this.slider.getProgress();
         this.sendMessage(AudioService.MSG_PLAY, a);
     }
 
     private String getPlayingFile() {
-        int pos = this.filePosition;
-        boolean pred = pos == UNSELECTED;
+        String[] files = this.playingFiles.files;
+        int pos = this.playingFilePosition;
         // Returning "" must be harmless.
-        return pred ? "" : this.playingFile.files[pos];
+        return pos < files.length ? files[pos] : "";
     }
 
     private String getPlayingPath() {
@@ -1148,49 +1164,33 @@ public class MainActivity extends Activity {
         button.setImageResource(resourceId);
     }
 
-    private void playNextAudio() {
-        this.playNewAudio(this.filePosition + 1);
-        this.fileList.invalidateViews();
-    }
-
-    private void updateNextProcedure() {
-        int last = this.playingFile.files.length - 1;
-        this.nextProc = this.filePosition < last ? new PlayNextProc(this) : new PlayNothingProc(this);
-    }
-
-    private void playNewAudio(int position) {
+    private void selectFile(int position) {
         this.pause();
-        this.incomingHandler.ignoreResponseUntilPlay();
+        this.incomingHandler.ignoreResponseUntilPlaying();
 
-        this.filePosition = position;
-        this.updateNextProcedure();
+        this.playingFiles.copyFrom(this.shownFiles);
+        this.playingFilePosition = position;
 
-        String path = this.getPlayingPath();
-        int duration = this.getDuration(path);
-        this.slider.setMax(duration);
+        this.enableButton(this.nextButton1, true);
+        this.showNext();
         this.slider.setProgress(0);
-        this.showPlayingFile();
 
         this.play();
     }
 
-    private void selectFile(int position) {
-        FileSystem fs = this.playingFile;
-        fs.directoryPosition = this.selectedFile.directoryPosition;
-        fs.files = this.selectedFile.files;
-        this.filePosition = position;
-
-        this.fileList.invalidateViews();
-        this.enableButton(this.nextButton1, true);
-        this.showNext();
-
-        this.playNewAudio(position);
-    }
-
+    /**
+     * Updates views which relate only with a playing file. Current time does
+     * not relate with a playing file only, but also time, so it is out of
+     * targets of this method.
+     */
     private void showPlayingFile() {
+        this.fileList.invalidateViews();
+
+        String path = this.getPlayingPath();
+        int duration = this.getDuration(path);
+        this.slider.setMax(duration);
         this.title.setText(this.getPlayingFile());
-        this.showTime(this.currentTime, this.slider.getProgress());
-        this.showTime(this.totalTime, this.slider.getMax());
+        this.showTime(this.totalTime, duration);
     }
 
     private void showPrevious() {
@@ -1223,7 +1223,8 @@ public class MainActivity extends Activity {
         }
 
         public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
-            this.activity.selectDir(position);
+            DirectoryListRow row = (DirectoryListRow)view.getTag();
+            this.activity.selectDirectory(row.path.getText().toString());
         }
     }
 
@@ -1310,6 +1311,12 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.i(LOG_TAG, "MainActivity was destroyed.");
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
 
@@ -1338,7 +1345,6 @@ public class MainActivity extends Activity {
             this.serviceStopper = new TrueServiceStopper(this);
             this.serviceUnbinder = new TrueServiceUnbinder(this);
             this.connection = conn;
-            this.incomingHandler.enableResponse();
 
             /*
              * You may notice that some members (timer, the play button,
@@ -1378,28 +1384,29 @@ public class MainActivity extends Activity {
         super.onSaveInstanceState(outState);
 
         // widgets' states
-        outState.putInt(Key.PAGE_INDEX.getKey(), this.pageIndex);
+        this.saveInt(outState, Key.PAGE_INDEX, this.pageIndex);
         this.saveButton(outState, Key.NEXT_BUTTON0_ENABLED, this.nextButton0);
         this.saveButton(outState, Key.NEXT_BUTTON1_ENABLED, this.nextButton1);
-        this.savePlayerState(outState);
-        outState.putInt(Key.DURATION.getKey(), this.slider.getMax());
-        outState.putInt(Key.PROGRESS.getKey(), this.slider.getProgress());
+        this.saveInt(outState, Key.DURATION, this.slider.getMax());
+        this.saveInt(outState, Key.PROGRESS, this.slider.getProgress());
         this.saveTextView(outState, Key.TITLE, this.title);
         this.saveTextView(outState, Key.CURRENT_TIME, this.currentTime);
         this.saveTextView(outState, Key.TOTAL_TIME, this.totalTime);
 
         // internal data
-        outState.putStringArray(Key.DIRS.getKey(), this.dirs);
+        this.saveStringArray(outState, Key.DIRECTORIES, this.directories);
+        this.savePlayerState(outState);
         this.saveFileSystem(outState,
-                            this.selectedFile,
-                            Key.SELECTED_FILE_DIRECTORY_POSITION,
-                            Key.SELECTED_FILE_FILES);
+                            this.shownFiles,
+                            Key.SHOWN_DIRECTORY,
+                            Key.SHOWN_FILES);
         this.saveFileSystem(outState,
-                            this.playingFile,
-                            Key.PLAYING_FILE_DIRECTORY_POSITION,
-                            Key.PLAYING_FILE_FILES);
-        outState.putInt(Key.FILE_POSITION.getKey(),
-                        this.filePosition);
+                            this.playingFiles,
+                            Key.PLAYING_DIRECTORY,
+                            Key.PLAYING_FILES);
+        this.saveInt(outState,
+                     Key.PLAYING_FILE_POSITION,
+                     this.playingFilePosition);
 
         Log.i(LOG_TAG, "Instance state was saved.");
     }
@@ -1419,32 +1426,30 @@ public class MainActivity extends Activity {
         this.restoreButton(savedInstanceState,
                            Key.NEXT_BUTTON1_ENABLED,
                            this.nextButton1);
-        this.slider.setMax(savedInstanceState.getInt(Key.DURATION.getKey()));
-        this.slider.setProgress(savedInstanceState.getInt(Key.PROGRESS.getKey()));
-        this.restorePlayerState(savedInstanceState);
+        this.restoreSlider(savedInstanceState);
         this.restoreTextView(savedInstanceState, Key.TITLE, this.title);
         this.restoreTextView(savedInstanceState,
                              Key.CURRENT_TIME,
                              this.currentTime);
-        this.restoreTextView(savedInstanceState, Key.TOTAL_TIME, this.totalTime);
+        this.restoreTextView(savedInstanceState,
+                             Key.TOTAL_TIME,
+                             this.totalTime);
 
         // Internal data
-        this.dirs = savedInstanceState.getStringArray(Key.DIRS.getKey());
+        this.directories = savedInstanceState.getStringArray(Key.DIRECTORIES.name());
+        this.restorePlayerState(savedInstanceState);
         this.restoreFileSystem(savedInstanceState,
-                               this.selectedFile,
-                               Key.SELECTED_FILE_DIRECTORY_POSITION,
-                               Key.SELECTED_FILE_FILES);
+                               this.shownFiles,
+                               Key.SHOWN_DIRECTORY,
+                               Key.SHOWN_FILES);
         this.restoreFileSystem(savedInstanceState,
-                               this.playingFile,
-                               Key.PLAYING_FILE_DIRECTORY_POSITION,
-                               Key.PLAYING_FILE_FILES);
-        String key = Key.FILE_POSITION.getKey();
-        this.filePosition = savedInstanceState.getInt(key);
-        this.updateNextProcedure();
+                               this.playingFiles,
+                               Key.PLAYING_DIRECTORY,
+                               Key.PLAYING_FILES);
+        this.playingFilePosition = savedInstanceState.getInt(Key.PLAYING_FILE_POSITION.name());
 
         // Restores UI.
-        this.showDirectories(this.dirs);
-        this.showFiles(this.selectedFile.files);
+        this.showFiles(this.shownFiles.files);
 
         Log.i(LOG_TAG, "Instance state was restored.");
     }
@@ -1460,29 +1465,47 @@ public class MainActivity extends Activity {
         NEXT_BUTTON1_ENABLED,
         DURATION,
         PROGRESS,
-        PLAYER_STATE,
         TITLE,
         CURRENT_TIME,
         TOTAL_TIME,
 
-        DIRS,
-        SELECTED_FILE_DIRECTORY_POSITION,
-        SELECTED_FILE_FILES,
-        PLAYING_FILE_DIRECTORY_POSITION,
-        PLAYING_FILE_FILES,
-        FILE_POSITION;
+        DIRECTORIES,
+        SHOWN_DIRECTORY,
+        SHOWN_FILES,
+        PLAYING_DIRECTORY,
+        PLAYING_FILES,
+        PLAYING_FILE_POSITION,
+
+        PLAYER_STATE;
 
         public String getKey() {
             return this.name();
         }
     }
 
+    private void saveInt(Bundle outState, Key key, int n) {
+        outState.putInt(key.name(), n);
+    }
+
+    private void restoreSlider(Bundle savedInstanceState) {
+        this.slider.setMax(savedInstanceState.getInt(Key.DURATION.name()));
+        this.slider.setProgress(savedInstanceState.getInt(Key.PROGRESS.name()));
+    }
+
     private void saveTextView(Bundle outState, Key key, TextView view) {
-        outState.putCharSequence(key.getKey(), view.getText());
+        outState.putCharSequence(key.name(), view.getText());
     }
 
     private void restoreTextView(Bundle savedInstanceState, Key key, TextView view) {
         view.setText(savedInstanceState.getCharSequence(key.name()));
+    }
+
+    private void saveString(Bundle outState, Key key, String value) {
+        outState.putString(key.name(), value);
+    }
+
+    private void saveStringArray(Bundle outState, Key key, String[] values) {
+        outState.putStringArray(key.name(), values);
     }
 
     private void savePlayerState(Bundle outState) {
@@ -1501,18 +1524,18 @@ public class MainActivity extends Activity {
 
     private void saveFileSystem(Bundle outState,
                                 FileSystem fs,
-                                Key dirKey,
+                                Key directoryKey,
                                 Key filesKey) {
-        outState.putInt(dirKey.getKey(), fs.directoryPosition);
-        outState.putStringArray(filesKey.getKey(), fs.files);
+        this.saveString(outState, directoryKey, fs.directory);
+        this.saveStringArray(outState, filesKey, fs.files);
     }
 
     private void restoreFileSystem(Bundle savedInstanceState,
                                    FileSystem fs,
-                                   Key dirKey,
+                                   Key directoryKey,
                                    Key filesKey) {
-        fs.directoryPosition = savedInstanceState.getInt(dirKey.getKey());
-        fs.files = savedInstanceState.getStringArray(filesKey.getKey());
+        fs.directory = savedInstanceState.getString(directoryKey.name());
+        fs.files = savedInstanceState.getStringArray(filesKey.name());
     }
 
     private void restoreButton(Bundle savedInstanceState, Key key, ImageButton button) {
