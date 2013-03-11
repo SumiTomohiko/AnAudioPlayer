@@ -72,7 +72,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    private abstract class Adapter extends ArrayAdapter<String> {
+    private abstract static class Adapter extends ArrayAdapter<String> {
 
         protected LayoutInflater inflater;
         protected MainActivity activity;
@@ -97,13 +97,13 @@ public class MainActivity extends Activity {
         }
     }
 
-    private class FileListRow {
+    private static class FileAdapter extends Adapter {
 
-        public ImageView playingIcon;
-        public TextView name;
-    }
+        private static class Row {
 
-    private class FileAdapter extends Adapter {
+            public ImageView playingIcon;
+            public TextView name;
+        }
 
         public FileAdapter(MainActivity activity, String[] objects) {
             super(activity, objects);
@@ -114,7 +114,7 @@ public class MainActivity extends Activity {
             String file = this.activity.getPlayingFile();
             boolean isPlaying = this.isPlayingDirectoryShown() && this.activity.shownFiles.files[position].equals(file);
             int src = isPlaying ? R.drawable.ic_playing : R.drawable.ic_blank;
-            FileListRow row = (FileListRow)convertView.getTag();
+            Row row = (Row)convertView.getTag();
             row.playingIcon.setImageResource(src);
             row.name.setText(this.getItem(position));
 
@@ -124,7 +124,7 @@ public class MainActivity extends Activity {
         @Override
         protected View makeConvertView(ViewGroup parent) {
             View view = this.inflater.inflate(R.layout.file_row, parent, false);
-            FileListRow row = new FileListRow();
+            Row row = new Row();
             row.playingIcon = (ImageView)view.findViewById(R.id.playing_icon);
             row.name = (TextView)view.findViewById(R.id.name);
             view.setTag(row);
@@ -139,13 +139,13 @@ public class MainActivity extends Activity {
         }
     }
 
-    private class DirectoryListRow {
+    private static class DirectoryAdapter extends Adapter {
 
-        public ImageView playingIcon;
-        public TextView path;
-    }
+        private static class Row {
 
-    private class DirectoryAdapter extends Adapter {
+            public ImageView playingIcon;
+            public TextView path;
+        }
 
         public DirectoryAdapter(MainActivity activity, String[] objects) {
             super(activity, objects);
@@ -163,7 +163,7 @@ public class MainActivity extends Activity {
         @Override
         protected View makeConvertView(ViewGroup parent) {
             View view = this.inflater.inflate(R.layout.dir_row, parent, false);
-            DirectoryListRow row = new DirectoryListRow();
+            Row row = new Row();
             row.playingIcon = (ImageView)view.findViewById(R.id.playing_icon);
             row.path = (TextView)view.findViewById(R.id.path);
             view.setTag(row);
@@ -174,7 +174,7 @@ public class MainActivity extends Activity {
             String directory = this.activity.getPlayingDirectory();
             boolean isPlaying = path.equals(directory);
             int src = isPlaying ? R.drawable.ic_playing : R.drawable.ic_blank;
-            DirectoryListRow row = (DirectoryListRow)view.getTag();
+            Row row = (Row)view.getTag();
             row.playingIcon.setImageResource(src);
             row.path.setText(path);
         }
@@ -1223,8 +1223,7 @@ public class MainActivity extends Activity {
         }
 
         public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
-            DirectoryListRow row = (DirectoryListRow)view.getTag();
-            this.activity.selectDirectory(row.path.getText().toString());
+            this.activity.selectDirectory(this.activity.directories[position]);
         }
     }
 
