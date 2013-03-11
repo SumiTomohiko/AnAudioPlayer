@@ -4,6 +4,7 @@ _build
 bin
 dist
 gen
+jp.gr.java_conf.neko_daisuki.anaudioplayer
 libs
 local.properties
 project.properties
