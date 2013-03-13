@@ -26,6 +26,12 @@
         <item name="android:background">@color/background</item>
         <item name="android:listSelector">@drawable/row</item>
     </style>
+    <style name="AnAudioPlayerTheme" parent="@android:style/Theme.Holo.Light">
+        <item name="android:actionBarStyle">@style/AnAudioPlayerActionBar</item>
+    </style>
+    <style name="AnAudioPlayerActionBar" parent="@android:style/Widget.Holo.Light.ActionBar">
+        <item name="android:background">@color/pressed</item>
+    </style>
 </resources>
 <!--
 vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
