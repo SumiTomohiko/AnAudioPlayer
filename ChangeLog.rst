@@ -2,6 +2,12 @@
 ChangeLog
 *********
 
+1.0.0beta4 (2013-03-16)
+=======================
+
+* Fixed to play next music automatically after one music ended.
+* Redesigned the file list to show the selected directory path.
+
 1.0.0beta3 (2013-03-06)
 =======================
 
