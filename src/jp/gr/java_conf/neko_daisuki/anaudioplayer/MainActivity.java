@@ -1166,6 +1166,7 @@ public class MainActivity extends Activity {
         this.enableButton(this.nextButton1, true);
         this.showNext();
         this.slider.setProgress(0);
+        this.dirList.invalidateViews();
 
         this.play();
     }
