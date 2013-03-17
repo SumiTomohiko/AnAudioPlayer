@@ -2,6 +2,12 @@
 ChangeLog
 *********
 
+1.0.0beta5 (2013-03-18)
+=======================
+
+* Fixed to update the directory list.
+* Redesigned the file list.
+
 1.0.0beta4 (2013-03-16)
 =======================
 
