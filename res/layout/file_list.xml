@@ -11,7 +11,7 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="@string/title_dummy"
-        android:background="@color/selected"
+        android:background="@color/widgets"
         style="@style/Text"/>
     <ListView
         android:id="@+id/file_list"
