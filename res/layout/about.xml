@@ -12,16 +12,14 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/version_title"
-            style="@style/Text"/>
+            android:text="@string/version_title"/>
         <TextView
             android:id="@+id/version"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/version_dummy"
-            android:gravity="right"
-            style="@style/Text"/>
+            android:gravity="right"/>
     </LinearLayout>
     <LinearLayout
         android:layout_width="fill_parent"
@@ -29,22 +27,19 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/authors_website_title"
-            style="@style/Text"/>
+            android:text="@string/authors_website_title"/>
         <TextView
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/url"
             android:gravity="right"
-            android:autoLink="web"
-            style="@style/Text"/>
+            android:autoLink="web"/>
     </LinearLayout>
     <TextView
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="@string/license_title"
-        style="@style/Text"/>
+        android:text="@string/license_title"/>
     <EditText
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"

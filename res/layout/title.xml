@@ -5,8 +5,7 @@
     android:id="@+id/title"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:text="@string/title_dummy"
-    style="@style/Text"/>
+    android:text="@string/title_dummy"/>
 <!--
 vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
 -->

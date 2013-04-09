@@ -18,8 +18,7 @@
         android:layout_width="0dip"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:gravity="center_vertical"
-        style="@style/Text"/>
+        android:gravity="center_vertical"/>
 </LinearLayout>
 <!--
 vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
