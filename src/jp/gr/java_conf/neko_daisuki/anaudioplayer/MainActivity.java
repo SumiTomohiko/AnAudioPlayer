@@ -925,7 +925,6 @@ public class MainActivity extends Activity {
     }
 
     private static final long ANIMATION_DURATION = 250;
-    //private static final int INTERPOLATOR = android.R.anim.decelerate_interpolator;
     private static final int INTERPOLATOR = android.R.anim.linear_interpolator;
 
     private Animation loadAnimation(int id, Interpolator interp) {
