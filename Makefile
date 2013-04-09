@@ -6,3 +6,6 @@ all:
 
 install:
 	@$(ANT) installd
+
+clean:
+	@$(ANT) clean
