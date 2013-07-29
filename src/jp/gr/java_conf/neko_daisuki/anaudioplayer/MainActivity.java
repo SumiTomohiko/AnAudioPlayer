@@ -14,6 +14,8 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences.Editor;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -47,6 +49,46 @@ import jp.gr.java_conf.neko_daisuki.android.widget.UzumakiHead;
 import jp.gr.java_conf.neko_daisuki.android.widget.UzumakiSlider;
 
 public class MainActivity extends Activity {
+
+    private enum PlayerState {
+        PLAYING,
+        PAUSED
+    };
+
+    private static class PreferencesUtil {
+
+        private static final String KEY_PLAYER_STATE = "PlayerState";
+
+        public static PlayerState getPlayerState(SharedPreferences prefs) {
+            String value = prefs.getString(KEY_PLAYER_STATE, "");
+            return value.equals(PlayerState.PLAYING.name())
+                ? PlayerState.PLAYING
+                : PlayerState.PAUSED;
+        }
+
+        public static void putPlayerState(Editor editor, PlayerState state) {
+            editor.putString(KEY_PLAYER_STATE, state.name());
+        }
+
+        public static String[] getStringArray(SharedPreferences prefs, String key) {
+            String s = prefs.getString(key, null);
+            return s != null ? s.split("\n") : new String[0];
+        }
+
+        public static void putStringArray(Editor editor, String key, String[] values) {
+            int len = values.length;
+            editor.putString(key, 0 < len ? buildArray(values) : null);
+        }
+
+        private static String buildArray(String[] sa) {
+            StringBuilder buffer = new StringBuilder(sa[0]);
+            for (int i = 1; i < sa.length; i++) {
+                buffer.append("\n");
+                buffer.append(sa[i]);
+            }
+            return buffer.toString();
+        }
+    }
 
     private static class FileSystem {
 
@@ -738,13 +780,6 @@ public class MainActivity extends Activity {
 
     // Widgets
     private ViewFlipper flipper;
-    /**
-     * pageIndex is needed for save/restore instance state. I tried some ways
-     * to know current page index on runtime, but I did not find a useful way
-     * in any cases. Counting manually is easiest.
-     */
-    private int pageIndex;
-
     private ListView dirList;
     private ImageButton nextButton0;
 
@@ -775,6 +810,7 @@ public class MainActivity extends Activity {
     private TimerInterface timer;
 
     // Stateful internal data
+    private PlayerState playerState;
     private String[] directories;
     private FileSystem shownFiles = new FileSystem();
     private FileSystem playingFiles = new FileSystem();
@@ -813,6 +849,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         this.setContentView(R.layout.main);
 
+        this.playerState = PlayerState.PAUSED;
         this.findViews();
         this.initializeFlipButtonListener();
         this.initializeDirList();
@@ -823,7 +860,6 @@ public class MainActivity extends Activity {
         this.initializeSlider();
         this.initializeMenu();
 
-        this.pageIndex = 0;
         this.incomingHandler = new IncomingHandler(this);
         this.incomingMessenger = new Messenger(this.incomingHandler);
         this.fakeOutgoingMessenger = new FakeMessenger();
@@ -948,9 +984,6 @@ public class MainActivity extends Activity {
     private void initializeFlipButtonListener() {
         ImageButton[] nextButtons = { this.nextButton0, this.nextButton1 };
         this.setClickListener(nextButtons, new NextButtonListener(this));
-        for (ImageButton button: nextButtons) {
-            this.enableButton(button, false);
-        }
 
         View[] previousButtons = { this.prevButton1, this.prevButton2 };
         this.setClickListener(previousButtons, new PreviousButtonListener(this));
@@ -1004,6 +1037,7 @@ public class MainActivity extends Activity {
         this.changePauseButtonToPlayButton();
         this.enableSliderChangeListener();
         this.outgoingMessenger = this.fakeOutgoingMessenger;
+        this.playerState = PlayerState.PAUSED;
     }
 
     private class PlayerTask extends TimerTask {
@@ -1077,6 +1111,8 @@ public class MainActivity extends Activity {
 
         this.startAudioService();
         this.bindAudioService(new PlayProcedureOnConnected(this));
+
+        this.playerState = PlayerState.PLAYING;
     }
 
     private void sendWhatFile() {
@@ -1181,14 +1217,12 @@ public class MainActivity extends Activity {
         this.flipper.setInAnimation(this.leftInAnimation);
         this.flipper.setOutAnimation(this.rightOutAnimation);
         this.flipper.showPrevious();
-        this.pageIndex -= 1;
     }
 
     private void showNext() {
         this.flipper.setInAnimation(this.rightInAnimation);
         this.flipper.setOutAnimation(this.leftOutAnimation);
         this.flipper.showNext();
-        this.pageIndex += 1;
     }
 
     private abstract class ListListener implements AdapterView.OnItemClickListener {
@@ -1303,14 +1337,12 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
 
-        Intent intent = this.makeAudioServiceIntent();
-        Runnable proc = new ResumeProcedureOnConnected(this);
-        Connection conn = new Connection(this, proc);
-        if (this.bindService(intent, conn, 0)) {
+        this.resumeState();
+
+        if (this.playerState == PlayerState.PLAYING) {
+            this.bindAudioService(new ResumeProcedureOnConnected(this));
             this.serviceStarter = new FakeServiceStarter();
             this.serviceStopper = new TrueServiceStopper(this);
-            this.serviceUnbinder = new TrueServiceUnbinder(this);
-            this.connection = conn;
         }
         else {
             this.serviceStarter = new TrueServiceStarter(this);
@@ -1333,85 +1365,80 @@ public class MainActivity extends Activity {
 
         this.stopTimer();
         this.unbindAudioService();
+        this.saveState();
 
         Log.i(LOG_TAG, "MainActivity was paused.");
     }
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
+    private SharedPreferences getPrivatePreferences() {
+        return getPreferences(Context.MODE_PRIVATE);
+    }
+
+    private void saveState() {
+        Editor editor = getPrivatePreferences().edit();
 
         // widgets' states
-        this.saveInt(outState, Key.PAGE_INDEX, this.pageIndex);
-        this.saveButton(outState, Key.NEXT_BUTTON0_ENABLED, this.nextButton0);
-        this.saveButton(outState, Key.NEXT_BUTTON1_ENABLED, this.nextButton1);
-        this.saveTextView(outState, Key.DIRECTORY_LABEL, this.dirLabel);
-        this.saveInt(outState, Key.DURATION, this.slider.getMax());
-        this.saveInt(outState, Key.PROGRESS, this.slider.getProgress());
-        this.saveTextView(outState, Key.TITLE, this.title);
-        this.saveTextView(outState, Key.CURRENT_TIME, this.currentTime);
-        this.saveTextView(outState, Key.TOTAL_TIME, this.totalTime);
+        this.saveInt(editor, Key.PAGE_INDEX, this.flipper.getDisplayedChild());
+        this.saveButton(editor, Key.NEXT_BUTTON0_ENABLED, this.nextButton0);
+        this.saveButton(editor, Key.NEXT_BUTTON1_ENABLED, this.nextButton1);
+        this.saveTextView(editor, Key.DIRECTORY_LABEL, this.dirLabel);
+        this.saveInt(editor, Key.DURATION, this.slider.getMax());
+        this.saveInt(editor, Key.PROGRESS, this.slider.getProgress());
+        this.saveTextView(editor, Key.TITLE, this.title);
+        this.saveTextView(editor, Key.CURRENT_TIME, this.currentTime);
+        this.saveTextView(editor, Key.TOTAL_TIME, this.totalTime);
 
         // internal data
-        this.saveStringArray(outState, Key.DIRECTORIES, this.directories);
-        this.saveFileSystem(outState,
+        PreferencesUtil.putPlayerState(editor, this.playerState);
+        saveStringArray(editor, Key.DIRECTORIES, this.directories);
+        this.saveFileSystem(editor,
                             this.shownFiles,
                             Key.SHOWN_DIRECTORY,
                             Key.SHOWN_FILES);
-        this.saveFileSystem(outState,
+        this.saveFileSystem(editor,
                             this.playingFiles,
                             Key.PLAYING_DIRECTORY,
                             Key.PLAYING_FILES);
-        this.saveInt(outState,
+        this.saveInt(editor,
                      Key.PLAYING_FILE_POSITION,
                      this.playingFilePosition);
 
-        Log.i(LOG_TAG, "Instance state was saved.");
+        editor.commit();
     }
 
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
+    private void resumeState() {
+        SharedPreferences prefs = getPrivatePreferences();
 
         // Widgets
-        this.pageIndex = savedInstanceState.getInt(Key.PAGE_INDEX.getKey());
-        for (int i = 0; i < this.pageIndex; i++) {
-            this.flipper.showNext();
-        }
-        this.restoreButton(savedInstanceState,
-                           Key.NEXT_BUTTON0_ENABLED,
-                           this.nextButton0);
-        this.restoreButton(savedInstanceState,
-                           Key.NEXT_BUTTON1_ENABLED,
-                           this.nextButton1);
-        this.restoreTextView(savedInstanceState,
-                             Key.DIRECTORY_LABEL,
-                             this.dirLabel);
-        this.restoreSlider(savedInstanceState);
-        this.restoreTextView(savedInstanceState, Key.TITLE, this.title);
-        this.restoreTextView(savedInstanceState,
-                             Key.CURRENT_TIME,
-                             this.currentTime);
-        this.restoreTextView(savedInstanceState,
-                             Key.TOTAL_TIME,
-                             this.totalTime);
+        int childIndex = prefs.getInt(Key.PAGE_INDEX.getKey(), 0);
+        this.flipper.setDisplayedChild(childIndex);
+        this.restoreButton(prefs, Key.NEXT_BUTTON0_ENABLED, this.nextButton0);
+        this.restoreButton(prefs, Key.NEXT_BUTTON1_ENABLED, this.nextButton1);
+        this.restoreTextView(prefs, Key.DIRECTORY_LABEL, this.dirLabel);
+        this.restoreSlider(prefs);
+        this.restoreTextView(prefs, Key.TITLE, this.title);
+        this.restoreTextView(prefs, Key.CURRENT_TIME, this.currentTime);
+        this.restoreTextView(prefs, Key.TOTAL_TIME, this.totalTime);
 
         // Internal data
-        this.directories = savedInstanceState.getStringArray(Key.DIRECTORIES.name());
-        this.restoreFileSystem(savedInstanceState,
+        this.playerState = PreferencesUtil.getPlayerState(prefs);
+        this.directories = PreferencesUtil.getStringArray(
+                prefs,
+                Key.DIRECTORIES.name());
+        this.restoreFileSystem(prefs,
                                this.shownFiles,
                                Key.SHOWN_DIRECTORY,
                                Key.SHOWN_FILES);
-        this.restoreFileSystem(savedInstanceState,
+        this.restoreFileSystem(prefs,
                                this.playingFiles,
                                Key.PLAYING_DIRECTORY,
                                Key.PLAYING_FILES);
-        this.playingFilePosition = savedInstanceState.getInt(Key.PLAYING_FILE_POSITION.name());
+        this.playingFilePosition = prefs.getInt(
+                Key.PLAYING_FILE_POSITION.name(),
+                0);
 
         // Restores UI.
         this.showFiles(this.shownFiles.files);
-
-        Log.i(LOG_TAG, "Instance state was restored.");
     }
 
     private enum Key {
@@ -1439,54 +1466,58 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void saveInt(Bundle outState, Key key, int n) {
-        outState.putInt(key.name(), n);
+    private void saveInt(Editor editor, Key key, int n) {
+        editor.putInt(key.name(), n);
     }
 
-    private void restoreSlider(Bundle savedInstanceState) {
-        this.slider.setMax(savedInstanceState.getInt(Key.DURATION.name()));
-        this.slider.setProgress(savedInstanceState.getInt(Key.PROGRESS.name()));
+    private void restoreSlider(SharedPreferences prefs) {
+        /*
+         * The default value is dummy. Its role is only avoiding the exception
+         * of divide by zero.
+         */
+        this.slider.setMax(prefs.getInt(Key.DURATION.name(), 1));
+
+        this.slider.setProgress(prefs.getInt(Key.PROGRESS.name(), 0));
     }
 
-    private void saveTextView(Bundle outState, Key key, TextView view) {
-        outState.putCharSequence(key.name(), view.getText());
+    private void saveTextView(Editor editor, Key key, TextView view) {
+        editor.putString(key.name(), view.getText().toString());
     }
 
-    private void restoreTextView(Bundle savedInstanceState, Key key, TextView view) {
-        view.setText(savedInstanceState.getCharSequence(key.name()));
+    private void restoreTextView(SharedPreferences prefs, Key key, TextView view) {
+        view.setText(prefs.getString(key.name(), null));
     }
 
-    private void saveString(Bundle outState, Key key, String value) {
-        outState.putString(key.name(), value);
+    private void saveString(Editor editor, Key key, String value) {
+        editor.putString(key.name(), value);
     }
 
-    private void saveStringArray(Bundle outState, Key key, String[] values) {
-        outState.putStringArray(key.name(), values);
+    private void saveStringArray(Editor editor, Key key, String[] values) {
+        PreferencesUtil.putStringArray(editor, key.name(), values);
     }
 
-    private void saveFileSystem(Bundle outState,
+    private void saveFileSystem(Editor editor,
                                 FileSystem fs,
                                 Key directoryKey,
                                 Key filesKey) {
-        this.saveString(outState, directoryKey, fs.directory);
-        this.saveStringArray(outState, filesKey, fs.files);
+        this.saveString(editor, directoryKey, fs.directory);
+        this.saveStringArray(editor, filesKey, fs.files);
     }
 
-    private void restoreFileSystem(Bundle savedInstanceState,
+    private void restoreFileSystem(SharedPreferences prefs,
                                    FileSystem fs,
                                    Key directoryKey,
                                    Key filesKey) {
-        fs.directory = savedInstanceState.getString(directoryKey.name());
-        fs.files = savedInstanceState.getStringArray(filesKey.name());
+        fs.directory = prefs.getString(directoryKey.name(), null);
+        fs.files = PreferencesUtil.getStringArray(prefs, filesKey.name());
     }
 
-    private void restoreButton(Bundle savedInstanceState, Key key, ImageButton button) {
-        boolean enabled = savedInstanceState.getBoolean(key.getKey());
-        this.enableButton(button, enabled);
+    private void restoreButton(SharedPreferences prefs, Key key, ImageButton button) {
+        this.enableButton(button, prefs.getBoolean(key.getKey(), false));
     }
 
-    private void saveButton(Bundle outState, Key key, ImageButton button) {
-        outState.putBoolean(key.getKey(), button.isClickable());
+    private void saveButton(Editor editor, Key key, ImageButton button) {
+        editor.putBoolean(key.getKey(), button.isClickable());
     }
 
     private void sendMessage(int what, Object o) {
@@ -1533,7 +1564,7 @@ public class MainActivity extends Activity {
     private void bindAudioService(Runnable procedureOnConnected) {
         Intent intent = this.makeAudioServiceIntent();
         this.connection = new Connection(this, procedureOnConnected);
-        this.bindService(intent, this.connection, 0);
+        this.bindService(intent, this.connection, Context.BIND_AUTO_CREATE);
         this.serviceUnbinder = new TrueServiceUnbinder(this);
     }
 
