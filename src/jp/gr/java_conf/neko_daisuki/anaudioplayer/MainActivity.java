@@ -780,12 +780,6 @@ public class MainActivity extends Activity {
     private FileSystem playingFiles = new FileSystem();
     private int playingFilePosition;
 
-    /**
-     * <code>state</code> tells which playing or paused the player is. I tried
-     * to reuse other objects to indicate this, but such design cannot tell what
-     * I do strongly. Using a special variable is most simple.
-     */
-    private PlayerState state = PlayerState.PAUSED;
     private Runnable procAfterSeeking;
 
     private ServiceStarter serviceStarter;
@@ -1005,7 +999,6 @@ public class MainActivity extends Activity {
 
     private void pause() {
         this.procAfterSeeking = new StayAfterSeeking();
-        this.state = PlayerState.PAUSED;
         this.stopTimer();
         this.stopAudioService();
         this.changePauseButtonToPlayButton();
@@ -1071,7 +1064,6 @@ public class MainActivity extends Activity {
     private void onConnectedWithService() {
         this.startTimer();
         this.procAfterSeeking = new PlayAfterSeeking(this);
-        this.state = PlayerState.PLAYING;
         this.changePlayButtonToPauseButton();
         this.disableSliderChangeListener();
     }
@@ -1311,39 +1303,14 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
 
-        /*
-         * I wondered if here is better than onRestoreInstanceState() to restore
-         * members for the service, but I believe so now. Because:
-         *
-         * 1. Here is symmetric with onPause(). onPause() disconnects the
-         * service, so reconnecting at here is beautiful.
-         *
-         * 2. onResume() is called always. Android does not call
-         * onRestoreInstanceState() when this activity is newly created,
-         * although I must initialize some members with non-null. onResume() is
-         * called even in this case. I can think onResume() as a stateful
-         * constructor (onCreate() is a stateless constructor. Because there are
-         * no information about application's state when onCreate() is called).
-         */
-        if (this.state == PlayerState.PLAYING){
-            Intent intent = this.makeAudioServiceIntent();
-
-            Runnable proc = new ResumeProcedureOnConnected(this);
-            Connection conn = new Connection(this, proc);
-
-            this.bindService(intent, conn, 0);
+        Intent intent = this.makeAudioServiceIntent();
+        Runnable proc = new ResumeProcedureOnConnected(this);
+        Connection conn = new Connection(this, proc);
+        if (this.bindService(intent, conn, 0)) {
             this.serviceStarter = new FakeServiceStarter();
             this.serviceStopper = new TrueServiceStopper(this);
             this.serviceUnbinder = new TrueServiceUnbinder(this);
             this.connection = conn;
-
-            /*
-             * You may notice that some members (timer, the play button,
-             * outgoing messenger, etc) are not initialized even at here. Don't
-             * worry, they will be initialized through
-             * ResumeProcedureOnConnected, which will call
-             * onConnectedWithService() finally.
-             */
         }
         else {
             this.serviceStarter = new TrueServiceStarter(this);
@@ -1387,7 +1354,6 @@ public class MainActivity extends Activity {
 
         // internal data
         this.saveStringArray(outState, Key.DIRECTORIES, this.directories);
-        this.savePlayerState(outState);
         this.saveFileSystem(outState,
                             this.shownFiles,
                             Key.SHOWN_DIRECTORY,
@@ -1432,7 +1398,6 @@ public class MainActivity extends Activity {
 
         // Internal data
         this.directories = savedInstanceState.getStringArray(Key.DIRECTORIES.name());
-        this.restorePlayerState(savedInstanceState);
         this.restoreFileSystem(savedInstanceState,
                                this.shownFiles,
                                Key.SHOWN_DIRECTORY,
@@ -1447,11 +1412,6 @@ public class MainActivity extends Activity {
         this.showFiles(this.shownFiles.files);
 
         Log.i(LOG_TAG, "Instance state was restored.");
-    }
-
-    private enum PlayerState {
-        PLAYING,
-        PAUSED
     }
 
     private enum Key {
@@ -1502,20 +1462,6 @@ public class MainActivity extends Activity {
 
     private void saveStringArray(Bundle outState, Key key, String[] values) {
         outState.putStringArray(key.name(), values);
-    }
-
-    private void savePlayerState(Bundle outState) {
-        outState.putString(Key.PLAYER_STATE.getKey(), this.state.name());
-    }
-
-    private PlayerState getPlayerStateOfString(String s) {
-        String paused = PlayerState.PAUSED.name();
-        return s.equals(paused) ? PlayerState.PAUSED : PlayerState.PLAYING;
-    }
-
-    private void restorePlayerState(Bundle savedInstanceState) {
-        String value = savedInstanceState.getString(Key.PLAYER_STATE.getKey());
-        this.state = this.getPlayerStateOfString(value);
     }
 
     private void saveFileSystem(Bundle outState,
