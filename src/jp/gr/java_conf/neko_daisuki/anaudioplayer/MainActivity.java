@@ -363,7 +363,7 @@ public class MainActivity extends Activity {
 
             this.procedureOnConnected.run();
 
-            Log.i(LOG_TAG, "MainActivity conneted to AudioService.");
+            Log.i(LOG_TAG, "MainActivity connected to AudioService.");
         }
 
         public void onServiceDisconnected(ComponentName className) {
