@@ -4,6 +4,9 @@ ANT=	ant
 all:
 	@$(ANT)
 
+release:
+	@$(ANT) release
+
 install:
 	@$(ANT) installd
 
