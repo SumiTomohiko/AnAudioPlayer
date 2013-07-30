@@ -215,6 +215,17 @@ public class AudioService extends Service {
             }
         }
 
+        private static class WhatTimeNotPlayingHandler extends MessageHandler {
+
+            public WhatTimeNotPlayingHandler(AudioService service) {
+                super(service);
+            }
+
+            public void handle(Message msg) {
+                this.reply(msg, Message.obtain(null, MSG_NOT_PLAYING));
+            }
+        }
+
         private static class InitHandler extends MessageHandler {
 
             public InitHandler(AudioService service) {
@@ -264,6 +275,9 @@ public class AudioService extends Service {
             this.handlers.put(MSG_INIT, new InitHandler(service));
             this.handlers.put(MSG_PAUSE, new PauseHandler(service));
             this.handlers.put(MSG_WHAT_FILE, new WhatFileHandler(service));
+            this.handlers.put(
+                    MSG_WHAT_TIME,
+                    new WhatTimeNotPlayingHandler(service));
             this.whatTimeHandler = new WhatTimeHandler(service);
             this.whatTimePlayingHandler = new WhatTimePlayingHandler(service);
         }
@@ -309,25 +323,38 @@ public class AudioService extends Service {
      * Protocol for the service
      * ========================
      *
-     * +-------------+--------------+------------------------------------------+
-     * |Request      |Response      |Description                               |
-     * +=============+==============+==========================================+
-     * |MSG_INIT     |(nothing)     |Initializes the service with a file list. |
-     * |             |              |The service set current audio as a first  |
-     * |             |              |one in the list.                          |
-     * +-------------+--------------+------------------------------------------+
-     * |MSG_PLAY     |(nothing)     |Plays the current audio from given offset.|
-     * +-------------+--------------+------------------------------------------+
-     * |MSG_PAUSE    |(nothing)     |                                          |
-     * +-------------+--------------+------------------------------------------+
-     * |MSG_WHAT_TIME|MSG_WHAT_TIME |Tells current offset.                     |
-     * +             +--------------+------------------------------------------+
-     * |             |MSG_PLAYING   |Tells new file started.                   |
-     * +             +--------------+------------------------------------------+
-     * |             |MSG_COMPLETION|Tells that the list ended.                |
-     * +-------------+--------------+------------------------------------------+
-     * |MSG_WHAT_FILE|MSG_PLAYING   |Tells what file the service playing.      |
-     * +-------------+--------------+------------------------------------------+
+     * +-------------+---------------+-----------------------------------------+
+     * |Request      |Response       |Description                              |
+     * +=============+===============+=========================================+
+     * |MSG_INIT     |(nothing)      |Initializes the service with a file list.|
+     * |             |               |The service set current audio as a first |
+     * |             |               |one in the list.                         |
+     * +-------------+---------------+-----------------------------------------+
+     * |MSG_PLAY     |(nothing)      |Plays the current audio from given       |
+     * |             |               |offset.                                  |
+     * +-------------+---------------+-----------------------------------------+
+     * |MSG_PAUSE    |(nothing)      |                                         |
+     * +-------------+---------------+-----------------------------------------+
+     * |MSG_WHAT_TIME|MSG_WHAT_TIME  |Tells current offset.                    |
+     * +             +---------------+-----------------------------------------+
+     * |             |MSG_PLAYING    |Tells new file started.                  |
+     * +             +---------------+-----------------------------------------+
+     * |             |MSG_COMPLETION |Tells that the list ended.               |
+     * +             +---------------+-----------------------------------------+
+     * |             |MSG_NOT_PLAYING|Tells that no music is on air.           |
+     * +-------------+---------------+-----------------------------------------+
+     * |MSG_WHAT_FILE|MSG_PLAYING    |Tells what file the service playing.     |
+     * +-------------+---------------+-----------------------------------------+
+     *
+     * About MSG_NOT_PLAYING
+     * ---------------------
+     *
+     *  Sometimes Android kills the process which is playing music. Android re-
+     *  creates the service, but the service gets initialized (The service is
+     *  playing nothing). So, when a user restart the application, because the
+     *  application is resumed to be playing the killed music, then it sends
+     *  MSG_WHAT_TIME. The service must tell that no music is playing to stop
+     *  the timer, etc.
      */
     public static final int MSG_PLAY = 0x00;
     public static final int MSG_INIT = 0x01;
@@ -336,6 +363,7 @@ public class AudioService extends Service {
     public static final int MSG_WHAT_TIME = 0x08;
     public static final int MSG_WHAT_FILE = 0x10;
     public static final int MSG_COMPLETION = 0x20;
+    public static final int MSG_NOT_PLAYING = 0x40;
 
     private static final String LOG_TAG = MainActivity.LOG_TAG;
 

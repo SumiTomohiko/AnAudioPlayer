@@ -522,6 +522,17 @@ public class MainActivity extends Activity {
             }
         }
 
+        private class NotPlayingHandler extends MessageHandler {
+
+            public NotPlayingHandler(MainActivity activity) {
+                super(activity);
+            }
+
+            public void handle(Message msg) {
+                this.activity.pause();
+            }
+        }
+
         private class NopHandler extends MessageHandler {
 
             public NopHandler() {
@@ -554,7 +565,12 @@ public class MainActivity extends Activity {
 
         public IncomingHandler(MainActivity activity) {
             this.handlers = new SparseArray<MessageHandler>();
-            this.handlers.put(AudioService.MSG_PLAYING, new PlayingHandler(activity));
+            this.handlers.put(
+                    AudioService.MSG_PLAYING,
+                    new PlayingHandler(activity));
+            this.handlers.put(
+                    AudioService.MSG_NOT_PLAYING,
+                    new NotPlayingHandler(activity));
 
             this.whatTimeHandler = new WhatTimeHandler(activity);
             this.completionHandler = new CompletionHandler(activity);
