@@ -5,6 +5,7 @@ bin
 dist
 gen
 jp.gr.java_conf.neko_daisuki.anaudioplayer
+jp.gr.java_conf.neko_daisuki.android.widget
 libs
 local.properties
 project.properties
