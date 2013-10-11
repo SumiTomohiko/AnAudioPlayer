@@ -12,3 +12,8 @@ install:
 
 clean:
 	@$(ANT) clean
+
+icon:
+	@$(ANT) icon
+
+.PHONY: icon
