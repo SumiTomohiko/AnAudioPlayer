@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE ListView>
-<ListView
+<jp.gr.java_conf.neko_daisuki.android.widget.NiceListView
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/dir_list"
     android:layout_width="fill_parent"

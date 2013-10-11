@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+    <import file="svg2drawables.xml"/>
+
+    <macrodef name="svg2drawables-large">
+        <attribute name="name"/>
+        <sequential>
+            <svg2drawable name="@{name}" dpi="m" size="96"/>
+            <svg2drawable name="@{name}" dpi="h" size="144"/>
+            <svg2drawable name="@{name}" dpi="xh" size="192"/>
+            <svg2drawable name="@{name}" dpi="xxh" size="288"/>
+        </sequential>
+    </macrodef>
+
+    <target name="icon">
+        <svg2drawables-large name="ic_no_entry"/>
+    </target>
+</project>
+<!--
+vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
+-->

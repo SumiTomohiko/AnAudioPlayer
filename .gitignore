@@ -10,4 +10,8 @@ libs
 local.properties
 project.properties
 projectrc.local
+res/drawable-hdpi/ic_no_entry.png
+res/drawable-mdpi/ic_no_entry.png
+res/drawable-xhdpi/ic_no_entry.png
+res/drawable-xxhdpi/ic_no_entry.png
 src/jp/gr/java_conf/neko_daisuki/anaudioplayer/R.java
