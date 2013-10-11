@@ -1,7 +1,9 @@
 
 ANT=	ant
 
-all:
+all: apk
+
+apk:
 	@$(ANT)
 
 release:
