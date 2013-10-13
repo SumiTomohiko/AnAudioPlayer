@@ -14,6 +14,8 @@
 
     <target name="icon">
         <svg2drawables-large name="ic_no_entry"/>
+        <svg2drawables-large name="ic_arrow_down"/>
+        <svg2drawables-large name="ic_arrow_up"/>
     </target>
 </project>
 <!--
