@@ -9,6 +9,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AbsListView;
 import android.widget.ImageView;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 
 import jp.gr.java_conf.neko_daisuki.anaudioplayer.R;
@@ -77,21 +78,49 @@ public class NiceListView extends ListView {
             }
         }
 
+        private class InitialOnScrollRunner implements Runnable {
+
+            public void run() {
+                mOnScrollRunner = new OnScrollRunner();
+            }
+        }
+
+        private class OnScrollRunner implements Runnable {
+
+            public void run() {
+                int offset = computeVerticalScrollOffset();
+                if (offset != mLastOffset) {
+                    int extent = computeVerticalScrollExtent();
+                    if (offset == 0) {
+                        showImage(mTopNoEntryImage);
+                    }
+                    else if (offset + extent == computeVerticalScrollRange()) {
+                        showImage(mBottomNoEntryImage);
+                    }
+                }
+                mLastOffset = offset;
+            }
+        }
+
         private int mLastOffset;
+        private Runnable mOnScrollRunner;
+
+        public SelfListener() {
+            reset();
+        }
+
+        public void reset() {
+            /*
+             * ListView invokes onScroll() in layouting after setAdapter(). Such
+             * onScroll() invoking can show the no entry icon. So the first
+             * invoking must be ignored.
+             */
+            mOnScrollRunner = new InitialOnScrollRunner();
+        }
 
         public void onScroll(AbsListView view, int firstVisibleItem,
                              int visibleItemCount, int totalItemCount) {
-            int offset = computeVerticalScrollOffset();
-            if (offset != mLastOffset) {
-                int extent = computeVerticalScrollExtent();
-                if (offset == 0) {
-                    showImage(mTopNoEntryImage);
-                }
-                else if (offset + extent == computeVerticalScrollRange()) {
-                    showImage(mBottomNoEntryImage);
-                }
-            }
-            mLastOffset = offset;
+            mOnScrollRunner.run();
         }
 
         public void onScrollStateChanged(AbsListView view, int scrollState) {
@@ -148,6 +177,7 @@ public class NiceListView extends ListView {
     private boolean mAutoScrolling = false;
     private SparseArray<MotionHandler> mMotionHandlers;
     private MotionHandler mDefaultMotionHandler;
+    private SelfListener mSelfListener = new SelfListener();
     // cache
     private View[] mViews;
     private MoveAction mMoveUpAction = new MoveUpAction();
@@ -171,6 +201,11 @@ public class NiceListView extends ListView {
     public boolean onTouchEvent(MotionEvent event) {
         MotionHandler entry = mMotionHandlers.get(event.getActionMasked());
         return (entry != null ? entry : mDefaultMotionHandler).run(event);
+    }
+
+    public void setAdapter(ListAdapter adapter) {
+        mSelfListener.reset();
+        super.setAdapter(adapter);
     }
 
     protected void dispatchDraw(Canvas canvas) {
@@ -215,7 +250,7 @@ public class NiceListView extends ListView {
         };
 
         setOverScrollMode(OVER_SCROLL_NEVER);
-        setOnScrollListener(new SelfListener());
+        setOnScrollListener(mSelfListener);
 
         mMotionHandlers = new SparseArray<MotionHandler>();
         mMotionHandlers.put(MotionEvent.ACTION_DOWN, new MotionDownHandler());
