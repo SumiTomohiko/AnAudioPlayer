@@ -96,17 +96,11 @@ public class AudioService extends Service {
         }
     }
 
-    private static class CompletionListener implements MediaPlayer.OnCompletionListener {
-
-        private AudioService mService;
-
-        public CompletionListener(AudioService service) {
-            mService = service;
-        }
+    private class CompletionListener implements MediaPlayer.OnCompletionListener {
 
         @Override
         public void onCompletion(MediaPlayer _) {
-            mService.mCompletionProc.run();
+            mCompletionProc.run();
         }
     }
 
@@ -282,39 +276,25 @@ public class AudioService extends Service {
         }
     }
 
-    private abstract static class CompletionProcedure {
-
-        protected AudioService mService;
-
-        public CompletionProcedure(AudioService service) {
-            mService = service;
-        }
+    private abstract class CompletionProcedure {
 
         public abstract void run();
     }
 
     private class StopProcedure extends CompletionProcedure {
 
-        public StopProcedure(AudioService service) {
-            super(service);
-        }
-
         @Override
         public void run() {
-            mService.mHandler.complete();
+            mHandler.complete();
         }
     }
 
     private class PlayNextProcedure extends CompletionProcedure {
 
-        public PlayNextProcedure(AudioService service) {
-            super(service);
-        }
-
         @Override
         public void run() {
-            mService.mPosition += 1;
-            mService.play(0);
+            mPosition += 1;
+            play(0);
         }
     }
 
@@ -396,9 +376,9 @@ public class AudioService extends Service {
         mHandler = new IncomingHandler(this);
         mMessenger = new Messenger(mHandler);
         mPlayer = new TruePlayer();
-        mPlayer.setOnCompletionListener(new CompletionListener(this));
-        mStopProc = new StopProcedure(this);
-        mPlayNextProc = new PlayNextProcedure(this);
+        mPlayer.setOnCompletionListener(new CompletionListener());
+        mStopProc = new StopProcedure();
+        mPlayNextProc = new PlayNextProcedure();
 
         Log.i(LOG_TAG, "AudioService was created.");
     }

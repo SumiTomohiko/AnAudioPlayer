@@ -107,23 +107,15 @@ public class MainActivity extends Activity {
         }
     }
 
-    private static class ActivityHolder {
-
-        protected MainActivity mActivity;
-
-        public ActivityHolder(MainActivity activity) {
-            mActivity = activity;
-        }
-    }
-
-    private abstract static class Adapter extends ArrayAdapter<String> {
+    private abstract class Adapter extends ArrayAdapter<String> {
 
         protected LayoutInflater mInflater;
-        protected MainActivity mActivity;
 
-        public Adapter(MainActivity activity, String[] objects) {
-            super(activity, 0, objects);
-            initialize(activity);
+        public Adapter(String[] objects) {
+            super(MainActivity.this, 0, objects);
+
+            String service = Context.LAYOUT_INFLATER_SERVICE;
+            mInflater = (LayoutInflater)getSystemService(service);
         }
 
         @Override
@@ -135,30 +127,24 @@ public class MainActivity extends Activity {
 
         protected abstract View makeConvertView(ViewGroup parent);
         protected abstract View makeView(int position, View convertView);
-
-        private void initialize(MainActivity activity) {
-            mActivity = activity;
-            String service = Context.LAYOUT_INFLATER_SERVICE;
-            mInflater = (LayoutInflater)activity.getSystemService(service);
-        }
     }
 
-    private static class FileAdapter extends Adapter {
+    private class FileAdapter extends Adapter {
 
-        private static class Row {
+        private class Row {
 
             public ImageView playingIcon;
             public TextView name;
         }
 
-        public FileAdapter(MainActivity activity, String[] objects) {
-            super(activity, objects);
+        public FileAdapter(String[] objects) {
+            super(objects);
         }
 
         @Override
         protected View makeView(int position, View convertView) {
-            String file = mActivity.getPlayingFile();
-            boolean isPlaying = isPlayingDirectoryShown() && mActivity.mShownFiles.files[position].equals(file);
+            String file = getPlayingFile();
+            boolean isPlaying = isPlayingDirectoryShown() && mShownFiles.files[position].equals(file);
             int src = isPlaying ? R.drawable.ic_playing : R.drawable.ic_blank;
             Row row = (Row)convertView.getTag();
             row.playingIcon.setImageResource(src);
@@ -178,30 +164,27 @@ public class MainActivity extends Activity {
         }
 
         private boolean isPlayingDirectoryShown() {
-            MainActivity activity = mActivity;
-            String shown = activity.mShownFiles.directory;
-            String playing = activity.mPlayingFiles.directory;
+            String shown = mShownFiles.directory;
+            String playing = mPlayingFiles.directory;
             return (shown != null) && shown.equals(playing);
         }
     }
 
-    private static class DirectoryAdapter extends Adapter {
+    private class DirectoryAdapter extends Adapter {
 
-        private static class Row {
+        private class Row {
 
             public ImageView playingIcon;
             public TextView path;
         }
 
-        public DirectoryAdapter(MainActivity activity, String[] objects) {
-            super(activity, objects);
+        public DirectoryAdapter(String[] objects) {
+            super(objects);
         }
 
         @Override
         protected View makeView(int position, View convertView) {
-            String path = mActivity.mDirectories[position];
-            setPlayingIcon(path, convertView);
-
+            setPlayingIcon(mDirectories[position], convertView);
             return convertView;
         }
 
@@ -216,7 +199,7 @@ public class MainActivity extends Activity {
         }
 
         private void setPlayingIcon(String path, View view) {
-            String directory = mActivity.getPlayingDirectory();
+            String directory = getPlayingDirectory();
             boolean isPlaying = path.equals(directory);
             int src = isPlaying ? R.drawable.ic_playing : R.drawable.ic_blank;
             Row row = (Row)view.getTag();
@@ -225,37 +208,25 @@ public class MainActivity extends Activity {
         }
     }
 
-    private abstract static class ProcedureOnConnected extends ActivityHolder implements Runnable {
-
-        public ProcedureOnConnected(MainActivity activity) {
-            super(activity);
-        }
+    private abstract class ProcedureOnConnected implements Runnable {
 
         public abstract void run();
     }
 
-    private static class PlayProcedureOnConnected extends ProcedureOnConnected {
-
-        public PlayProcedureOnConnected(MainActivity activity) {
-            super(activity);
-        }
+    private class PlayProcedureOnConnected extends ProcedureOnConnected {
 
         public void run() {
-            mActivity.sendInit();
-            mActivity.sendPlay();
-            mActivity.onConnectedWithService();
+            sendInit();
+            sendPlay();
+            onConnectedWithService();
         }
     }
 
-    private static class ResumeProcedureOnConnected extends ProcedureOnConnected {
-
-        public ResumeProcedureOnConnected(MainActivity activity) {
-            super(activity);
-        }
+    private class ResumeProcedureOnConnected extends ProcedureOnConnected {
 
         public void run() {
-            mActivity.sendWhatFile();
-            mActivity.onConnectedWithService();
+            sendWhatFile();
+            onConnectedWithService();
         }
     }
 
@@ -264,14 +235,10 @@ public class MainActivity extends Activity {
         public void unbind();
     }
 
-    private class TrueServiceUnbinder extends ActivityHolder implements ServiceUnbinder {
-
-        public TrueServiceUnbinder(MainActivity activity) {
-            super(activity);
-        }
+    private class TrueServiceUnbinder implements ServiceUnbinder {
 
         public void unbind() {
-            mActivity.unbindService(mActivity.mConnection);
+            unbindService(mConnection);
         }
     }
 
@@ -286,15 +253,11 @@ public class MainActivity extends Activity {
         public void start();
     }
 
-    private class TrueServiceStarter extends ActivityHolder implements ServiceStarter {
-
-        public TrueServiceStarter(MainActivity activity) {
-            super(activity);
-        }
+    private class TrueServiceStarter implements ServiceStarter {
 
         public void start() {
-            Intent intent = new Intent(mActivity, AudioService.class);
-            mActivity.startService(intent);
+            Intent intent = new Intent(MainActivity.this, AudioService.class);
+            startService(intent);
         }
     }
 
@@ -309,16 +272,12 @@ public class MainActivity extends Activity {
         public void stop();
     }
 
-    private class TrueServiceStopper extends ActivityHolder implements ServiceStopper {
-
-        public TrueServiceStopper(MainActivity activity) {
-            super(activity);
-        }
+    private class TrueServiceStopper implements ServiceStopper {
 
         public void stop() {
-            mActivity.unbindAudioService();
-            Intent intent = new Intent(mActivity, AudioService.class);
-            mActivity.stopService(intent);
+            unbindAudioService();
+            Intent intent = new Intent(MainActivity.this, AudioService.class);
+            stopService(intent);
         }
     }
 
@@ -352,20 +311,18 @@ public class MainActivity extends Activity {
         }
     }
 
-    private class Connection extends ActivityHolder implements ServiceConnection {
+    private class Connection implements ServiceConnection {
 
         private Runnable mProcedureOnConnected;
 
-        public Connection(MainActivity activity,
-                          Runnable procedureOnConnected) {
-            super(activity);
+        public Connection(Runnable procedureOnConnected) {
             mProcedureOnConnected = procedureOnConnected;
         }
 
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
             Messenger messenger = new Messenger(service);
-            mActivity.mOutgoingMessenger = new TrueMessenger(messenger);
+            mOutgoingMessenger = new TrueMessenger(messenger);
 
             mProcedureOnConnected.run();
 
@@ -377,37 +334,25 @@ public class MainActivity extends Activity {
         }
     }
 
-    private class OnStartRotatingListener extends ActivityHolder implements RotatingUzumakiSlider.OnStartRotatingListener {
-
-        public OnStartRotatingListener(MainActivity activity) {
-            super(activity);
-        }
+    private class OnStartRotatingListener implements RotatingUzumakiSlider.OnStartRotatingListener {
 
         public void onStartRotating(RotatingUzumakiSlider slider) {
-            mActivity.onStartSliding();
+            onStartSliding();
         }
     }
 
-    private class OnStopRotatingListener extends ActivityHolder implements RotatingUzumakiSlider.OnStopRotatingListener {
-
-        public OnStopRotatingListener(MainActivity activity) {
-            super(activity);
-        }
+    private class OnStopRotatingListener implements RotatingUzumakiSlider.OnStopRotatingListener {
 
         public void onStopRotating(RotatingUzumakiSlider slider) {
-            mActivity.mProcAfterSeeking.run();
+            mProcAfterSeeking.run();
         }
     }
 
-    private class PlayAfterSeeking extends ActivityHolder implements Runnable {
-
-        public PlayAfterSeeking(MainActivity activity) {
-            super(activity);
-        }
+    private class PlayAfterSeeking implements Runnable {
 
         public void run() {
-            mActivity.startTimer();
-            mActivity.sendPlay();
+            startTimer();
+            sendPlay();
         }
     }
 
@@ -419,48 +364,26 @@ public class MainActivity extends Activity {
 
     private class SliderLogger implements UzumakiSlider.Logger {
 
-        private MainActivity mActivity;
-
-        public SliderLogger(MainActivity activity) {
-            mActivity = activity;
-        }
-
         public void log(String msg) {
-            mActivity.log(msg);
+            log(msg);
         }
     }
 
     private class OnStartHeadMovingListener implements UzumakiSlider.OnStartHeadMovingListener {
 
-        private MainActivity mActivity;
-
-        public OnStartHeadMovingListener(MainActivity activity) {
-            mActivity = activity;
-        }
-
         public void onStartHeadMoving(UzumakiSlider slider, UzumakiHead head) {
-            mActivity.onStartSliding();
+            onStartSliding();
         }
     }
 
-    private class OnStopHeadMovingListener extends ActivityHolder implements UzumakiSlider.OnStopHeadMovingListener {
-
-        public OnStopHeadMovingListener(MainActivity activity) {
-            super(activity);
-        }
+    private class OnStopHeadMovingListener implements UzumakiSlider.OnStopHeadMovingListener {
 
         public void onStopHeadMoving(UzumakiSlider slider, UzumakiHead head) {
-            mActivity.mProcAfterSeeking.run();
+            mProcAfterSeeking.run();
         }
     }
 
     private abstract class MenuDispatcher {
-
-        protected MainActivity mActivity;
-
-        public MenuDispatcher(MainActivity activity) {
-            mActivity = activity;
-        }
 
         public boolean dispatch() {
             callback();
@@ -472,21 +395,19 @@ public class MainActivity extends Activity {
 
     private class AboutDispatcher extends MenuDispatcher {
 
-        public AboutDispatcher(MainActivity activity) {
-            super(activity);
-        }
-
         protected void callback() {
-            mActivity.showAbout();
+            showAbout();
         }
     }
 
     private static class IncomingHandler extends Handler {
 
-        private abstract class MessageHandler extends ActivityHolder {
+        private abstract class MessageHandler {
+
+            protected MainActivity mActivity;
 
             public MessageHandler(MainActivity activity) {
-                super(activity);
+                mActivity = activity;
             }
 
             public abstract void handle(Message msg);
@@ -508,7 +429,7 @@ public class MainActivity extends Activity {
              *
              * During AAP is on background, UI is not updated. UI is updated
              * when AAP comes back to foreground. If music is on air,
-             * MSG_WHAT_TIME message updates the slider. Similaly,
+             * MSG_WHAT_TIME message updates the slider. Similarly,
              * MSG_COMPLETION must update UI.
              */
             private void completeSlider() {
@@ -626,13 +547,11 @@ public class MainActivity extends Activity {
         }
     }
 
-    private static abstract class ContentTask extends AsyncTask<Void, Void, List<String>> {
+    private abstract class ContentTask extends AsyncTask<Void, Void, List<String>> {
 
-        protected MainActivity mActivity;
         protected List<String> mEmptyList;
 
-        public ContentTask(MainActivity activity) {
-            mActivity = activity;
+        public ContentTask() {
             mEmptyList = new ArrayList<String>();
         }
 
@@ -686,7 +605,7 @@ public class MainActivity extends Activity {
             String trackColumn = MediaStore.Audio.AudioColumns.TRACK;
             String pathColumn = MediaStore.MediaColumns.DATA;
             String order = String.format("%s, %s", trackColumn, pathColumn);
-            Cursor c = mActivity.getContentResolver().query(
+            Cursor c = getContentResolver().query(
                     MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                     new String[] { pathColumn },
                     null,   // selection
@@ -696,18 +615,17 @@ public class MainActivity extends Activity {
         }
     }
 
-    private static class FileListingTask extends ContentTask {
+    private class FileListingTask extends ContentTask {
 
         private String mPath;
 
-        public FileListingTask(MainActivity activity, String path) {
-            super(activity);
+        public FileListingTask(String path) {
             mPath = path;
         }
 
         @Override
         protected void onPostExecute(List<String> files) {
-            mActivity.showFiles(files);
+            showFiles(files);
         }
 
         @Override
@@ -739,15 +657,11 @@ public class MainActivity extends Activity {
         }
     }
 
-    private static class DirectoryListingTask extends ContentTask {
-
-        public DirectoryListingTask(MainActivity activity) {
-            super(activity);
-        }
+    private class DirectoryListingTask extends ContentTask {
 
         @Override
         protected void onPostExecute(List<String> directories) {
-            mActivity.showDirectories(directories.toArray(new String[0]));
+            showDirectories(directories.toArray(new String[0]));
         }
 
         @Override
@@ -778,14 +692,10 @@ public class MainActivity extends Activity {
         }
     }
 
-    private static class TrueSliderListener extends ActivityHolder implements UzumakiSlider.OnSliderChangeListener {
-
-        public TrueSliderListener(MainActivity activity) {
-            super(activity);
-        }
+    private class TrueSliderListener implements UzumakiSlider.OnSliderChangeListener {
 
         public void onProgressChanged(UzumakiSlider _) {
-            mActivity.showCurrentTime();
+            showCurrentTime();
         }
     }
 
@@ -854,8 +764,7 @@ public class MainActivity extends Activity {
     @Override
     public void onStart() {
         super.onStart();
-
-        new DirectoryListingTask(this).execute();
+        new DirectoryListingTask().execute();
     }
 
     @Override
@@ -905,17 +814,17 @@ public class MainActivity extends Activity {
     }
 
     private void initializeMenu() {
-        mMenuDispatchers.put(R.id.about, new AboutDispatcher(this));
+        mMenuDispatchers.put(R.id.about, new AboutDispatcher());
     }
 
     private void initializeSlider() {
-        mSlider.addOnStartHeadMovingListener(new OnStartHeadMovingListener(this));
-        mSlider.addOnStopHeadMovingListener(new OnStopHeadMovingListener(this));
-        mSlider.addOnStartRotatingListener(new OnStartRotatingListener(this));
-        mSlider.addOnStopRotatingListener(new OnStopRotatingListener(this));
-        mSlider.setLogger(new SliderLogger(this));
+        mSlider.addOnStartHeadMovingListener(new OnStartHeadMovingListener());
+        mSlider.addOnStopHeadMovingListener(new OnStopHeadMovingListener());
+        mSlider.addOnStartRotatingListener(new OnStartRotatingListener());
+        mSlider.addOnStopRotatingListener(new OnStopRotatingListener());
+        mSlider.setLogger(new SliderLogger());
 
-        mTrueSliderListener = new TrueSliderListener(this);
+        mTrueSliderListener = new TrueSliderListener();
         mFakeSliderListener = new FakeSliderListener();
     }
 
@@ -944,32 +853,24 @@ public class MainActivity extends Activity {
     }
 
     private void initializePlayButton() {
-        mPauseListener = new PauseButtonListener(this);
+        mPauseListener = new PauseButtonListener();
         mPlayButton.setOnClickListener(mPauseListener);
-        mPlayListener = new PlayButtonListener(this);
+        mPlayListener = new PlayButtonListener();
     }
 
-    private class PauseButtonListener extends ActivityHolder implements View.OnClickListener {
-
-        public PauseButtonListener(MainActivity activity) {
-            super(activity);
-        }
+    private class PauseButtonListener implements View.OnClickListener {
 
         @Override
         public void onClick(View view) {
-            mActivity.pause();
+            pause();
         }
     }
 
-    private class PlayButtonListener extends ActivityHolder implements View.OnClickListener {
-
-        public PlayButtonListener(MainActivity activity) {
-            super(activity);
-        }
+    private class PlayButtonListener implements View.OnClickListener {
 
         @Override
         public void onClick(View view) {
-            mActivity.play();
+            play();
         }
     }
 
@@ -997,7 +898,7 @@ public class MainActivity extends Activity {
 
     private void showDirectories(String[] dirs) {
         mDirectories = dirs;
-        mDirList.setAdapter(new DirectoryAdapter(this, dirs));
+        mDirList.setAdapter(new DirectoryAdapter(dirs));
     }
 
     private void initializeFlipButtonListener() {
@@ -1015,7 +916,7 @@ public class MainActivity extends Activity {
     private void selectDirectory(String directory) {
         mShownFiles.directory = directory;
 
-        new FileListingTask(this, directory).execute();
+        new FileListingTask(directory).execute();
 
         mDirLabel.setText(directory);
         enableButton(mNextButton0, true);
@@ -1028,7 +929,7 @@ public class MainActivity extends Activity {
 
     private void showFiles(String[] files) {
         mShownFiles.files = files;
-        mFileList.setAdapter(new FileAdapter(this, files));
+        mFileList.setAdapter(new FileAdapter(files));
     }
 
     private void stopTimer() {
@@ -1061,20 +962,16 @@ public class MainActivity extends Activity {
 
     private class PlayerTask extends TimerTask {
 
-        private class Proc extends ActivityHolder implements Runnable {
-
-            public Proc(MainActivity activity) {
-                super(activity);
-            }
+        private class Proc implements Runnable {
 
             public void run() {
-                mActivity.sendMessage(AudioService.MSG_WHAT_TIME);
+                sendMessage(AudioService.MSG_WHAT_TIME);
             }
         }
 
         public PlayerTask(MainActivity activity) {
             mHandler = new Handler();
-            mProc = new Proc(activity);
+            mProc = new Proc();
         }
 
         private Handler mHandler;
@@ -1116,7 +1013,7 @@ public class MainActivity extends Activity {
 
     private void onConnectedWithService() {
         startTimer();
-        mProcAfterSeeking = new PlayAfterSeeking(this);
+        mProcAfterSeeking = new PlayAfterSeeking();
         changePlayButtonToPauseButton();
         disableSliderChangeListener();
     }
@@ -1129,7 +1026,7 @@ public class MainActivity extends Activity {
         stopTimer();
 
         startAudioService();
-        bindAudioService(new PlayProcedureOnConnected(this));
+        bindAudioService(new PlayProcedureOnConnected());
 
         mPlayerState = PlayerState.PLAYING;
     }
@@ -1365,12 +1262,12 @@ public class MainActivity extends Activity {
         resumeState();
 
         if (mPlayerState == PlayerState.PLAYING) {
-            bindAudioService(new ResumeProcedureOnConnected(this));
+            bindAudioService(new ResumeProcedureOnConnected());
             mServiceStarter = new FakeServiceStarter();
-            mServiceStopper = new TrueServiceStopper(this);
+            mServiceStopper = new TrueServiceStopper();
         }
         else {
-            mServiceStarter = new TrueServiceStarter(this);
+            mServiceStarter = new TrueServiceStarter();
             mServiceStopper = new FakeServiceStopper();
             mServiceUnbinder = new FakeServiceUnbinder();
             mConnection = null;
@@ -1547,19 +1444,21 @@ public class MainActivity extends Activity {
         sendMessage(what, null);
     }
 
+    /*
     private void log(String msg) {
         mTitle.setText(msg);
     }
+    */
 
     private void startAudioService() {
         mServiceStarter.start();
         mServiceStarter = new FakeServiceStarter();
-        mServiceStopper = new TrueServiceStopper(this);
+        mServiceStopper = new TrueServiceStopper();
     }
 
     private void stopAudioService() {
         mServiceStopper.stop();
-        mServiceStarter = new TrueServiceStarter(this);
+        mServiceStarter = new TrueServiceStarter();
         mServiceStopper = new FakeServiceStopper();
     }
 
@@ -1574,9 +1473,9 @@ public class MainActivity extends Activity {
 
     private void bindAudioService(Runnable procedureOnConnected) {
         Intent intent = makeAudioServiceIntent();
-        mConnection = new Connection(this, procedureOnConnected);
+        mConnection = new Connection(procedureOnConnected);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-        mServiceUnbinder = new TrueServiceUnbinder(this);
+        mServiceUnbinder = new TrueServiceUnbinder();
     }
 
     private void onStartSliding() {
