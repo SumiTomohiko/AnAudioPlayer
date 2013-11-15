@@ -705,7 +705,147 @@ public class MainActivity extends Activity {
         }
     }
 
+    private class PauseButtonListener implements View.OnClickListener {
+
+        @Override
+        public void onClick(View view) {
+            pause();
+        }
+    }
+
+    private class PlayButtonListener implements View.OnClickListener {
+
+        @Override
+        public void onClick(View view) {
+            play();
+        }
+    }
+
+    private abstract class ListListener implements AdapterView.OnItemClickListener {
+    }
+
+    private class DirectoryListListener extends ListListener {
+
+        public void onItemClick(AdapterView<?> adapter, View view, int position,
+                                long id) {
+            selectDirectory(mDirectories[position]);
+        }
+    }
+
+    private class FileListListener extends ListListener {
+
+        public void onItemClick(AdapterView<?> adapter, View view, int position,
+                                long id) {
+            selectFile(position);
+        }
+    }
+
+    private class PlayerTask extends TimerTask {
+
+        private class Proc implements Runnable {
+
+            public void run() {
+                sendMessage(AudioService.MSG_WHAT_TIME);
+            }
+        }
+
+        public PlayerTask(MainActivity activity) {
+            mHandler = new Handler();
+            mProc = new Proc();
+        }
+
+        private Handler mHandler;
+        private Runnable mProc;
+
+        @Override
+        public void run() {
+            mHandler.post(mProc);
+        }
+    }
+
+    private abstract class FlipButtonListener implements View.OnClickListener {
+    }
+
+    private class NextButtonListener extends FlipButtonListener {
+
+        @Override
+        public void onClick(View view) {
+            showNext();
+        }
+    }
+
+    private class PreviousButtonListener extends FlipButtonListener {
+
+        @Override
+        public void onClick(View view) {
+            showPrevious();
+        }
+    }
+
+    private interface TimerInterface {
+
+        public void scheduleAtFixedRate(TimerTask task, long deley,
+                                        long period);
+        public void cancel();
+    }
+
+    private class TrueTimer implements TimerInterface {
+
+        public TrueTimer() {
+            mTimer = new Timer(true);
+        }
+
+        public void scheduleAtFixedRate(TimerTask task, long deley,
+                                        long period) {
+            mTimer.scheduleAtFixedRate(task, deley, period);
+        }
+
+        public void cancel() {
+            mTimer.cancel();
+        }
+
+        private Timer mTimer;
+    }
+
+    private class FakeTimer implements TimerInterface {
+
+        public void scheduleAtFixedRate(TimerTask task, long deley,
+                                        long period) {
+        }
+
+        public void cancel() {
+        }
+    }
+
+    private enum Key {
+        PAGE_INDEX,
+        NEXT_BUTTON0_ENABLED,
+        NEXT_BUTTON1_ENABLED,
+        DIRECTORY_LABEL,
+        DURATION,
+        PROGRESS,
+        TITLE,
+        CURRENT_TIME,
+        TOTAL_TIME,
+
+        DIRECTORIES,
+        SHOWN_DIRECTORY,
+        SHOWN_FILES,
+        PLAYING_DIRECTORY,
+        PLAYING_FILES,
+        PLAYING_FILE_POSITION,
+
+        PLAYER_STATE;
+
+        public String getKey() {
+            return name();
+        }
+    }
+
     public static final String LOG_TAG = "anaudioplayer";
+
+    private static final long ANIMATION_DURATION = 250;
+    private static final int INTERPOLATOR = android.R.anim.linear_interpolator;
 
     // Widgets
     private ViewFlipper mFlipper;
@@ -808,6 +948,50 @@ public class MainActivity extends Activity {
         return dispatcher != null ? dispatcher.dispatch() : super.onOptionsItemSelected(item);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.i(LOG_TAG, "MainActivity was destroyed.");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        resumeState();
+
+        if (mPlayerState == PlayerState.PLAYING) {
+            bindAudioService(new ResumeProcedureOnConnected());
+            mServiceStarter = new FakeServiceStarter();
+            mServiceStopper = new TrueServiceStopper();
+        }
+        else {
+            mServiceStarter = new TrueServiceStarter();
+            mServiceStopper = new FakeServiceStopper();
+            mServiceUnbinder = new FakeServiceUnbinder();
+            mConnection = null;
+            /*
+             * To initialize other members (timer, the play button, outgoing
+             * messenger, etc), pause() is called.
+             */
+            pause();
+        }
+
+        Log.i(LOG_TAG, "MainActivity was resumed.");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        stopTimer();
+        unbindAudioService();
+        saveState();
+
+        Log.i(LOG_TAG, "MainActivity was paused.");
+    }
+
+
     private void showAbout() {
         Intent i = new Intent(this, AboutActivity.class);
         startActivity(i);
@@ -858,25 +1042,6 @@ public class MainActivity extends Activity {
         mPlayListener = new PlayButtonListener();
     }
 
-    private class PauseButtonListener implements View.OnClickListener {
-
-        @Override
-        public void onClick(View view) {
-            pause();
-        }
-    }
-
-    private class PlayButtonListener implements View.OnClickListener {
-
-        @Override
-        public void onClick(View view) {
-            play();
-        }
-    }
-
-    private static final long ANIMATION_DURATION = 250;
-    private static final int INTERPOLATOR = android.R.anim.linear_interpolator;
-
     private Animation loadAnimation(int id, Interpolator interp) {
         Animation anim = AnimationUtils.loadAnimation(this, id);
         anim.setDuration(ANIMATION_DURATION);
@@ -893,7 +1058,7 @@ public class MainActivity extends Activity {
     }
 
     private void initializeDirList() {
-        mDirList.setOnItemClickListener(new DirectoryListListener(this));
+        mDirList.setOnItemClickListener(new DirectoryListListener());
     }
 
     private void showDirectories(String[] dirs) {
@@ -903,10 +1068,10 @@ public class MainActivity extends Activity {
 
     private void initializeFlipButtonListener() {
         ImageButton[] nextButtons = { mNextButton0, mNextButton1 };
-        setClickListener(nextButtons, new NextButtonListener(this));
+        setClickListener(nextButtons, new NextButtonListener());
 
         View[] previousButtons = { mPrevButton1, mPrevButton2 };
-        setClickListener(previousButtons, new PreviousButtonListener(this));
+        setClickListener(previousButtons, new PreviousButtonListener());
     }
 
     private String getPlayingDirectory() {
@@ -958,29 +1123,6 @@ public class MainActivity extends Activity {
         enableSliderChangeListener();
         mOutgoingMessenger = mFakeOutgoingMessenger;
         mPlayerState = PlayerState.PAUSED;
-    }
-
-    private class PlayerTask extends TimerTask {
-
-        private class Proc implements Runnable {
-
-            public void run() {
-                sendMessage(AudioService.MSG_WHAT_TIME);
-            }
-        }
-
-        public PlayerTask(MainActivity activity) {
-            mHandler = new Handler();
-            mProc = new Proc();
-        }
-
-        private Handler mHandler;
-        private Runnable mProc;
-
-        @Override
-        public void run() {
-            mHandler.post(mProc);
-        }
     }
 
     private void showCurrentTime() {
@@ -1141,157 +1283,12 @@ public class MainActivity extends Activity {
         mFlipper.showNext();
     }
 
-    private abstract class ListListener implements AdapterView.OnItemClickListener {
-
-        public ListListener(MainActivity activity) {
-            mActivity = activity;
-        }
-
-        protected MainActivity mActivity;
-    }
-
-    private class DirectoryListListener extends ListListener {
-
-        public DirectoryListListener(MainActivity activity) {
-            super(activity);
-        }
-
-        public void onItemClick(AdapterView<?> adapter, View view, int position,
-                                long id) {
-            mActivity.selectDirectory(mActivity.mDirectories[position]);
-        }
-    }
-
-    private class FileListListener extends ListListener {
-
-        public FileListListener(MainActivity activity) {
-            super(activity);
-        }
-
-        public void onItemClick(AdapterView<?> adapter, View view, int position,
-                                long id) {
-            mActivity.selectFile(position);
-        }
-    }
-
     private void setClickListener(View[] buttons,
                                   View.OnClickListener listener) {
         for (View button: buttons) {
             button.setOnClickListener(listener);
         }
     }
-
-    private abstract class FlipButtonListener implements View.OnClickListener {
-
-        public FlipButtonListener(MainActivity activity) {
-            mActivity = activity;
-        }
-
-        protected MainActivity mActivity;
-    }
-
-    private class NextButtonListener extends FlipButtonListener {
-
-        public NextButtonListener(MainActivity activity) {
-            super(activity);
-        }
-
-        @Override
-        public void onClick(View view) {
-            mActivity.showNext();
-        }
-    }
-
-    private class PreviousButtonListener extends FlipButtonListener {
-
-        public PreviousButtonListener(MainActivity activity) {
-            super(activity);
-        }
-
-        @Override
-        public void onClick(View view) {
-            mActivity.showPrevious();
-        }
-    }
-
-    private interface TimerInterface {
-
-        public void scheduleAtFixedRate(TimerTask task, long deley,
-                                        long period);
-        public void cancel();
-    }
-
-    private class TrueTimer implements TimerInterface {
-
-        public TrueTimer() {
-            mTimer = new Timer(true);
-        }
-
-        public void scheduleAtFixedRate(TimerTask task, long deley,
-                                        long period) {
-            mTimer.scheduleAtFixedRate(task, deley, period);
-        }
-
-        public void cancel() {
-            mTimer.cancel();
-        }
-
-        private Timer mTimer;
-    }
-
-    private class FakeTimer implements TimerInterface {
-
-        public void scheduleAtFixedRate(TimerTask task, long deley,
-                                        long period) {
-        }
-
-        public void cancel() {
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        Log.i(LOG_TAG, "MainActivity was destroyed.");
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        resumeState();
-
-        if (mPlayerState == PlayerState.PLAYING) {
-            bindAudioService(new ResumeProcedureOnConnected());
-            mServiceStarter = new FakeServiceStarter();
-            mServiceStopper = new TrueServiceStopper();
-        }
-        else {
-            mServiceStarter = new TrueServiceStarter();
-            mServiceStopper = new FakeServiceStopper();
-            mServiceUnbinder = new FakeServiceUnbinder();
-            mConnection = null;
-            /*
-             * To initialize other members (timer, the play button, outgoing
-             * messenger, etc), pause() is called.
-             */
-            pause();
-        }
-
-        Log.i(LOG_TAG, "MainActivity was resumed.");
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-
-        stopTimer();
-        unbindAudioService();
-        saveState();
-
-        Log.i(LOG_TAG, "MainActivity was paused.");
-    }
-
     private SharedPreferences getPrivatePreferences() {
         return getPreferences(Context.MODE_PRIVATE);
     }
@@ -1349,31 +1346,6 @@ public class MainActivity extends Activity {
 
         // Restores UI.
         showFiles(mShownFiles.files);
-    }
-
-    private enum Key {
-        PAGE_INDEX,
-        NEXT_BUTTON0_ENABLED,
-        NEXT_BUTTON1_ENABLED,
-        DIRECTORY_LABEL,
-        DURATION,
-        PROGRESS,
-        TITLE,
-        CURRENT_TIME,
-        TOTAL_TIME,
-
-        DIRECTORIES,
-        SHOWN_DIRECTORY,
-        SHOWN_FILES,
-        PLAYING_DIRECTORY,
-        PLAYING_FILES,
-        PLAYING_FILE_POSITION,
-
-        PLAYER_STATE;
-
-        public String getKey() {
-            return name();
-        }
     }
 
     private void saveInt(Editor editor, Key key, int n) {
@@ -1485,7 +1457,7 @@ public class MainActivity extends Activity {
     }
 
     private void initializeFileList() {
-        mFileList.setOnItemClickListener(new FileListListener(this));
+        mFileList.setOnItemClickListener(new FileListListener());
     }
 }
 
