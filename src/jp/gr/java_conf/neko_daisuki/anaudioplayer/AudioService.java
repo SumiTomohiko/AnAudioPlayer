@@ -44,39 +44,39 @@ public class AudioService extends Service {
 
     private static class TruePlayer implements Player {
 
-        private MediaPlayer mp = new MediaPlayer();
+        private MediaPlayer mMp = new MediaPlayer();
 
         public void play(String path, int offset) throws IOException {
-            this.mp.reset();
-            this.mp.setDataSource(path);
-            this.mp.prepare();
-            this.mp.seekTo(offset);
-            this.mp.start();
+            mMp.reset();
+            mMp.setDataSource(path);
+            mMp.prepare();
+            mMp.seekTo(offset);
+            mMp.start();
         }
 
         public void pause() {
-            this.mp.pause();
+            mMp.pause();
         }
 
         public int getCurrentPosition() {
-            return this.mp.getCurrentPosition();
+            return mMp.getCurrentPosition();
         }
 
         public void release() {
-            this.mp.release();
+            mMp.release();
         }
 
         public void setOnCompletionListener(MediaPlayer.OnCompletionListener listener) {
-            this.mp.setOnCompletionListener(listener);
+            mMp.setOnCompletionListener(listener);
         }
     }
 
     private static class FakePlayer implements Player {
 
-        private int position;
+        private int mPosition;
 
         public FakePlayer(int position) {
-            this.position = position;
+            mPosition = position;
         }
 
         public void play(String path, int offset) throws IOException {
@@ -86,7 +86,7 @@ public class AudioService extends Service {
         }
 
         public int getCurrentPosition() {
-            return this.position;
+            return mPosition;
         }
 
         public void release() {
@@ -98,15 +98,15 @@ public class AudioService extends Service {
 
     private static class CompletionListener implements MediaPlayer.OnCompletionListener {
 
-        private AudioService service;
+        private AudioService mService;
 
         public CompletionListener(AudioService service) {
-            this.service = service;
+            mService = service;
         }
 
         @Override
         public void onCompletion(MediaPlayer _) {
-            this.service.completionProc.run();
+            mService.mCompletionProc.run();
         }
     }
 
@@ -114,10 +114,10 @@ public class AudioService extends Service {
 
         private abstract static class MessageHandler {
 
-            protected AudioService service;
+            protected AudioService mService;
 
             public MessageHandler(AudioService service) {
-                this.service = service;
+                mService = service;
             }
 
             public abstract void handle(Message msg);
@@ -133,8 +133,8 @@ public class AudioService extends Service {
 
             protected void sendPlaying(Message msg) {
                 PlayingArgument a = new PlayingArgument();
-                a.position = this.service.position;
-                this.reply(msg, Message.obtain(null, MSG_PLAYING, a));
+                a.position = mService.mPosition;
+                reply(msg, Message.obtain(null, MSG_PLAYING, a));
             }
         }
 
@@ -145,7 +145,7 @@ public class AudioService extends Service {
             }
 
             public void handle(Message msg) {
-                this.service.player.pause();
+                mService.mPlayer.pause();
             }
         }
 
@@ -174,9 +174,9 @@ public class AudioService extends Service {
 
             public void handle(Message msg) {
                 int what = MSG_WHAT_TIME;
-                int pos = this.service.player.getCurrentPosition();
+                int pos = mService.mPlayer.getCurrentPosition();
                 Message reply = Message.obtain(null, what, pos, 0, msg.obj);
-                this.reply(msg,  reply);
+                reply(msg,  reply);
             }
         }
 
@@ -188,7 +188,7 @@ public class AudioService extends Service {
 
             public void handle(Message msg) {
                 PlayArgument a = (PlayArgument)msg.obj;
-                this.service.play(a.offset);
+                mService.play(a.offset);
             }
         }
 
@@ -199,8 +199,8 @@ public class AudioService extends Service {
             }
 
             public void handle(Message msg) {
-                this.sendPlaying(msg);
-                this.service.handler.sendWhatTime();
+                sendPlaying(msg);
+                mService.mHandler.sendWhatTime();
             }
         }
 
@@ -211,7 +211,7 @@ public class AudioService extends Service {
             }
 
             public void handle(Message msg) {
-                this.sendPlaying(msg);
+                sendPlaying(msg);
             }
         }
 
@@ -222,7 +222,7 @@ public class AudioService extends Service {
             }
 
             public void handle(Message msg) {
-                this.reply(msg, Message.obtain(null, MSG_NOT_PLAYING));
+                reply(msg, Message.obtain(null, MSG_NOT_PLAYING));
             }
         }
 
@@ -234,61 +234,60 @@ public class AudioService extends Service {
 
             public void handle(Message msg) {
                 InitArgument a = (InitArgument)msg.obj;
-                this.service.directory = a.directory;
-                this.service.files = a.files;
-                this.service.position = a.position;
+                mService.mDirectory = a.directory;
+                mService.mFiles = a.files;
+                mService.mPosition = a.position;
             }
         }
 
-        private AudioService service;
-        private SparseArray<MessageHandler> handlers;
-        private MessageHandler whatTimeHandler;
-        private MessageHandler whatTimePlayingHandler;
+        private AudioService mService;
+        private SparseArray<MessageHandler> mHandlers;
+        private MessageHandler mWhatTimeHandler;
+        private MessageHandler mWhatTimePlayingHandler;
 
         public IncomingHandler(AudioService service) {
             super();
-            this.initializeHandlers(service);
+            initializeHandlers(service);
         }
 
         @Override
         public void handleMessage(Message msg) {
-            this.handlers.get(msg.what).handle(msg);
+            mHandlers.get(msg.what).handle(msg);
         }
 
         public void complete() {
-            MessageHandler h = new WhatTimeCompletionHandler(this.service);
-            this.handlers.put(MSG_WHAT_TIME, h);
+            MessageHandler h = new WhatTimeCompletionHandler(mService);
+            mHandlers.put(MSG_WHAT_TIME, h);
         }
 
         public void sendPlaying() {
-            this.handlers.put(MSG_WHAT_TIME, this.whatTimePlayingHandler);
+            mHandlers.put(MSG_WHAT_TIME, mWhatTimePlayingHandler);
         }
 
         public void sendWhatTime() {
-            this.handlers.put(MSG_WHAT_TIME, this.whatTimeHandler);
+            mHandlers.put(MSG_WHAT_TIME, mWhatTimeHandler);
         }
 
         private void initializeHandlers(AudioService service) {
-            this.service = service;
-            this.handlers = new SparseArray<MessageHandler>();
-            this.handlers.put(MSG_PLAY,  new PlayHandler(service));
-            this.handlers.put(MSG_INIT, new InitHandler(service));
-            this.handlers.put(MSG_PAUSE, new PauseHandler(service));
-            this.handlers.put(MSG_WHAT_FILE, new WhatFileHandler(service));
-            this.handlers.put(
-                    MSG_WHAT_TIME,
-                    new WhatTimeNotPlayingHandler(service));
-            this.whatTimeHandler = new WhatTimeHandler(service);
-            this.whatTimePlayingHandler = new WhatTimePlayingHandler(service);
+            mService = service;
+            mHandlers = new SparseArray<MessageHandler>();
+            mHandlers.put(MSG_PLAY,  new PlayHandler(service));
+            mHandlers.put(MSG_INIT, new InitHandler(service));
+            mHandlers.put(MSG_PAUSE, new PauseHandler(service));
+            mHandlers.put(MSG_WHAT_FILE, new WhatFileHandler(service));
+            mHandlers.put(MSG_WHAT_TIME,
+                          new WhatTimeNotPlayingHandler(service));
+            mWhatTimeHandler = new WhatTimeHandler(service);
+            mWhatTimePlayingHandler = new WhatTimePlayingHandler(service);
         }
     }
 
     private abstract static class CompletionProcedure {
 
-        protected AudioService service;
+        protected AudioService mService;
 
         public CompletionProcedure(AudioService service) {
-            this.service = service;
+            mService = service;
         }
 
         public abstract void run();
@@ -302,7 +301,7 @@ public class AudioService extends Service {
 
         @Override
         public void run() {
-            this.service.handler.complete();
+            mService.mHandler.complete();
         }
     }
 
@@ -314,8 +313,8 @@ public class AudioService extends Service {
 
         @Override
         public void run() {
-            this.service.position += 1;
-            this.service.play(0);
+            mService.mPosition += 1;
+            mService.play(0);
         }
     }
 
@@ -367,21 +366,21 @@ public class AudioService extends Service {
 
     private static final String LOG_TAG = MainActivity.LOG_TAG;
 
-    private String directory;
-    private String[] files;
-    private int position;
+    private String mDirectory;
+    private String[] mFiles;
+    private int mPosition;
 
-    private IncomingHandler handler;
-    private Messenger messenger;
-    private Player player;
-    private CompletionProcedure completionProc;
-    private CompletionProcedure stopProc;
-    private CompletionProcedure playNextProc;
+    private IncomingHandler mHandler;
+    private Messenger mMessenger;
+    private Player mPlayer;
+    private CompletionProcedure mCompletionProc;
+    private CompletionProcedure mStopProc;
+    private CompletionProcedure mPlayNextProc;
 
     @Override
     public IBinder onBind(Intent intent) {
         Log.i(LOG_TAG, "One client was bound with AudioService.");
-        return this.messenger.getBinder();
+        return mMessenger.getBinder();
     }
 
     @Override
@@ -394,12 +393,12 @@ public class AudioService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        this.handler = new IncomingHandler(this);
-        this.messenger = new Messenger(this.handler);
-        this.player = new TruePlayer();
-        this.player.setOnCompletionListener(new CompletionListener(this));
-        this.stopProc = new StopProcedure(this);
-        this.playNextProc = new PlayNextProcedure(this);
+        mHandler = new IncomingHandler(this);
+        mMessenger = new Messenger(mHandler);
+        mPlayer = new TruePlayer();
+        mPlayer.setOnCompletionListener(new CompletionListener(this));
+        mStopProc = new StopProcedure(this);
+        mPlayNextProc = new PlayNextProcedure(this);
 
         Log.i(LOG_TAG, "AudioService was created.");
     }
@@ -408,36 +407,36 @@ public class AudioService extends Service {
     public void onDestroy() {
         super.onDestroy();
 
-        Player player = this.player;
+        Player player = mPlayer;
         player.pause();
         /*
          * MSG_WHAT_TIME message comes even after onDestroy(). So I placed
          * FakePlayer to handle MSG_WHAT_TIME.
          */
-        this.player = new FakePlayer(player.getCurrentPosition());
+        mPlayer = new FakePlayer(player.getCurrentPosition());
         player.release();
 
         Log.i(LOG_TAG, "AudioService was destroyed.");
     }
 
     private void updateCompletionProcedure() {
-        boolean isLast = this.position == this.files.length - 1;
-        this.completionProc = isLast ? this.stopProc : this.playNextProc;
+        boolean isLast = mPosition == mFiles.length - 1;
+        mCompletionProc = isLast ? mStopProc : mPlayNextProc;
     }
 
     private void play(int offset) {
-        String file = this.files[this.position];
-        String path = this.directory + File.separator + file;
+        String file = mFiles[mPosition];
+        String path = mDirectory + File.separator + file;
         try {
-            this.player.play(path, offset);
+            mPlayer.play(path, offset);
         }
         catch (IOException e) {
             e.printStackTrace();
             // TODO: The handler must return an error to a client.
             return;
         }
-        this.updateCompletionProcedure();
-        this.handler.sendPlaying();
+        updateCompletionProcedure();
+        mHandler.sendPlaying();
 
         Log.i(LOG_TAG, String.format("Play: %s from %d", path, offset));
     }

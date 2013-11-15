@@ -6,31 +6,33 @@ import android.graphics.Path;
 
 public class UzumakiDiagram
 {
-    private int centerX;
-    private int centerY;
-    private int startAngle;
-    private int sweepAngle;
-    private int outerDiameter;
-    private int innerDiameter;
-    private Paint paint;
+    private int mCenterX;
+    private int mCenterY;
+    private int mStartAngle;
+    private int mSweepAngle;
+    private int mOuterDiameter;
+    private int mInnerDiameter;
+    private Paint mPaint;
 
-    public UzumakiDiagram(int centerX, int centerY, int startAngle, int sweepAngle, int outerDiameter, int innerDiameter, Paint paint) {
-        this.centerX = centerX;
-        this.centerY = centerY;
-        this.startAngle = startAngle;
-        this.sweepAngle = sweepAngle;
-        this.outerDiameter = outerDiameter;
-        this.innerDiameter = innerDiameter;
-        this.paint = paint;
+    public UzumakiDiagram(int centerX, int centerY, int startAngle,
+                          int sweepAngle, int outerDiameter, int innerDiameter,
+                          Paint paint) {
+        mCenterX = centerX;
+        mCenterY = centerY;
+        mStartAngle = startAngle;
+        mSweepAngle = sweepAngle;
+        mOuterDiameter = outerDiameter;
+        mInnerDiameter = innerDiameter;
+        mPaint = paint;
     }
 
     public void draw(Canvas canvas) {
         Point p = new Point();
         Path path = new Path();
-        this.computePoint(p, this.startAngle);
+        computePoint(p, mStartAngle);
         path.moveTo(p.x, p.y);
 
-        int sweepAngle = Math.abs(this.sweepAngle);
+        int sweepAngle = Math.abs(mSweepAngle);
         /*
          * About "resolution"
          * ==================
@@ -46,24 +48,24 @@ public class UzumakiDiagram
          * smooth enough.
          */
         int resolution = 4;
-        int direction = 0 < this.sweepAngle ? 1 : -1;
+        int direction = 0 < mSweepAngle ? 1 : -1;
         int lastAngle = sweepAngle + resolution;
         for (int angle = 0; angle < lastAngle; angle += resolution) {
-            this.computePoint(p, this.startAngle + direction * angle);
+            computePoint(p, mStartAngle + direction * angle);
             path.lineTo(p.x, p.y);
         }
 
-        canvas.drawPath(path, this.paint);
+        canvas.drawPath(path, mPaint);
     }
 
     private void computePoint(Point dest, int angle) {
-        int diameterDelta = this.outerDiameter - this.innerDiameter;
-        float ratio = (float)(this.startAngle - angle) / Math.abs(this.sweepAngle);
-        float radius = (this.outerDiameter - diameterDelta * ratio) / 2;
+        int diameterDelta = mOuterDiameter - mInnerDiameter;
+        float ratio = (float)(mStartAngle - angle) / Math.abs(mSweepAngle);
+        float radius = (mOuterDiameter - diameterDelta * ratio) / 2;
         float x = radius * (float)Math.cos(Math.toRadians(angle));
         float y = radius * (float)Math.sin(Math.toRadians(angle));
-        dest.x = centerX + x;
-        dest.y = centerY + y;
+        dest.x = mCenterX + x;
+        dest.y = mCenterY + y;
     }
 
     private class Point {

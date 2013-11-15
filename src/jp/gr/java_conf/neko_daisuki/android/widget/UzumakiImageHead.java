@@ -13,14 +13,14 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
 
     private abstract class MotionEventProc implements MotionEventDispatcher.Proc {
 
-        private UzumakiImageHead head;
+        private UzumakiImageHead mHead;
 
         public MotionEventProc(UzumakiImageHead head) {
-            this.head = head;
+            mHead = head;
         }
 
         public boolean run(MotionEvent event) {
-            this.callback(this.head, event);
+            callback(mHead, event);
             return true;
         }
 
@@ -60,60 +60,60 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
         }
     }
 
-    private MotionEventDispatcher dispatcher;
-    private UzumakiSlider slider;
-    private float xAtDown;
-    private float yAtDown;
-    private int progressAtDown;
+    private MotionEventDispatcher mDispatcher;
+    private UzumakiSlider mSlider;
+    private float mXAtDown;
+    private float mYAtDown;
+    private int mProgressAtDown;
 
     public UzumakiImageHead(Context context) {
         super(context);
-        this.initialize();
+        initialize();
     }
 
     public UzumakiImageHead(Context context, AttributeSet attrs) {
         super(context, attrs);
-        this.initialize();
+        initialize();
     }
 
     public UzumakiImageHead(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        this.initialize();
+        initialize();
     }
 
     public void setSlider(UzumakiSlider slider) {
-        this.slider = slider;
+        mSlider = slider;
     }
 
     public void movePointer(int x, int y, int l, int t, int r, int b) {
-        Drawable d = this.getDrawable();
+        Drawable d = getDrawable();
         int width = d.getMinimumWidth();
         int height = d.getMinimumHeight();
-        this.layout(x - width / 2, y - height, x + width / 2, y);
+        layout(x - width / 2, y - height, x + width / 2, y);
     }
 
     public boolean onTouchEvent(MotionEvent event) {
-        return this.dispatcher.dispatch(event);
+        return mDispatcher.dispatch(event);
     }
 
     private void disableActionMove() {
-        this.dispatcher.removeMoveProc();
+        mDispatcher.removeMoveProc();
     }
 
     private void enableActionMove() {
-        this.dispatcher.setMoveProc(new ActionMoveProc(this));
+        mDispatcher.setMoveProc(new ActionMoveProc(this));
     }
 
     private void initialize() {
-        this.dispatcher = new MotionEventDispatcher();
-        this.dispatcher.setDownProc(new ActionDownProc(this));
-        this.dispatcher.setUpProc(new ActionUpProc(this));
+        mDispatcher = new MotionEventDispatcher();
+        mDispatcher.setDownProc(new ActionDownProc(this));
+        mDispatcher.setUpProc(new ActionUpProc(this));
     }
 
     private float convertToSliderAxisX(float x) {
         View view = this;
         float parentX = x + view.getLeft();
-        while ((view = (View)view.getParent()) != this.slider) {
+        while ((view = (View)view.getParent()) != mSlider) {
             parentX += view.getLeft();
         }
 
@@ -130,24 +130,24 @@ public class UzumakiImageHead extends ImageView implements UzumakiHead {
     }
 
     private void onActionDown(MotionEvent event) {
-        this.slider.fireOnStartHeadMovingListeners(this);
-        this.enableActionMove();
-        this.xAtDown = this.convertToSliderAxisX(event.getX());
-        this.yAtDown = this.convertToSliderAxisY(event.getY());
-        this.progressAtDown = this.slider.getProgress();
+        mSlider.fireOnStartHeadMovingListeners(this);
+        enableActionMove();
+        mXAtDown = convertToSliderAxisX(event.getX());
+        mYAtDown = convertToSliderAxisY(event.getY());
+        mProgressAtDown = mSlider.getProgress();
     }
 
     private void onActionUp(MotionEvent event) {
-        this.slider.fireOnStopHeadMovingListeners(this);
-        this.disableActionMove();
+        mSlider.fireOnStopHeadMovingListeners(this);
+        disableActionMove();
     }
 
     private void onActionMove(MotionEvent event) {
-        float x = this.convertToSliderAxisX(event.getX());
-        float y = this.convertToSliderAxisY(event.getY());
-        float deltaX = x - this.xAtDown;
-        float deltaY = y - this.yAtDown;
-        this.slider.slideHead(this.progressAtDown, deltaX, deltaY);
+        float x = convertToSliderAxisX(event.getX());
+        float y = convertToSliderAxisY(event.getY());
+        float deltaX = x - mXAtDown;
+        float deltaY = y - mYAtDown;
+        mSlider.slideHead(mProgressAtDown, deltaX, deltaY);
     }
 }
 

@@ -45,151 +45,152 @@ public abstract class UzumakiSlider extends ViewGroup {
         TYPE_PERCENT
     };
 
-    private int min;
-    private int max;
-    private int progress;
+    private int mMin;
+    private int mMax;
+    private int mProgress;
 
-    private int startAngle;
-    private int sweepAngle;
-    private SizeType outerDiameterType;
-    private int outerDiameter;
-    private SizeType innerDiameterType;
-    private int innerDiameter;
-    private SizeType outlineInnerDiameterType;
-    private int outlineInnerDiameter;
+    private int mStartAngle;
+    private int mSweepAngle;
+    private SizeType mOuterDiameterType;
+    private int mOuterDiameter;
+    private SizeType mInnerDiameterType;
+    private int mInnerDiameter;
+    private SizeType mOutlineInnerDiameterType;
+    private int mOutlineInnerDiameter;
 
-    private int strokeWidth;
+    private int mStrokeWidth;
 
-    private List<OnStartHeadMovingListener> onStartHeadMovingListenerList;
-    private List<OnStopHeadMovingListener> onStopHeadMovingListenerList;
-    private List<OnSliderChangeListener> onSliderChangeListenerList;
+    private List<OnStartHeadMovingListener> mOnStartHeadMovingListenerList;
+    private List<OnStopHeadMovingListener> mOnStopHeadMovingListenerList;
+    private List<OnSliderChangeListener> mOnSliderChangeListenerList;
 
-    private Logger logger;
+    private Logger mLogger;
 
     /*
      * These two objects are reused in layout operation. Eclipse warns to avoid
      * allocations in every draw/layout operations.
      */
-    private List<View> notHeadList;
-    private List<View> headList;
+    private List<View> mNotHeadList;
+    private List<View> mHeadList;
 
     public UzumakiSlider(Context context) {
         super(context);
-        this.initialize();
+        initialize();
     }
 
     public UzumakiSlider(Context context, AttributeSet attrs) {
         super(context, attrs);
-        this.initialize();
-        this.readAttribute(attrs);
+        initialize();
+        readAttribute(attrs);
     }
 
     public UzumakiSlider(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        this.initialize();
-        this.readAttribute(attrs);
+        initialize();
+        readAttribute(attrs);
     }
 
     public int getProgress() {
-        return this.progress;
+        return mProgress;
     }
 
     public void setProgress(int progress) {
-        int min = this.getMin();
-        int max = this.getMax();
-        this.progress = Math.min(Math.max(min, progress), max);
+        int min = getMin();
+        int max = getMax();
+        mProgress = Math.min(Math.max(min, progress), max);
 
-        this.fireOnSliderChangeListeners();
-        this.requestLayout();
-        this.invalidate();
+        fireOnSliderChangeListeners();
+        requestLayout();
+        invalidate();
     }
 
     public int getMax() {
-        return this.max;
+        return mMax;
     }
 
     public int getSize() {
-        return this.max - this.min;
+        return mMax - mMin;
     }
 
     public void setMax(int max) {
-        this.max = max;
+        mMax = max;
     }
 
     public int getMin() {
-        return this.min;
+        return mMin;
     }
 
     public void setMin(int min) {
-        this.min = min;
+        mMin = min;
     }
 
     public int getAbsoluteOuterDiameter() {
-        return this.computeDiameter(this.outerDiameterType, this.outerDiameter);
+        return computeDiameter(mOuterDiameterType, mOuterDiameter);
     }
 
     public int getAbsoluteInnerDiameter() {
-        return this.computeDiameter(this.innerDiameterType, this.innerDiameter);
+        return computeDiameter(mInnerDiameterType, mInnerDiameter);
     }
 
     public int getAbsoluteOutlineInnerDiameter() {
-        return this.computeDiameter(this.outlineInnerDiameterType, this.outlineInnerDiameter);
+        return computeDiameter(mOutlineInnerDiameterType,
+                               mOutlineInnerDiameter);
     }
 
     public int getSweepAngle() {
-        return this.sweepAngle;
+        return mSweepAngle;
     }
 
     private void initialize() {
-        this.setWillNotDraw(false);
+        setWillNotDraw(false);
 
-        this.min = this.progress = 0;
-        this.max = 100;
+        mMin = mProgress = 0;
+        mMax = 100;
 
-        this.startAngle = 0;
-        this.sweepAngle = - (10 * 360 + 180);
+        mStartAngle = 0;
+        mSweepAngle = - (10 * 360 + 180);
 
-        this.outerDiameter = 95;
-        this.outerDiameterType = SizeType.TYPE_PERCENT;
-        this.innerDiameter = 45;
-        this.innerDiameterType = SizeType.TYPE_PERCENT;
-        this.outlineInnerDiameter = 40;
-        this.outlineInnerDiameterType = SizeType.TYPE_PERCENT;
+        mOuterDiameter = 95;
+        mOuterDiameterType = SizeType.TYPE_PERCENT;
+        mInnerDiameter = 45;
+        mInnerDiameterType = SizeType.TYPE_PERCENT;
+        mOutlineInnerDiameter = 40;
+        mOutlineInnerDiameterType = SizeType.TYPE_PERCENT;
 
-        this.strokeWidth = 2;
+        mStrokeWidth = 2;
 
-        this.onStartHeadMovingListenerList = new ArrayList<OnStartHeadMovingListener>();
-        this.onStopHeadMovingListenerList = new ArrayList<OnStopHeadMovingListener>();
-        this.onSliderChangeListenerList = new ArrayList<OnSliderChangeListener>();
+        mOnStartHeadMovingListenerList = new ArrayList<OnStartHeadMovingListener>();
+        mOnStopHeadMovingListenerList = new ArrayList<OnStopHeadMovingListener>();
+        mOnSliderChangeListenerList = new ArrayList<OnSliderChangeListener>();
 
-        this.setLogger(new FakeLogger());
+        setLogger(new FakeLogger());
 
-        this.notHeadList = new ArrayList<View>();
-        this.headList = new ArrayList<View>();
+        mNotHeadList = new ArrayList<View>();
+        mHeadList = new ArrayList<View>();
     }
 
     public void addOnSliderChangeListener(OnSliderChangeListener listener) {
-        this.onSliderChangeListenerList.add(listener);
+        mOnSliderChangeListenerList.add(listener);
     }
 
     public void addOnStartHeadMovingListener(OnStartHeadMovingListener listener) {
-        this.onStartHeadMovingListenerList.add(listener);
+        mOnStartHeadMovingListenerList.add(listener);
     }
 
     public void addOnStopHeadMovingListener(OnStopHeadMovingListener listener) {
-        this.onStopHeadMovingListenerList.add(listener);
+        mOnStopHeadMovingListenerList.add(listener);
     }
 
     public void setInnerDiameter(int value) {
-        this.innerDiameter = value;
+        mInnerDiameter = value;
     }
 
     public void setInnerDiameterType(SizeType type) {
-        this.innerDiameterType = type;
+        mInnerDiameterType = type;
     }
 
     public void setLogger(Logger logger) {
-        this.logger = logger;
+        mLogger = logger;
     }
 
     protected void onFinishInflate() {
@@ -197,7 +198,7 @@ public abstract class UzumakiSlider extends ViewGroup {
 
         List<View> _ = new ArrayList<View>();
         List<View> headList = new ArrayList<View>();
-        this.groupChildren(_, headList);
+        groupChildren(_, headList);
         for (View view: headList) {
             UzumakiHead head = (UzumakiHead)view;
             head.setSlider(this);
@@ -205,7 +206,7 @@ public abstract class UzumakiSlider extends ViewGroup {
     }
 
     protected void log(String msg) {
-        this.logger.log(msg);
+        mLogger.log(msg);
     }
 
     private abstract class MemberSetter {
@@ -262,33 +263,33 @@ public abstract class UzumakiSlider extends ViewGroup {
     }
 
     public void clearOnSliderChangeListeners() {
-        this.onSliderChangeListenerList.clear();
+        mOnSliderChangeListenerList.clear();
     }
 
     public void setOutlineInnerDiameter(int value) {
-        this.outlineInnerDiameter = value;
+        mOutlineInnerDiameter = value;
     }
 
     public void setOutlineInnerDiameterType(SizeType type) {
-        this.outlineInnerDiameterType = type;
+        mOutlineInnerDiameterType = type;
     }
 
     public void setOuterDiameter(int value) {
-        this.outerDiameter = value;
+        mOuterDiameter = value;
     }
 
     public void setOuterDiameterType(SizeType type) {
-        this.outerDiameterType = type;
+        mOuterDiameterType = type;
     }
 
     public void fireOnStartHeadMovingListeners(UzumakiHead head) {
-        for (OnStartHeadMovingListener listener: this.onStartHeadMovingListenerList) {
+        for (OnStartHeadMovingListener listener: mOnStartHeadMovingListenerList) {
             listener.onStartHeadMoving(this, head);
         }
     }
 
     public void fireOnStopHeadMovingListeners(UzumakiHead head) {
-        for (OnStopHeadMovingListener listener: this.onStopHeadMovingListenerList) {
+        for (OnStopHeadMovingListener listener: mOnStopHeadMovingListenerList) {
             listener.onStopHeadMoving(this, head);
         }
     }
@@ -299,41 +300,41 @@ public abstract class UzumakiSlider extends ViewGroup {
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
-        int outlineInnerDiameter = this.getAbsoluteOutlineInnerDiameter();
+        int outlineInnerDiameter = getAbsoluteOutlineInnerDiameter();
         int spec = MeasureSpec.makeMeasureSpec(outlineInnerDiameter, MeasureSpec.EXACTLY);
-        int nChildren = this.getChildCount();
+        int nChildren = getChildCount();
         for (int i = 0; i < nChildren; i++) {
-            this.getChildAt(i).measure(spec, spec);
+            getChildAt(i).measure(spec, spec);
         }
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        this.notHeadList.clear();
-        this.headList.clear();
-        this.groupChildren(this.notHeadList, this.headList);
+        mNotHeadList.clear();
+        mHeadList.clear();
+        groupChildren(mNotHeadList, mHeadList);
 
         int width = r - l;
         int height = b - t;
-        int diameter = this.outlineInnerDiameterType == SizeType.TYPE_PERCENT ? Math.min(width, height) * this.outlineInnerDiameter / 100 : this.outlineInnerDiameter;
+        int diameter = mOutlineInnerDiameterType == SizeType.TYPE_PERCENT ? Math.min(width, height) * mOutlineInnerDiameter / 100 : mOutlineInnerDiameter;
         int left = (width - diameter) / 2;
         int top = (height - diameter) / 2;
         int right = left + diameter;
         int bottom = top + diameter;
-        int nChildren = this.notHeadList.size();
+        int nChildren = mNotHeadList.size();
         for (int i = 0; i < nChildren; i++) {
-            this.notHeadList.get(i).layout(left, top, right, bottom);
+            mNotHeadList.get(i).layout(left, top, right, bottom);
         }
 
-        for (View head: headList) {
-            this.layoutHead(head, l, t, r, b);
+        for (View head: mHeadList) {
+            layoutHead(head, l, t, r, b);
         }
     }
 
     private void groupChildren(List<View> notHeadList, List<View> headList) {
-        int nChildren = this.getChildCount();
+        int nChildren = getChildCount();
         for (int i = 0; i < nChildren; i++) {
-            View child = this.getChildAt(i);
+            View child = getChildAt(i);
             List<View> l = child instanceof UzumakiHead ? headList : notHeadList;
             l.add(child);
         }
@@ -350,34 +351,45 @@ public abstract class UzumakiSlider extends ViewGroup {
     }
 
     private void readAttribute(AttributeSet attrs) {
-        this.startAngle = attrs.getAttributeIntValue(null, "start_angle", this.startAngle);
-        this.sweepAngle = attrs.getAttributeIntValue(null, "sweep_angle", this.sweepAngle);
+        mStartAngle = attrs.getAttributeIntValue(null, "start_angle",
+                                                 mStartAngle);
+        mSweepAngle = attrs.getAttributeIntValue(null, "sweep_angle",
+                                                 mSweepAngle);
 
-        this.parseSize(attrs.getAttributeValue(null, "outline_inner_diameter"), new OutlineInnerDiameterPercentSetter(), new OutlineInnerDiameterPixelSetter());
-        this.parseSize(attrs.getAttributeValue(null, "outer_diameter"), new OuterDiameterPercentSetter(), new OuterDiameterPixelSetter());
-        this.parseSize(attrs.getAttributeValue(null, "inner_diameter"), new InnerDiameterPercentSetter(), new InnerDiameterPixelSetter());
+        parseSize(attrs.getAttributeValue(null, "outline_inner_diameter"),
+                  new OutlineInnerDiameterPercentSetter(),
+                  new OutlineInnerDiameterPixelSetter());
+        parseSize(attrs.getAttributeValue(null, "outer_diameter"),
+                  new OuterDiameterPercentSetter(),
+                  new OuterDiameterPixelSetter());
+        parseSize(attrs.getAttributeValue(null, "inner_diameter"),
+                  new InnerDiameterPercentSetter(),
+                  new InnerDiameterPixelSetter());
 
-        this.strokeWidth = attrs.getAttributeIntValue(null, "stroke_width", this.strokeWidth);
+        mStrokeWidth = attrs.getAttributeIntValue(null, "stroke_width",
+                                                  mStrokeWidth);
     }
 
     private int computeDiameter(SizeType type, int size) {
-        int baseSize = this.getOutlineOuterDiameter();
+        int baseSize = getOutlineOuterDiameter();
         return type == SizeType.TYPE_PERCENT ? baseSize * size / 100 : size;
     }
 
     protected int getOutlineOuterDiameter() {
-        return Math.min(this.getWidth(), this.getHeight());
+        return Math.min(getWidth(), getHeight());
     }
 
     protected void drawTie(Canvas canvas) {
-        int x = this.getWidth() / 2;
-        int y = this.getHeight() / 2;
+        int x = getWidth() / 2;
+        int y = getHeight() / 2;
         Path outerOutline = new Path();
-        outerOutline.addCircle(x, y, this.getOutlineOuterDiameter() / 2, Path.Direction.CW);
+        outerOutline.addCircle(x, y, getOutlineOuterDiameter() / 2,
+                               Path.Direction.CW);
 
         Path innerOutline = new Path();
-        int outlineInnerDiameter = this.getAbsoluteOutlineInnerDiameter();
-        innerOutline.addCircle(x, y, outlineInnerDiameter / 2, Path.Direction.CW);
+        int outlineInnerDiameter = getAbsoluteOutlineInnerDiameter();
+        innerOutline.addCircle(x, y, outlineInnerDiameter / 2,
+                               Path.Direction.CW);
 
         Paint paint = new Paint();
         paint.setARGB(255, 0, 0, 0);
@@ -395,25 +407,27 @@ public abstract class UzumakiSlider extends ViewGroup {
     }
 
     protected void drawUzumaki(Canvas canvas) {
-        int x = this.getWidth() / 2;
-        int y = this.getHeight() / 2;
+        int x = getWidth() / 2;
+        int y = getHeight() / 2;
 
         Paint paint = new Paint();
         paint.setARGB(255, 255, 255, 255);
         paint.setAntiAlias(true);
-        paint.setStrokeWidth(this.strokeWidth);
+        paint.setStrokeWidth(mStrokeWidth);
         paint.setStyle(Paint.Style.STROKE);
 
-        int outerDiameter = this.getAbsoluteOuterDiameter();
-        int innerDiameter = this.getAbsoluteInnerDiameter();
-        UzumakiDiagram uzumaki = new UzumakiDiagram(x, y, this.startAngle, this.sweepAngle, outerDiameter, innerDiameter, paint);
+        int outerDiameter = getAbsoluteOuterDiameter();
+        int innerDiameter = getAbsoluteInnerDiameter();
+        UzumakiDiagram uzumaki = new UzumakiDiagram(x, y, mStartAngle,
+                                                    mSweepAngle, outerDiameter,
+                                                    innerDiameter, paint);
         uzumaki.draw(canvas);
     }
 
     protected abstract void layoutHead(View head, int l, int t, int r, int b);
 
     private void fireOnSliderChangeListeners() {
-        for (OnSliderChangeListener l: this.onSliderChangeListenerList) {
+        for (OnSliderChangeListener l: mOnSliderChangeListenerList) {
             l.onProgressChanged(this);
         }
     }

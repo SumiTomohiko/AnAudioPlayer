@@ -16,10 +16,10 @@ public class CircleImageButton extends ImageButton {
 
     private abstract class MotionEventProc implements MotionEventDispatcher.Proc {
 
-        protected CircleImageButton button;
+        protected CircleImageButton mButton;
 
         public MotionEventProc(CircleImageButton button) {
-            this.button = button;
+            mButton = button;
         }
 
         public abstract boolean run(MotionEvent event);
@@ -55,8 +55,8 @@ public class CircleImageButton extends ImageButton {
              * (*1) http://tools.oesf.biz/android-2.3.7_r1.0/xref/frameworks/base/core/java/android/view/View.java
              * (*2) http://tools.oesf.biz/android-4.0.1_r1.0/xref/frameworks/base/core/java/android/view/View.java
              */
-            this.button.setPressed(true);
-            this.button.invalidate();
+            mButton.setPressed(true);
+            mButton.invalidate();
             return true;
         }
     }
@@ -68,31 +68,33 @@ public class CircleImageButton extends ImageButton {
         }
 
         public boolean run(MotionEvent event) {
-            this.button.setPressed(false);
-            this.button.invalidate();
-            this.button.performClick();
+            mButton.setPressed(false);
+            mButton.invalidate();
+            mButton.performClick();
             return true;
         }
     }
 
     private abstract class Drawer {
 
-        protected CircleImageButton button;
-        protected int edgeWidth;
+        protected CircleImageButton mButton;
+        protected int mEdgeWidth;
 
         public Drawer(CircleImageButton button) {
-            this.button = button;
-            this.edgeWidth = 2;
+            mButton = button;
+            mEdgeWidth = 2;
         }
 
-        public abstract void draw(Canvas canvas, int centerX, int centerY, int outerRadius);
+        public abstract void draw(Canvas canvas, int centerX, int centerY,
+                                  int outerRadius);
 
         protected int computeInnerRadius(int outerRadius) {
             return (int)(0.92 * outerRadius);
         }
 
-        protected void drawButton(Canvas canvas, int centerX, int centerY, int outerRadius) {
-            int innerRadius = this.computeInnerRadius(outerRadius);
+        protected void drawButton(Canvas canvas, int centerX, int centerY,
+                                  int outerRadius) {
+            int innerRadius = computeInnerRadius(outerRadius);
             RectF outerRect = new RectF(centerX - outerRadius,
                                         centerY - outerRadius,
                                         centerX + outerRadius,
@@ -107,7 +109,7 @@ public class CircleImageButton extends ImageButton {
             paint.setAntiAlias(true);
 
             Paint mainPaint = new Paint(paint);
-            mainPaint.setColor(this.button.backgroundColor);
+            mainPaint.setColor(mButton.mBackgroundColor);
             canvas.drawCircle(centerX, centerY, outerRadius, mainPaint);
 
             Path topTie = new Path();
@@ -116,7 +118,7 @@ public class CircleImageButton extends ImageButton {
             topTie.addArc(innerRect, -180, 180);
             topTie.lineTo(centerX + outerRadius, centerY);
             Paint topTiePaint = new Paint(paint);
-            topTiePaint.setColor(this.button.brightColor);
+            topTiePaint.setColor(mButton.mBrightColor);
             canvas.drawPath(topTie, topTiePaint);
 
             Path bottomTie = new Path();
@@ -125,7 +127,7 @@ public class CircleImageButton extends ImageButton {
             bottomTie.addArc(innerRect, 180, -180);
             bottomTie.lineTo(centerX + outerRadius, centerY);
             Paint bottomTiePaint = new Paint(paint);
-            bottomTiePaint.setColor(this.button.shadowColor);
+            bottomTiePaint.setColor(mButton.mShadowColor);
             canvas.drawPath(bottomTie, bottomTiePaint);
 
             float radius = 0.86f * outerRadius;
@@ -136,30 +138,29 @@ public class CircleImageButton extends ImageButton {
             Path circle = new Path();
             circle.addArc(oval, 0, -180);
             Paint circlePaint = new Paint(paint);
-            circlePaint.setColor(this.button.brightColor);
+            circlePaint.setColor(mButton.mBrightColor);
             circlePaint.setStrokeWidth(1);
             circlePaint.setStyle(Paint.Style.STROKE);
             canvas.drawPath(circle, circlePaint);
             Path circle2 = new Path();
             circle2.addArc(oval, 0, 180);
             Paint circlePaint2 = new Paint(paint);
-            circlePaint2.setColor(this.button.shadowColor);
+            circlePaint2.setColor(mButton.mShadowColor);
             circlePaint2.setStrokeWidth(1);
             circlePaint2.setStyle(Paint.Style.STROKE);
             canvas.drawPath(circle2, circlePaint2);
         }
 
-        protected void drawEdge(Canvas canvas, int centerX, int centerY, int radius) {
+        protected void drawEdge(Canvas canvas, int centerX, int centerY,
+                                int radius) {
             Paint paint = new Paint();
             paint.setAntiAlias(true);
             paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(this.edgeWidth);
-            RectF rect = new RectF(centerX - radius,
-                                   centerY - radius,
-                                   centerX + radius,
-                                   centerY + radius);
+            paint.setStrokeWidth(mEdgeWidth);
+            RectF rect = new RectF(centerX - radius, centerY - radius,
+                                   centerX + radius, centerY + radius);
 
-            paint.setColor(this.button.shadowColor);
+            paint.setColor(mButton.mShadowColor);
             canvas.drawArc(rect, 0, -180, false, paint);
 
             //paint.setColor(this.button.brightColor);
@@ -173,9 +174,10 @@ public class CircleImageButton extends ImageButton {
             super(button);
         }
 
-        public void draw(Canvas canvas, int centerX, int centerY, int outerRadius) {
-            this.drawButton(canvas, centerX, centerY, outerRadius - this.edgeWidth);
-            this.drawEdge(canvas, centerX, centerY, outerRadius);
+        public void draw(Canvas canvas, int centerX, int centerY,
+                         int outerRadius) {
+            drawButton(canvas, centerX, centerY, outerRadius - mEdgeWidth);
+            drawEdge(canvas, centerX, centerY, outerRadius);
         }
     }
 
@@ -185,14 +187,16 @@ public class CircleImageButton extends ImageButton {
             super(button);
         }
 
-        public void draw(Canvas canvas, int centerX, int centerY, int outerRadius) {
-            int radius = (int)(0.99 * (outerRadius - this.edgeWidth));
-            this.drawButton(canvas, centerX, centerY, radius);
-            this.drawShadow(canvas, centerX, centerY, outerRadius);
-            this.drawEdge(canvas, centerX, centerY, outerRadius);
+        public void draw(Canvas canvas, int centerX, int centerY,
+                         int outerRadius) {
+            int radius = (int)(0.99 * (outerRadius - mEdgeWidth));
+            drawButton(canvas, centerX, centerY, radius);
+            drawShadow(canvas, centerX, centerY, outerRadius);
+            drawEdge(canvas, centerX, centerY, outerRadius);
         }
 
-        private void drawShadow(Canvas canvas, int centerX, int centerY, int radius) {
+        private void drawShadow(Canvas canvas, int centerX, int centerY,
+                                int radius) {
             Path path = new Path();
             RectF rect = new RectF(centerX - radius,
                                    centerY - radius,
@@ -212,76 +216,76 @@ public class CircleImageButton extends ImageButton {
         }
     }
 
-    private int padding;
-    private int backgroundColor;
-    private int brightColor;
-    private int shadowColor;
-    private MotionEventDispatcher motionEventDispatcher;
-    private Drawer neutralDrawer;
-    private Drawer pressedDrawer;
+    private int mPadding;
+    private int mBackgroundColor;
+    private int mBrightColor;
+    private int mShadowColor;
+    private MotionEventDispatcher mMotionEventDispatcher;
+    private Drawer mNeutralDrawer;
+    private Drawer mPressedDrawer;
 
     public CircleImageButton(Context context) {
         super(context);
-        this.initialize();
+        initialize();
     }
 
     public CircleImageButton(Context context, AttributeSet attrs) {
         super(context, attrs);
-        this.initialize();
+        initialize();
     }
 
-    public CircleImageButton(Context context, AttributeSet attrs, int defStyle) {
+    public CircleImageButton(Context context, AttributeSet attrs,
+                             int defStyle) {
         super(context, attrs, defStyle);
-        this.initialize();
+        initialize();
     }
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
-        float deltaX = event.getX() - this.getCenterX();
-        float deltaY = event.getY() - this.getCenterY();
+        float deltaX = event.getX() - getCenterX();
+        float deltaY = event.getY() - getCenterY();
         double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-        boolean isInCircle = distance < this.getRadius();
+        boolean isInCircle = distance < getRadius();
         return isInCircle ? super.dispatchTouchEvent(event) : false;
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        return this.motionEventDispatcher.dispatch(event);
+        return mMotionEventDispatcher.dispatch(event);
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        int centerX = this.getCenterX();
-        int centerY = this.getCenterY();
-        boolean isPressed = this.isPressed();
-        Drawer drawer = isPressed ? this.pressedDrawer : this.neutralDrawer;
-        drawer.draw(canvas, centerX, centerY, this.getRadius());
+        int centerX = getCenterX();
+        int centerY = getCenterY();
+        Drawer drawer = isPressed() ? mPressedDrawer : mNeutralDrawer;
+        drawer.draw(canvas, centerX, centerY, getRadius());
 
         super.onDraw(canvas);
     }
 
     private int getRadius() {
-        return Math.min(this.getWidth(), this.getHeight()) / 2 - this.padding;
+        return Math.min(getWidth(), getHeight()) / 2 - mPadding;
     }
 
     private int getCenterX() {
-        return this.getWidth() / 2;
+        return getWidth() / 2;
     }
 
     private int getCenterY() {
-        return this.getHeight() / 2;
+        return getHeight() / 2;
     }
 
     private void initialize() {
-        this.padding = 1;
-        this.backgroundColor = Color.argb(255, 0xcc, 0xcc, 0xcc);
-        this.brightColor = Color.argb(255, 255, 255, 255);
-        this.shadowColor = Color.argb(255, 138, 138, 138);
-        this.motionEventDispatcher = new MotionEventDispatcher();
-        this.motionEventDispatcher.setDownProc(new ActionDownEventProc(this));
-        this.motionEventDispatcher.setUpProc(new ActionUpEventProc(this));
-        this.neutralDrawer = new NeutralDrawer(this);
-        this.pressedDrawer = new PressedDrawer(this);
+        mPadding = 1;
+        mBackgroundColor = Color.argb(255, 0xcc, 0xcc, 0xcc);
+        mBrightColor = Color.argb(255, 255, 255, 255);
+        mShadowColor = Color.argb(255, 138, 138, 138);
+        mMotionEventDispatcher = new MotionEventDispatcher();
+        mMotionEventDispatcher.setDownProc(new ActionDownEventProc(this));
+        mMotionEventDispatcher.setUpProc(new ActionUpEventProc(this));
+        mNeutralDrawer = new NeutralDrawer(this);
+        mPressedDrawer = new PressedDrawer(this);
     }
 }
 

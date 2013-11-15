@@ -11,13 +11,13 @@ public class AboutActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        this.setContentView(R.layout.about);
-        this.showVersion();
+        setContentView(R.layout.about);
+        showVersion();
     }
 
     private void showVersion() {
-        PackageManager pm = this.getPackageManager();
-        String name = this.getPackageName();
+        PackageManager pm = getPackageManager();
+        String name = getPackageName();
         int flags = PackageManager.GET_INSTRUMENTATION;
 
         PackageInfo pi;
@@ -29,7 +29,7 @@ public class AboutActivity extends Activity {
             return;
         }
 
-        TextView view = (TextView)this.findViewById(R.id.version);
+        TextView view = (TextView)findViewById(R.id.version);
         view.setText(pi.versionName);
     }
 }

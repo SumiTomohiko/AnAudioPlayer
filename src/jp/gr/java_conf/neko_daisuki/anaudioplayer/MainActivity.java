@@ -70,12 +70,14 @@ public class MainActivity extends Activity {
             editor.putString(KEY_PLAYER_STATE, state.name());
         }
 
-        public static String[] getStringArray(SharedPreferences prefs, String key) {
+        public static String[] getStringArray(SharedPreferences prefs,
+                                              String key) {
             String s = prefs.getString(key, null);
             return s != null ? s.split("\n") : new String[0];
         }
 
-        public static void putStringArray(Editor editor, String key, String[] values) {
+        public static void putStringArray(Editor editor, String key,
+                                          String[] values) {
             int len = values.length;
             editor.putString(key, 0 < len ? buildArray(values) : null);
         }
@@ -100,42 +102,44 @@ public class MainActivity extends Activity {
         public String[] files = new String[0];
 
         public void copyFrom(FileSystem src) {
-            this.directory = src.directory;
-            this.files = src.files;
+            directory = src.directory;
+            files = src.files;
         }
     }
 
     private static class ActivityHolder {
 
-        protected MainActivity activity;
+        protected MainActivity mActivity;
 
         public ActivityHolder(MainActivity activity) {
-            this.activity = activity;
+            mActivity = activity;
         }
     }
 
     private abstract static class Adapter extends ArrayAdapter<String> {
 
-        protected LayoutInflater inflater;
-        protected MainActivity activity;
+        protected LayoutInflater mInflater;
+        protected MainActivity mActivity;
 
         public Adapter(MainActivity activity, String[] objects) {
             super(activity, 0, objects);
-            this.initialize(activity);
+            initialize(activity);
         }
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            return convertView == null ? this.getView(position, this.makeConvertView(parent), parent) : this.makeView(position, convertView);
+            return convertView == null
+                ? getView(position, makeConvertView(parent), parent)
+                : makeView(position, convertView);
         }
 
         protected abstract View makeConvertView(ViewGroup parent);
         protected abstract View makeView(int position, View convertView);
 
         private void initialize(MainActivity activity) {
-            this.activity = activity;
+            mActivity = activity;
             String service = Context.LAYOUT_INFLATER_SERVICE;
-            this.inflater = (LayoutInflater)activity.getSystemService(service);
+            mInflater = (LayoutInflater)activity.getSystemService(service);
         }
     }
 
@@ -153,19 +157,19 @@ public class MainActivity extends Activity {
 
         @Override
         protected View makeView(int position, View convertView) {
-            String file = this.activity.getPlayingFile();
-            boolean isPlaying = this.isPlayingDirectoryShown() && this.activity.shownFiles.files[position].equals(file);
+            String file = mActivity.getPlayingFile();
+            boolean isPlaying = isPlayingDirectoryShown() && mActivity.mShownFiles.files[position].equals(file);
             int src = isPlaying ? R.drawable.ic_playing : R.drawable.ic_blank;
             Row row = (Row)convertView.getTag();
             row.playingIcon.setImageResource(src);
-            row.name.setText(this.getItem(position));
+            row.name.setText(getItem(position));
 
             return convertView;
         }
 
         @Override
         protected View makeConvertView(ViewGroup parent) {
-            View view = this.inflater.inflate(R.layout.file_row, parent, false);
+            View view = mInflater.inflate(R.layout.file_row, parent, false);
             Row row = new Row();
             row.playingIcon = (ImageView)view.findViewById(R.id.playing_icon);
             row.name = (TextView)view.findViewById(R.id.name);
@@ -174,9 +178,9 @@ public class MainActivity extends Activity {
         }
 
         private boolean isPlayingDirectoryShown() {
-            MainActivity activity = this.activity;
-            String shown = activity.shownFiles.directory;
-            String playing = activity.playingFiles.directory;
+            MainActivity activity = mActivity;
+            String shown = activity.mShownFiles.directory;
+            String playing = activity.mPlayingFiles.directory;
             return (shown != null) && shown.equals(playing);
         }
     }
@@ -195,15 +199,15 @@ public class MainActivity extends Activity {
 
         @Override
         protected View makeView(int position, View convertView) {
-            String path = this.activity.directories[position];
-            this.setPlayingIcon(path, convertView);
+            String path = mActivity.mDirectories[position];
+            setPlayingIcon(path, convertView);
 
             return convertView;
         }
 
         @Override
         protected View makeConvertView(ViewGroup parent) {
-            View view = this.inflater.inflate(R.layout.dir_row, parent, false);
+            View view = mInflater.inflate(R.layout.dir_row, parent, false);
             Row row = new Row();
             row.playingIcon = (ImageView)view.findViewById(R.id.playing_icon);
             row.path = (TextView)view.findViewById(R.id.path);
@@ -212,7 +216,7 @@ public class MainActivity extends Activity {
         }
 
         private void setPlayingIcon(String path, View view) {
-            String directory = this.activity.getPlayingDirectory();
+            String directory = mActivity.getPlayingDirectory();
             boolean isPlaying = path.equals(directory);
             int src = isPlaying ? R.drawable.ic_playing : R.drawable.ic_blank;
             Row row = (Row)view.getTag();
@@ -237,9 +241,9 @@ public class MainActivity extends Activity {
         }
 
         public void run() {
-            this.activity.sendInit();
-            this.activity.sendPlay();
-            this.activity.onConnectedWithService();
+            mActivity.sendInit();
+            mActivity.sendPlay();
+            mActivity.onConnectedWithService();
         }
     }
 
@@ -250,8 +254,8 @@ public class MainActivity extends Activity {
         }
 
         public void run() {
-            this.activity.sendWhatFile();
-            this.activity.onConnectedWithService();
+            mActivity.sendWhatFile();
+            mActivity.onConnectedWithService();
         }
     }
 
@@ -267,7 +271,7 @@ public class MainActivity extends Activity {
         }
 
         public void unbind() {
-            this.activity.unbindService(this.activity.connection);
+            mActivity.unbindService(mActivity.mConnection);
         }
     }
 
@@ -289,8 +293,8 @@ public class MainActivity extends Activity {
         }
 
         public void start() {
-            Intent intent = new Intent(this.activity, AudioService.class);
-            this.activity.startService(intent);
+            Intent intent = new Intent(mActivity, AudioService.class);
+            mActivity.startService(intent);
         }
     }
 
@@ -312,9 +316,9 @@ public class MainActivity extends Activity {
         }
 
         public void stop() {
-            this.activity.unbindAudioService();
-            Intent intent = new Intent(this.activity, AudioService.class);
-            this.activity.stopService(intent);
+            mActivity.unbindAudioService();
+            Intent intent = new Intent(mActivity, AudioService.class);
+            mActivity.stopService(intent);
         }
     }
 
@@ -331,14 +335,14 @@ public class MainActivity extends Activity {
 
     private static class TrueMessenger implements MessengerWrapper {
 
-        private Messenger messenger;
+        private Messenger mMessenger;
 
         public TrueMessenger(Messenger messenger) {
-            this.messenger = messenger;
+            mMessenger = messenger;
         }
 
         public void send(Message msg) throws RemoteException {
-            this.messenger.send(msg);
+            mMessenger.send(msg);
         }
     }
 
@@ -350,18 +354,20 @@ public class MainActivity extends Activity {
 
     private class Connection extends ActivityHolder implements ServiceConnection {
 
-        private Runnable procedureOnConnected;
+        private Runnable mProcedureOnConnected;
 
-        public Connection(MainActivity activity, Runnable procedureOnConnected) {
+        public Connection(MainActivity activity,
+                          Runnable procedureOnConnected) {
             super(activity);
-            this.procedureOnConnected = procedureOnConnected;
+            mProcedureOnConnected = procedureOnConnected;
         }
 
-        public void onServiceConnected(ComponentName className, IBinder service) {
+        public void onServiceConnected(ComponentName className,
+                                       IBinder service) {
             Messenger messenger = new Messenger(service);
-            this.activity.outgoingMessenger = new TrueMessenger(messenger);
+            mActivity.mOutgoingMessenger = new TrueMessenger(messenger);
 
-            this.procedureOnConnected.run();
+            mProcedureOnConnected.run();
 
             Log.i(LOG_TAG, "MainActivity connected to AudioService.");
         }
@@ -378,7 +384,7 @@ public class MainActivity extends Activity {
         }
 
         public void onStartRotating(RotatingUzumakiSlider slider) {
-            this.activity.onStartSliding();
+            mActivity.onStartSliding();
         }
     }
 
@@ -389,7 +395,7 @@ public class MainActivity extends Activity {
         }
 
         public void onStopRotating(RotatingUzumakiSlider slider) {
-            this.activity.procAfterSeeking.run();
+            mActivity.mProcAfterSeeking.run();
         }
     }
 
@@ -400,8 +406,8 @@ public class MainActivity extends Activity {
         }
 
         public void run() {
-            this.activity.startTimer();
-            this.activity.sendPlay();
+            mActivity.startTimer();
+            mActivity.sendPlay();
         }
     }
 
@@ -413,27 +419,27 @@ public class MainActivity extends Activity {
 
     private class SliderLogger implements UzumakiSlider.Logger {
 
-        private MainActivity activity;
+        private MainActivity mActivity;
 
         public SliderLogger(MainActivity activity) {
-            this.activity = activity;
+            mActivity = activity;
         }
 
         public void log(String msg) {
-            this.activity.log(msg);
+            mActivity.log(msg);
         }
     }
 
     private class OnStartHeadMovingListener implements UzumakiSlider.OnStartHeadMovingListener {
 
-        private MainActivity activity;
+        private MainActivity mActivity;
 
         public OnStartHeadMovingListener(MainActivity activity) {
-            this.activity = activity;
+            mActivity = activity;
         }
 
         public void onStartHeadMoving(UzumakiSlider slider, UzumakiHead head) {
-            this.activity.onStartSliding();
+            mActivity.onStartSliding();
         }
     }
 
@@ -444,20 +450,20 @@ public class MainActivity extends Activity {
         }
 
         public void onStopHeadMoving(UzumakiSlider slider, UzumakiHead head) {
-            this.activity.procAfterSeeking.run();
+            mActivity.mProcAfterSeeking.run();
         }
     }
 
     private abstract class MenuDispatcher {
 
-        protected MainActivity activity;
+        protected MainActivity mActivity;
 
         public MenuDispatcher(MainActivity activity) {
-            this.activity = activity;
+            mActivity = activity;
         }
 
         public boolean dispatch() {
-            this.callback();
+            callback();
             return true;
         }
 
@@ -471,7 +477,7 @@ public class MainActivity extends Activity {
         }
 
         protected void callback() {
-            this.activity.showAbout();
+            mActivity.showAbout();
         }
     }
 
@@ -493,8 +499,8 @@ public class MainActivity extends Activity {
             }
 
             public void handle(Message msg) {
-                this.completeSlider();
-                this.activity.pause();
+                completeSlider();
+                mActivity.pause();
             }
 
             /**
@@ -506,7 +512,7 @@ public class MainActivity extends Activity {
              * MSG_COMPLETION must update UI.
              */
             private void completeSlider() {
-                RotatingUzumakiSlider slider = this.activity.slider;
+                RotatingUzumakiSlider slider = mActivity.mSlider;
                 slider.setProgress(slider.getMax());
             }
         }
@@ -518,7 +524,7 @@ public class MainActivity extends Activity {
             }
 
             public void handle(Message msg) {
-                this.activity.updateCurrentTime(msg.arg1);
+                mActivity.updateCurrentTime(msg.arg1);
             }
         }
 
@@ -529,7 +535,7 @@ public class MainActivity extends Activity {
             }
 
             public void handle(Message msg) {
-                this.activity.pause();
+                mActivity.pause();
             }
         }
 
@@ -551,37 +557,35 @@ public class MainActivity extends Activity {
 
             public void handle(Message msg) {
                 AudioService.PlayingArgument a = (AudioService.PlayingArgument)msg.obj;
-                this.activity.playingFilePosition = a.position;
-                this.activity.showPlayingFile();
+                mActivity.mPlayingFilePosition = a.position;
+                mActivity.showPlayingFile();
 
-                this.activity.incomingHandler.enableResponse();
+                mActivity.mIncomingHandler.enableResponse();
             }
         }
 
-        private SparseArray<MessageHandler> handlers;
-        private MessageHandler whatTimeHandler;
-        private MessageHandler completionHandler;
-        private MessageHandler nopHandler;
+        private SparseArray<MessageHandler> mHandlers;
+        private MessageHandler mWhatTimeHandler;
+        private MessageHandler mCompletionHandler;
+        private MessageHandler mNopHandler;
 
         public IncomingHandler(MainActivity activity) {
-            this.handlers = new SparseArray<MessageHandler>();
-            this.handlers.put(
-                    AudioService.MSG_PLAYING,
-                    new PlayingHandler(activity));
-            this.handlers.put(
-                    AudioService.MSG_NOT_PLAYING,
-                    new NotPlayingHandler(activity));
+            mHandlers = new SparseArray<MessageHandler>();
+            mHandlers.put(AudioService.MSG_PLAYING,
+                          new PlayingHandler(activity));
+            mHandlers.put(AudioService.MSG_NOT_PLAYING,
+                          new NotPlayingHandler(activity));
 
-            this.whatTimeHandler = new WhatTimeHandler(activity);
-            this.completionHandler = new CompletionHandler(activity);
-            this.nopHandler = new NopHandler();
+            mWhatTimeHandler = new WhatTimeHandler(activity);
+            mCompletionHandler = new CompletionHandler(activity);
+            mNopHandler = new NopHandler();
 
-            this.ignoreResponseUntilPlaying();
+            ignoreResponseUntilPlaying();
         }
 
         @Override
         public void handleMessage(Message msg) {
-            this.handlers.get(msg.what).handle(msg);
+            mHandlers.get(msg.what).handle(msg);
         }
 
         /**
@@ -604,36 +608,36 @@ public class MainActivity extends Activity {
          * one singleton message queue.
          */
         public void ignoreResponseUntilPlaying() {
-            this.setWhatTimeHandler(this.nopHandler);
-            this.setCompletionHandler(this.nopHandler);
+            setWhatTimeHandler(mNopHandler);
+            setCompletionHandler(mNopHandler);
         }
 
         private void enableResponse() {
-            this.setWhatTimeHandler(this.whatTimeHandler);
-            this.setCompletionHandler(this.completionHandler);
+            setWhatTimeHandler(mWhatTimeHandler);
+            setCompletionHandler(mCompletionHandler);
         }
 
         private void setWhatTimeHandler(MessageHandler handler) {
-            this.handlers.put(AudioService.MSG_WHAT_TIME, handler);
+            mHandlers.put(AudioService.MSG_WHAT_TIME, handler);
         }
 
         private void setCompletionHandler(MessageHandler handler) {
-            this.handlers.put(AudioService.MSG_COMPLETION, handler);
+            mHandlers.put(AudioService.MSG_COMPLETION, handler);
         }
     }
 
     private static abstract class ContentTask extends AsyncTask<Void, Void, List<String>> {
 
-        protected MainActivity activity;
-        protected List<String> emptyList;
+        protected MainActivity mActivity;
+        protected List<String> mEmptyList;
 
         public ContentTask(MainActivity activity) {
-            this.activity = activity;
-            this.emptyList = new ArrayList<String>();
+            mActivity = activity;
+            mEmptyList = new ArrayList<String>();
         }
 
         protected List<String> queryExistingMp3() {
-            return this.selectMp3(this.queryAudio());
+            return selectMp3(queryAudio());
         }
 
         protected List<String> makeList(String s) {
@@ -656,8 +660,7 @@ public class MainActivity extends Activity {
             List<String> l = new ArrayList<String>();
 
             for (String file: files) {
-                boolean pred = this.isMp3(file);
-                l.addAll(pred ? this.makeList(file) : this.emptyList);
+                l.addAll(isMp3(file) ? makeList(file) : mEmptyList);
             }
 
             return l;
@@ -683,35 +686,35 @@ public class MainActivity extends Activity {
             String trackColumn = MediaStore.Audio.AudioColumns.TRACK;
             String pathColumn = MediaStore.MediaColumns.DATA;
             String order = String.format("%s, %s", trackColumn, pathColumn);
-            Cursor c = this.activity.getContentResolver().query(
+            Cursor c = mActivity.getContentResolver().query(
                     MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                     new String[] { pathColumn },
                     null,   // selection
                     null,   // selection arguments
                     order); // order
-            return c != null ? this.fetchRecord(c) : new ArrayList<String>();
+            return c != null ? fetchRecord(c) : new ArrayList<String>();
         }
     }
 
     private static class FileListingTask extends ContentTask {
 
-        private String path;
+        private String mPath;
 
         public FileListingTask(MainActivity activity, String path) {
             super(activity);
-            this.path = path;
+            mPath = path;
         }
 
         @Override
         protected void onPostExecute(List<String> files) {
-            this.activity.showFiles(files);
+            mActivity.showFiles(files);
         }
 
         @Override
         protected List<String> doInBackground(Void... voids) {
             Log.i(LOG_TAG, "FileListingTask started.");
 
-            List<String> files = this.selectFiles(this.queryExistingMp3());
+            List<String> files = selectFiles(queryExistingMp3());
 
             Log.i(LOG_TAG, "FileListingTask ended.");
             return files;
@@ -719,7 +722,7 @@ public class MainActivity extends Activity {
 
         private void addFile(List<String> l, String path) {
             File file = new File(path);
-            if (!file.getParent().equals(this.path)) {
+            if (!file.getParent().equals(mPath)) {
                 return;
             }
             l.add(file.getName());
@@ -729,7 +732,7 @@ public class MainActivity extends Activity {
             List<String> l = new ArrayList<String>();
 
             for (String file: files) {
-                this.addFile(l, file);
+                addFile(l, file);
             }
 
             return l;
@@ -744,15 +747,15 @@ public class MainActivity extends Activity {
 
         @Override
         protected void onPostExecute(List<String> directories) {
-            this.activity.showDirectories(directories.toArray(new String[0]));
+            mActivity.showDirectories(directories.toArray(new String[0]));
         }
 
         @Override
         protected List<String> doInBackground(Void... voids) {
             Log.i(LOG_TAG, "DirectoryListingTask started.");
 
-            List<String> audio = this.queryExistingMp3();
-            List<String> directories = this.listDirectories(audio);
+            List<String> audio = queryExistingMp3();
+            List<String> directories = listDirectories(audio);
             Collections.sort(directories);
 
             Log.i(LOG_TAG, "DirectoryListingTask ended.");
@@ -782,7 +785,7 @@ public class MainActivity extends Activity {
         }
 
         public void onProgressChanged(UzumakiSlider _) {
-            this.activity.showCurrentTime();
+            mActivity.showCurrentTime();
         }
     }
 
@@ -795,58 +798,58 @@ public class MainActivity extends Activity {
     public static final String LOG_TAG = "anaudioplayer";
 
     // Widgets
-    private ViewFlipper flipper;
-    private ListView dirList;
-    private ImageButton nextButton0;
+    private ViewFlipper mFlipper;
+    private ListView mDirList;
+    private ImageButton mNextButton0;
 
-    private View prevButton1;
-    private TextView dirLabel;
-    private ListView fileList;
-    private ImageButton nextButton1;
+    private View mPrevButton1;
+    private TextView mDirLabel;
+    private ListView mFileList;
+    private ImageButton mNextButton1;
 
-    private View prevButton2;
-    private ImageButton playButton;
-    private RotatingUzumakiSlider slider;
-    private TextView title;
-    private TextView currentTime;
-    private TextView totalTime;
+    private View mPrevButton2;
+    private ImageButton mPlayButton;
+    private RotatingUzumakiSlider mSlider;
+    private TextView mTitle;
+    private TextView mCurrentTime;
+    private TextView mTotalTime;
 
     // Objects supporting any widgets. They are stateless.
-    private Animation leftInAnimation;
-    private Animation leftOutAnimation;
-    private Animation rightInAnimation;
-    private Animation rightOutAnimation;
-    private View.OnClickListener pauseListener;
-    private View.OnClickListener playListener;
-    private SparseArray<MenuDispatcher> menuDispatchers = new SparseArray<MenuDispatcher>();
+    private Animation mLeftInAnimation;
+    private Animation mLeftOutAnimation;
+    private Animation mRightInAnimation;
+    private Animation mRightOutAnimation;
+    private View.OnClickListener mPauseListener;
+    private View.OnClickListener mPlayListener;
+    private SparseArray<MenuDispatcher> mMenuDispatchers = new SparseArray<MenuDispatcher>();
 
     /**
      * Timer. This is stateful, but it is configured automatically.
      */
-    private TimerInterface timer;
+    private TimerInterface mTimer;
 
     // Stateful internal data
-    private PlayerState playerState;
-    private String[] directories;
-    private FileSystem shownFiles = new FileSystem();
-    private FileSystem playingFiles = new FileSystem();
-    private int playingFilePosition;
+    private PlayerState mPlayerState;
+    private String[] mDirectories;
+    private FileSystem mShownFiles = new FileSystem();
+    private FileSystem mPlayingFiles = new FileSystem();
+    private int mPlayingFilePosition;
 
-    private Runnable procAfterSeeking;
+    private Runnable mProcAfterSeeking;
 
-    private ServiceStarter serviceStarter;
-    private ServiceStopper serviceStopper;
-    private ServiceUnbinder serviceUnbinder;
-    private ServiceConnection connection;
-    private MessengerWrapper outgoingMessenger;
-    private Messenger incomingMessenger;
-    private IncomingHandler incomingHandler;
+    private ServiceStarter mServiceStarter;
+    private ServiceStopper mServiceStopper;
+    private ServiceUnbinder mServiceUnbinder;
+    private ServiceConnection mConnection;
+    private MessengerWrapper mOutgoingMessenger;
+    private Messenger mIncomingMessenger;
+    private IncomingHandler mIncomingHandler;
 
     // Stateless internal data (reusable)
-    private TimerInterface fakeTimer;
-    private UzumakiSlider.OnSliderChangeListener trueSliderListener;
-    private UzumakiSlider.OnSliderChangeListener fakeSliderListener;
-    private MessengerWrapper fakeOutgoingMessenger;
+    private TimerInterface mFakeTimer;
+    private UzumakiSlider.OnSliderChangeListener mTrueSliderListener;
+    private UzumakiSlider.OnSliderChangeListener mFakeSliderListener;
+    private MessengerWrapper mFakeOutgoingMessenger;
 
     @Override
     public void onStart() {
@@ -857,28 +860,28 @@ public class MainActivity extends Activity {
 
     @Override
     public Object onRetainNonConfigurationInstance() {
-        return this.connection;
+        return mConnection;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        this.setContentView(R.layout.main);
+        setContentView(R.layout.main);
 
-        this.playerState = PlayerState.PAUSED;
-        this.findViews();
-        this.initializeFlipButtonListener();
-        this.initializeDirList();
-        this.initializeFileList();
-        this.initializeAnimation();
-        this.initializePlayButton();
-        this.initializeTimer();
-        this.initializeSlider();
-        this.initializeMenu();
+        mPlayerState = PlayerState.PAUSED;
+        findViews();
+        initializeFlipButtonListener();
+        initializeDirList();
+        initializeFileList();
+        initializeAnimation();
+        initializePlayButton();
+        initializeTimer();
+        initializeSlider();
+        initializeMenu();
 
-        this.incomingHandler = new IncomingHandler(this);
-        this.incomingMessenger = new Messenger(this.incomingHandler);
-        this.fakeOutgoingMessenger = new FakeMessenger();
+        mIncomingHandler = new IncomingHandler(this);
+        mIncomingMessenger = new Messenger(mIncomingHandler);
+        mFakeOutgoingMessenger = new FakeMessenger();
 
         Log.i(LOG_TAG, "MainActivity was created.");
     }
@@ -892,58 +895,58 @@ public class MainActivity extends Activity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        MenuDispatcher dispatcher = this.menuDispatchers.get(item.getItemId());
+        MenuDispatcher dispatcher = mMenuDispatchers.get(item.getItemId());
         return dispatcher != null ? dispatcher.dispatch() : super.onOptionsItemSelected(item);
     }
 
     private void showAbout() {
         Intent i = new Intent(this, AboutActivity.class);
-        this.startActivity(i);
+        startActivity(i);
     }
 
     private void initializeMenu() {
-        this.menuDispatchers.put(R.id.about, new AboutDispatcher(this));
+        mMenuDispatchers.put(R.id.about, new AboutDispatcher(this));
     }
 
     private void initializeSlider() {
-        this.slider.addOnStartHeadMovingListener(new OnStartHeadMovingListener(this));
-        this.slider.addOnStopHeadMovingListener(new OnStopHeadMovingListener(this));
-        this.slider.addOnStartRotatingListener(new OnStartRotatingListener(this));
-        this.slider.addOnStopRotatingListener(new OnStopRotatingListener(this));
-        this.slider.setLogger(new SliderLogger(this));
+        mSlider.addOnStartHeadMovingListener(new OnStartHeadMovingListener(this));
+        mSlider.addOnStopHeadMovingListener(new OnStopHeadMovingListener(this));
+        mSlider.addOnStartRotatingListener(new OnStartRotatingListener(this));
+        mSlider.addOnStopRotatingListener(new OnStopRotatingListener(this));
+        mSlider.setLogger(new SliderLogger(this));
 
-        this.trueSliderListener = new TrueSliderListener(this);
-        this.fakeSliderListener = new FakeSliderListener();
+        mTrueSliderListener = new TrueSliderListener(this);
+        mFakeSliderListener = new FakeSliderListener();
     }
 
     private void initializeTimer() {
-        this.timer = this.fakeTimer = new FakeTimer();
+        mTimer = mFakeTimer = new FakeTimer();
     }
 
     private void findViews() {
-        this.flipper = (ViewFlipper)this.findViewById(R.id.flipper);
+        mFlipper = (ViewFlipper)findViewById(R.id.flipper);
 
-        this.dirList = (ListView)this.findViewById(R.id.dir_list);
-        this.nextButton0 = (ImageButton)this.findViewById(R.id.next0);
+        mDirList = (ListView)findViewById(R.id.dir_list);
+        mNextButton0 = (ImageButton)findViewById(R.id.next0);
 
-        this.prevButton1 = (View)this.findViewById(R.id.prev1);
-        this.dirLabel = (TextView)this.findViewById(R.id.dir_label);
-        this.fileList = (ListView)this.findViewById(R.id.file_list);
-        this.nextButton1 = (ImageButton)this.findViewById(R.id.next1);
+        mPrevButton1 = (View)findViewById(R.id.prev1);
+        mDirLabel = (TextView)findViewById(R.id.dir_label);
+        mFileList = (ListView)findViewById(R.id.file_list);
+        mNextButton1 = (ImageButton)findViewById(R.id.next1);
 
-        this.prevButton2 = (View)this.findViewById(R.id.prev2);
-        this.playButton = (ImageButton)this.findViewById(R.id.play);
-        this.slider = (RotatingUzumakiSlider)this.findViewById(R.id.slider);
+        mPrevButton2 = (View)findViewById(R.id.prev2);
+        mPlayButton = (ImageButton)findViewById(R.id.play);
+        mSlider = (RotatingUzumakiSlider)findViewById(R.id.slider);
 
-        this.title = (TextView)this.findViewById(R.id.title);
-        this.currentTime = (TextView)this.findViewById(R.id.current_time);
-        this.totalTime = (TextView)this.findViewById(R.id.total_time);
+        mTitle = (TextView)findViewById(R.id.title);
+        mCurrentTime = (TextView)findViewById(R.id.current_time);
+        mTotalTime = (TextView)findViewById(R.id.total_time);
     }
 
     private void initializePlayButton() {
-        this.pauseListener = new PauseButtonListener(this);
-        this.playButton.setOnClickListener(this.pauseListener);
-        this.playListener = new PlayButtonListener(this);
+        mPauseListener = new PauseButtonListener(this);
+        mPlayButton.setOnClickListener(mPauseListener);
+        mPlayListener = new PlayButtonListener(this);
     }
 
     private class PauseButtonListener extends ActivityHolder implements View.OnClickListener {
@@ -954,7 +957,7 @@ public class MainActivity extends Activity {
 
         @Override
         public void onClick(View view) {
-            this.activity.pause();
+            mActivity.pause();
         }
     }
 
@@ -966,7 +969,7 @@ public class MainActivity extends Activity {
 
         @Override
         public void onClick(View view) {
-            this.activity.play();
+            mActivity.play();
         }
     }
 
@@ -982,86 +985,81 @@ public class MainActivity extends Activity {
 
     private void initializeAnimation() {
         Interpolator interp = AnimationUtils.loadInterpolator(this, INTERPOLATOR);
-        this.leftInAnimation = this.loadAnimation(R.anim.anim_left_in, interp);
-        this.leftOutAnimation = this.loadAnimation(R.anim.anim_left_out, interp);
-        this.rightInAnimation = this.loadAnimation(R.anim.anim_right_in, interp);
-        this.rightOutAnimation = this.loadAnimation(R.anim.anim_right_out, interp);
+        mLeftInAnimation = loadAnimation(R.anim.anim_left_in, interp);
+        mLeftOutAnimation = loadAnimation(R.anim.anim_left_out, interp);
+        mRightInAnimation = loadAnimation(R.anim.anim_right_in, interp);
+        mRightOutAnimation = loadAnimation(R.anim.anim_right_out, interp);
     }
 
     private void initializeDirList() {
-        this.dirList.setOnItemClickListener(new DirectoryListListener(this));
+        mDirList.setOnItemClickListener(new DirectoryListListener(this));
     }
 
     private void showDirectories(String[] dirs) {
-        this.directories = dirs;
-        this.dirList.setAdapter(new DirectoryAdapter(this, dirs));
+        mDirectories = dirs;
+        mDirList.setAdapter(new DirectoryAdapter(this, dirs));
     }
 
     private void initializeFlipButtonListener() {
-        ImageButton[] nextButtons = { this.nextButton0, this.nextButton1 };
-        this.setClickListener(nextButtons, new NextButtonListener(this));
+        ImageButton[] nextButtons = { mNextButton0, mNextButton1 };
+        setClickListener(nextButtons, new NextButtonListener(this));
 
-        View[] previousButtons = { this.prevButton1, this.prevButton2 };
-        this.setClickListener(previousButtons, new PreviousButtonListener(this));
+        View[] previousButtons = { mPrevButton1, mPrevButton2 };
+        setClickListener(previousButtons, new PreviousButtonListener(this));
     }
 
     private String getPlayingDirectory() {
-        return this.playingFiles.directory;
+        return mPlayingFiles.directory;
     }
 
     private void selectDirectory(String directory) {
-        this.shownFiles.directory = directory;
+        mShownFiles.directory = directory;
 
         new FileListingTask(this, directory).execute();
 
-        this.dirLabel.setText(directory);
-        this.enableButton(this.nextButton0, true);
-        this.showNext();
+        mDirLabel.setText(directory);
+        enableButton(mNextButton0, true);
+        showNext();
     }
 
     private void showFiles(List<String> files) {
-        this.showFiles(files.toArray(new String[0]));
+        showFiles(files.toArray(new String[0]));
     }
 
     private void showFiles(String[] files) {
-        this.shownFiles.files = files;
-        this.fileList.setAdapter(new FileAdapter(this, files));
+        mShownFiles.files = files;
+        mFileList.setAdapter(new FileAdapter(this, files));
     }
 
     private void stopTimer() {
-        this.timer.cancel();
-        this.timer = this.fakeTimer;
+        mTimer.cancel();
+        mTimer = mFakeTimer;
     }
 
     private void setSliderChangeListener(UzumakiSlider.OnSliderChangeListener l) {
-        this.slider.clearOnSliderChangeListeners();
-        this.slider.addOnSliderChangeListener(l);
+        mSlider.clearOnSliderChangeListeners();
+        mSlider.addOnSliderChangeListener(l);
     }
 
     private void enableSliderChangeListener() {
-        this.setSliderChangeListener(this.trueSliderListener);
+        setSliderChangeListener(mTrueSliderListener);
     }
 
     private void disableSliderChangeListener() {
-        this.setSliderChangeListener(this.fakeSliderListener);
+        setSliderChangeListener(mFakeSliderListener);
     }
 
     private void pause() {
-        this.procAfterSeeking = new StayAfterSeeking();
-        this.stopTimer();
-        this.stopAudioService();
-        this.changePauseButtonToPlayButton();
-        this.enableSliderChangeListener();
-        this.outgoingMessenger = this.fakeOutgoingMessenger;
-        this.playerState = PlayerState.PAUSED;
+        mProcAfterSeeking = new StayAfterSeeking();
+        stopTimer();
+        stopAudioService();
+        changePauseButtonToPlayButton();
+        enableSliderChangeListener();
+        mOutgoingMessenger = mFakeOutgoingMessenger;
+        mPlayerState = PlayerState.PAUSED;
     }
 
     private class PlayerTask extends TimerTask {
-
-        public PlayerTask(MainActivity activity) {
-            this.handler = new Handler();
-            this.proc = new Proc(activity);
-        }
 
         private class Proc extends ActivityHolder implements Runnable {
 
@@ -1070,52 +1068,57 @@ public class MainActivity extends Activity {
             }
 
             public void run() {
-                this.activity.sendMessage(AudioService.MSG_WHAT_TIME);
+                mActivity.sendMessage(AudioService.MSG_WHAT_TIME);
             }
         }
 
-        @Override
-        public void run() {
-            this.handler.post(this.proc);
+        public PlayerTask(MainActivity activity) {
+            mHandler = new Handler();
+            mProc = new Proc(activity);
         }
 
-        private Handler handler;
-        private Runnable proc;
+        private Handler mHandler;
+        private Runnable mProc;
+
+        @Override
+        public void run() {
+            mHandler.post(mProc);
+        }
     }
 
     private void showCurrentTime() {
-        this.showTime(this.currentTime, this.slider.getProgress());
+        showTime(mCurrentTime, mSlider.getProgress());
     }
 
     private void updateCurrentTime(int position) {
-        this.slider.setProgress(position);
-        this.showCurrentTime();
+        mSlider.setProgress(position);
+        showCurrentTime();
     }
 
     private void startTimer() {
-        this.timer = new TrueTimer();
+        mTimer = new TrueTimer();
         /*
          * Each Timer requests new TimerTask object (Timers cannot share one
          * task).
          */
-        this.timer.scheduleAtFixedRate(new PlayerTask(this), 0, 10);
+        mTimer.scheduleAtFixedRate(new PlayerTask(this), 0, 10);
     }
 
     private void changePlayButtonToPauseButton() {
-        this.playButton.setOnClickListener(this.pauseListener);
-        this.playButton.setImageResource(R.drawable.ic_pause);
+        mPlayButton.setOnClickListener(mPauseListener);
+        mPlayButton.setImageResource(R.drawable.ic_pause);
     }
 
     private void changePauseButtonToPlayButton() {
-        this.playButton.setOnClickListener(this.playListener);
-        this.playButton.setImageResource(R.drawable.ic_play);
+        mPlayButton.setOnClickListener(mPlayListener);
+        mPlayButton.setImageResource(R.drawable.ic_play);
     }
 
     private void onConnectedWithService() {
-        this.startTimer();
-        this.procAfterSeeking = new PlayAfterSeeking(this);
-        this.changePlayButtonToPauseButton();
-        this.disableSliderChangeListener();
+        startTimer();
+        mProcAfterSeeking = new PlayAfterSeeking(this);
+        changePlayButtonToPauseButton();
+        disableSliderChangeListener();
     }
 
     private void play() {
@@ -1123,47 +1126,47 @@ public class MainActivity extends Activity {
          * Stops the current timer. New timer will start by
          * PlayProcedureOnConnected later.
          */
-        this.stopTimer();
+        stopTimer();
 
-        this.startAudioService();
-        this.bindAudioService(new PlayProcedureOnConnected(this));
+        startAudioService();
+        bindAudioService(new PlayProcedureOnConnected(this));
 
-        this.playerState = PlayerState.PLAYING;
+        mPlayerState = PlayerState.PLAYING;
     }
 
     private void sendWhatFile() {
-        this.sendMessage(AudioService.MSG_WHAT_FILE);
+        sendMessage(AudioService.MSG_WHAT_FILE);
     }
 
     private void sendInit() {
         AudioService.InitArgument a = new AudioService.InitArgument();
-        a.directory = this.playingFiles.directory;
-        a.files = this.playingFiles.files;
-        a.position = this.playingFilePosition;
-        this.sendMessage(AudioService.MSG_INIT, a);
+        a.directory = mPlayingFiles.directory;
+        a.files = mPlayingFiles.files;
+        a.position = mPlayingFilePosition;
+        sendMessage(AudioService.MSG_INIT, a);
     }
 
     private void sendPlay() {
         AudioService.PlayArgument a = new AudioService.PlayArgument();
-        a.offset = this.slider.getProgress();
-        this.sendMessage(AudioService.MSG_PLAY, a);
+        a.offset = mSlider.getProgress();
+        sendMessage(AudioService.MSG_PLAY, a);
     }
 
     private String getPlayingFile() {
-        String[] files = this.playingFiles.files;
-        int pos = this.playingFilePosition;
+        String[] files = mPlayingFiles.files;
+        int pos = mPlayingFilePosition;
         // Returning "" must be harmless.
         return pos < files.length ? files[pos] : "";
     }
 
     private String getPlayingPath() {
-        String dir = this.getPlayingDirectory();
-        return dir + File.separator + this.getPlayingFile();
+        String dir = getPlayingDirectory();
+        return dir + File.separator + getPlayingFile();
     }
 
     private int getDuration(String path) {
         String col = MediaStore.Audio.AudioColumns.DURATION;
-        Cursor c = this.getContentResolver().query(
+        Cursor c = getContentResolver().query(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
                 new String[] { col },
                 String.format("%s=?", MediaStore.Audio.Media.DATA),
@@ -1200,18 +1203,18 @@ public class MainActivity extends Activity {
     }
 
     private void selectFile(int position) {
-        this.pause();
-        this.incomingHandler.ignoreResponseUntilPlaying();
+        pause();
+        mIncomingHandler.ignoreResponseUntilPlaying();
 
-        this.playingFiles.copyFrom(this.shownFiles);
-        this.playingFilePosition = position;
+        mPlayingFiles.copyFrom(mShownFiles);
+        mPlayingFilePosition = position;
 
-        this.enableButton(this.nextButton1, true);
-        this.showNext();
-        this.slider.setProgress(0);
-        this.dirList.invalidateViews();
+        enableButton(mNextButton1, true);
+        showNext();
+        mSlider.setProgress(0);
+        mDirList.invalidateViews();
 
-        this.play();
+        play();
     }
 
     /**
@@ -1220,34 +1223,34 @@ public class MainActivity extends Activity {
      * targets of this method.
      */
     private void showPlayingFile() {
-        this.fileList.invalidateViews();
+        mFileList.invalidateViews();
 
-        String path = this.getPlayingPath();
-        int duration = this.getDuration(path);
-        this.slider.setMax(duration);
-        this.title.setText(this.getPlayingFile());
-        this.showTime(this.totalTime, duration);
+        String path = getPlayingPath();
+        int duration = getDuration(path);
+        mSlider.setMax(duration);
+        mTitle.setText(getPlayingFile());
+        showTime(mTotalTime, duration);
     }
 
     private void showPrevious() {
-        this.flipper.setInAnimation(this.leftInAnimation);
-        this.flipper.setOutAnimation(this.rightOutAnimation);
-        this.flipper.showPrevious();
+        mFlipper.setInAnimation(mLeftInAnimation);
+        mFlipper.setOutAnimation(mRightOutAnimation);
+        mFlipper.showPrevious();
     }
 
     private void showNext() {
-        this.flipper.setInAnimation(this.rightInAnimation);
-        this.flipper.setOutAnimation(this.leftOutAnimation);
-        this.flipper.showNext();
+        mFlipper.setInAnimation(mRightInAnimation);
+        mFlipper.setOutAnimation(mLeftOutAnimation);
+        mFlipper.showNext();
     }
 
     private abstract class ListListener implements AdapterView.OnItemClickListener {
 
         public ListListener(MainActivity activity) {
-            this.activity = activity;
+            mActivity = activity;
         }
 
-        protected MainActivity activity;
+        protected MainActivity mActivity;
     }
 
     private class DirectoryListListener extends ListListener {
@@ -1256,8 +1259,9 @@ public class MainActivity extends Activity {
             super(activity);
         }
 
-        public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
-            this.activity.selectDirectory(this.activity.directories[position]);
+        public void onItemClick(AdapterView<?> adapter, View view, int position,
+                                long id) {
+            mActivity.selectDirectory(mActivity.mDirectories[position]);
         }
     }
 
@@ -1267,12 +1271,14 @@ public class MainActivity extends Activity {
             super(activity);
         }
 
-        public void onItemClick(AdapterView<?> adapter, View view, int position, long id) {
-            this.activity.selectFile(position);
+        public void onItemClick(AdapterView<?> adapter, View view, int position,
+                                long id) {
+            mActivity.selectFile(position);
         }
     }
 
-    private void setClickListener(View[] buttons, View.OnClickListener listener) {
+    private void setClickListener(View[] buttons,
+                                  View.OnClickListener listener) {
         for (View button: buttons) {
             button.setOnClickListener(listener);
         }
@@ -1281,10 +1287,10 @@ public class MainActivity extends Activity {
     private abstract class FlipButtonListener implements View.OnClickListener {
 
         public FlipButtonListener(MainActivity activity) {
-            this.activity = activity;
+            mActivity = activity;
         }
 
-        protected MainActivity activity;
+        protected MainActivity mActivity;
     }
 
     private class NextButtonListener extends FlipButtonListener {
@@ -1295,7 +1301,7 @@ public class MainActivity extends Activity {
 
         @Override
         public void onClick(View view) {
-            this.activity.showNext();
+            mActivity.showNext();
         }
     }
 
@@ -1307,36 +1313,39 @@ public class MainActivity extends Activity {
 
         @Override
         public void onClick(View view) {
-            this.activity.showPrevious();
+            mActivity.showPrevious();
         }
     }
 
     private interface TimerInterface {
 
-        public void scheduleAtFixedRate(TimerTask task, long deley, long period);
+        public void scheduleAtFixedRate(TimerTask task, long deley,
+                                        long period);
         public void cancel();
     }
 
     private class TrueTimer implements TimerInterface {
 
         public TrueTimer() {
-            this.timer = new Timer(true);
+            mTimer = new Timer(true);
         }
 
-        public void scheduleAtFixedRate(TimerTask task, long deley, long period) {
-            this.timer.scheduleAtFixedRate(task, deley, period);
+        public void scheduleAtFixedRate(TimerTask task, long deley,
+                                        long period) {
+            mTimer.scheduleAtFixedRate(task, deley, period);
         }
 
         public void cancel() {
-            this.timer.cancel();
+            mTimer.cancel();
         }
 
-        private Timer timer;
+        private Timer mTimer;
     }
 
     private class FakeTimer implements TimerInterface {
 
-        public void scheduleAtFixedRate(TimerTask task, long deley, long period) {
+        public void scheduleAtFixedRate(TimerTask task, long deley,
+                                        long period) {
         }
 
         public void cancel() {
@@ -1353,23 +1362,23 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
 
-        this.resumeState();
+        resumeState();
 
-        if (this.playerState == PlayerState.PLAYING) {
-            this.bindAudioService(new ResumeProcedureOnConnected(this));
-            this.serviceStarter = new FakeServiceStarter();
-            this.serviceStopper = new TrueServiceStopper(this);
+        if (mPlayerState == PlayerState.PLAYING) {
+            bindAudioService(new ResumeProcedureOnConnected(this));
+            mServiceStarter = new FakeServiceStarter();
+            mServiceStopper = new TrueServiceStopper(this);
         }
         else {
-            this.serviceStarter = new TrueServiceStarter(this);
-            this.serviceStopper = new FakeServiceStopper();
-            this.serviceUnbinder = new FakeServiceUnbinder();
-            this.connection = null;
+            mServiceStarter = new TrueServiceStarter(this);
+            mServiceStopper = new FakeServiceStopper();
+            mServiceUnbinder = new FakeServiceUnbinder();
+            mConnection = null;
             /*
              * To initialize other members (timer, the play button, outgoing
              * messenger, etc), pause() is called.
              */
-            this.pause();
+            pause();
         }
 
         Log.i(LOG_TAG, "MainActivity was resumed.");
@@ -1379,9 +1388,9 @@ public class MainActivity extends Activity {
     protected void onPause() {
         super.onPause();
 
-        this.stopTimer();
-        this.unbindAudioService();
-        this.saveState();
+        stopTimer();
+        unbindAudioService();
+        saveState();
 
         Log.i(LOG_TAG, "MainActivity was paused.");
     }
@@ -1394,30 +1403,24 @@ public class MainActivity extends Activity {
         Editor editor = getPrivatePreferences().edit();
 
         // widgets' states
-        this.saveInt(editor, Key.PAGE_INDEX, this.flipper.getDisplayedChild());
-        this.saveButton(editor, Key.NEXT_BUTTON0_ENABLED, this.nextButton0);
-        this.saveButton(editor, Key.NEXT_BUTTON1_ENABLED, this.nextButton1);
-        this.saveTextView(editor, Key.DIRECTORY_LABEL, this.dirLabel);
-        this.saveInt(editor, Key.DURATION, this.slider.getMax());
-        this.saveInt(editor, Key.PROGRESS, this.slider.getProgress());
-        this.saveTextView(editor, Key.TITLE, this.title);
-        this.saveTextView(editor, Key.CURRENT_TIME, this.currentTime);
-        this.saveTextView(editor, Key.TOTAL_TIME, this.totalTime);
+        saveInt(editor, Key.PAGE_INDEX, mFlipper.getDisplayedChild());
+        saveButton(editor, Key.NEXT_BUTTON0_ENABLED, mNextButton0);
+        saveButton(editor, Key.NEXT_BUTTON1_ENABLED, mNextButton1);
+        saveTextView(editor, Key.DIRECTORY_LABEL, mDirLabel);
+        saveInt(editor, Key.DURATION, mSlider.getMax());
+        saveInt(editor, Key.PROGRESS, mSlider.getProgress());
+        saveTextView(editor, Key.TITLE, mTitle);
+        saveTextView(editor, Key.CURRENT_TIME, mCurrentTime);
+        saveTextView(editor, Key.TOTAL_TIME, mTotalTime);
 
         // internal data
-        PreferencesUtil.putPlayerState(editor, this.playerState);
-        saveStringArray(editor, Key.DIRECTORIES, this.directories);
-        this.saveFileSystem(editor,
-                            this.shownFiles,
-                            Key.SHOWN_DIRECTORY,
-                            Key.SHOWN_FILES);
-        this.saveFileSystem(editor,
-                            this.playingFiles,
-                            Key.PLAYING_DIRECTORY,
-                            Key.PLAYING_FILES);
-        this.saveInt(editor,
-                     Key.PLAYING_FILE_POSITION,
-                     this.playingFilePosition);
+        PreferencesUtil.putPlayerState(editor, mPlayerState);
+        saveStringArray(editor, Key.DIRECTORIES, mDirectories);
+        saveFileSystem(editor, mShownFiles, Key.SHOWN_DIRECTORY,
+                       Key.SHOWN_FILES);
+        saveFileSystem(editor, mPlayingFiles, Key.PLAYING_DIRECTORY,
+                       Key.PLAYING_FILES);
+        saveInt(editor, Key.PLAYING_FILE_POSITION, mPlayingFilePosition);
 
         editor.commit();
     }
@@ -1427,34 +1430,28 @@ public class MainActivity extends Activity {
 
         // Widgets
         int childIndex = prefs.getInt(Key.PAGE_INDEX.getKey(), 0);
-        this.flipper.setDisplayedChild(childIndex);
-        this.restoreButton(prefs, Key.NEXT_BUTTON0_ENABLED, this.nextButton0);
-        this.restoreButton(prefs, Key.NEXT_BUTTON1_ENABLED, this.nextButton1);
-        this.restoreTextView(prefs, Key.DIRECTORY_LABEL, this.dirLabel);
-        this.restoreSlider(prefs);
-        this.restoreTextView(prefs, Key.TITLE, this.title);
-        this.restoreTextView(prefs, Key.CURRENT_TIME, this.currentTime);
-        this.restoreTextView(prefs, Key.TOTAL_TIME, this.totalTime);
+        mFlipper.setDisplayedChild(childIndex);
+        restoreButton(prefs, Key.NEXT_BUTTON0_ENABLED, mNextButton0);
+        restoreButton(prefs, Key.NEXT_BUTTON1_ENABLED, mNextButton1);
+        restoreTextView(prefs, Key.DIRECTORY_LABEL, mDirLabel);
+        restoreSlider(prefs);
+        restoreTextView(prefs, Key.TITLE, mTitle);
+        restoreTextView(prefs, Key.CURRENT_TIME, mCurrentTime);
+        restoreTextView(prefs, Key.TOTAL_TIME, mTotalTime);
 
         // Internal data
-        this.playerState = PreferencesUtil.getPlayerState(prefs);
-        this.directories = PreferencesUtil.getStringArray(
-                prefs,
-                Key.DIRECTORIES.name());
-        this.restoreFileSystem(prefs,
-                               this.shownFiles,
-                               Key.SHOWN_DIRECTORY,
-                               Key.SHOWN_FILES);
-        this.restoreFileSystem(prefs,
-                               this.playingFiles,
-                               Key.PLAYING_DIRECTORY,
-                               Key.PLAYING_FILES);
-        this.playingFilePosition = prefs.getInt(
-                Key.PLAYING_FILE_POSITION.name(),
-                0);
+        mPlayerState = PreferencesUtil.getPlayerState(prefs);
+        mDirectories = PreferencesUtil.getStringArray(prefs,
+                                                      Key.DIRECTORIES.name());
+        restoreFileSystem(prefs, mShownFiles, Key.SHOWN_DIRECTORY,
+                          Key.SHOWN_FILES);
+        restoreFileSystem(prefs, mPlayingFiles, Key.PLAYING_DIRECTORY,
+                          Key.PLAYING_FILES);
+        mPlayingFilePosition = prefs.getInt(Key.PLAYING_FILE_POSITION.name(),
+                                            0);
 
         // Restores UI.
-        this.showFiles(this.shownFiles.files);
+        showFiles(mShownFiles.files);
     }
 
     private enum Key {
@@ -1478,7 +1475,7 @@ public class MainActivity extends Activity {
         PLAYER_STATE;
 
         public String getKey() {
-            return this.name();
+            return name();
         }
     }
 
@@ -1491,16 +1488,17 @@ public class MainActivity extends Activity {
          * The default value is dummy. Its role is only avoiding the exception
          * of divide by zero.
          */
-        this.slider.setMax(prefs.getInt(Key.DURATION.name(), 1));
+        mSlider.setMax(prefs.getInt(Key.DURATION.name(), 1));
 
-        this.slider.setProgress(prefs.getInt(Key.PROGRESS.name(), 0));
+        mSlider.setProgress(prefs.getInt(Key.PROGRESS.name(), 0));
     }
 
     private void saveTextView(Editor editor, Key key, TextView view) {
         editor.putString(key.name(), view.getText().toString());
     }
 
-    private void restoreTextView(SharedPreferences prefs, Key key, TextView view) {
+    private void restoreTextView(SharedPreferences prefs, Key key,
+                                 TextView view) {
         view.setText(prefs.getString(key.name(), null));
     }
 
@@ -1512,24 +1510,21 @@ public class MainActivity extends Activity {
         PreferencesUtil.putStringArray(editor, key.name(), values);
     }
 
-    private void saveFileSystem(Editor editor,
-                                FileSystem fs,
-                                Key directoryKey,
+    private void saveFileSystem(Editor editor, FileSystem fs, Key directoryKey,
                                 Key filesKey) {
-        this.saveString(editor, directoryKey, fs.directory);
-        this.saveStringArray(editor, filesKey, fs.files);
+        saveString(editor, directoryKey, fs.directory);
+        saveStringArray(editor, filesKey, fs.files);
     }
 
-    private void restoreFileSystem(SharedPreferences prefs,
-                                   FileSystem fs,
-                                   Key directoryKey,
-                                   Key filesKey) {
+    private void restoreFileSystem(SharedPreferences prefs, FileSystem fs,
+                                   Key directoryKey, Key filesKey) {
         fs.directory = prefs.getString(directoryKey.name(), null);
         fs.files = PreferencesUtil.getStringArray(prefs, filesKey.name());
     }
 
-    private void restoreButton(SharedPreferences prefs, Key key, ImageButton button) {
-        this.enableButton(button, prefs.getBoolean(key.getKey(), false));
+    private void restoreButton(SharedPreferences prefs, Key key,
+                               ImageButton button) {
+        enableButton(button, prefs.getBoolean(key.getKey(), false));
     }
 
     private void saveButton(Editor editor, Key key, ImageButton button) {
@@ -1538,9 +1533,9 @@ public class MainActivity extends Activity {
 
     private void sendMessage(int what, Object o) {
         Message msg = Message.obtain(null, what, o);
-        msg.replyTo = this.incomingMessenger;
+        msg.replyTo = mIncomingMessenger;
         try {
-            this.outgoingMessenger.send(msg);
+            mOutgoingMessenger.send(msg);
         }
         catch (RemoteException e) {
             // TODO: MainActivity must show error to users.
@@ -1549,28 +1544,28 @@ public class MainActivity extends Activity {
     }
 
     private void sendMessage(int what) {
-        this.sendMessage(what, null);
+        sendMessage(what, null);
     }
 
     private void log(String msg) {
-        this.title.setText(msg);
+        mTitle.setText(msg);
     }
 
     private void startAudioService() {
-        this.serviceStarter.start();
-        this.serviceStarter = new FakeServiceStarter();
-        this.serviceStopper = new TrueServiceStopper(this);
+        mServiceStarter.start();
+        mServiceStarter = new FakeServiceStarter();
+        mServiceStopper = new TrueServiceStopper(this);
     }
 
     private void stopAudioService() {
-        this.serviceStopper.stop();
-        this.serviceStarter = new TrueServiceStarter(this);
-        this.serviceStopper = new FakeServiceStopper();
+        mServiceStopper.stop();
+        mServiceStarter = new TrueServiceStarter(this);
+        mServiceStopper = new FakeServiceStopper();
     }
 
     private void unbindAudioService() {
-        this.serviceUnbinder.unbind();
-        this.serviceUnbinder = new FakeServiceUnbinder();
+        mServiceUnbinder.unbind();
+        mServiceUnbinder = new FakeServiceUnbinder();
     }
 
     private Intent makeAudioServiceIntent() {
@@ -1578,20 +1573,20 @@ public class MainActivity extends Activity {
     }
 
     private void bindAudioService(Runnable procedureOnConnected) {
-        Intent intent = this.makeAudioServiceIntent();
-        this.connection = new Connection(this, procedureOnConnected);
-        this.bindService(intent, this.connection, Context.BIND_AUTO_CREATE);
-        this.serviceUnbinder = new TrueServiceUnbinder(this);
+        Intent intent = makeAudioServiceIntent();
+        mConnection = new Connection(this, procedureOnConnected);
+        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+        mServiceUnbinder = new TrueServiceUnbinder(this);
     }
 
     private void onStartSliding() {
-        this.stopTimer();
-        this.enableSliderChangeListener();
-        this.sendMessage(AudioService.MSG_PAUSE);
+        stopTimer();
+        enableSliderChangeListener();
+        sendMessage(AudioService.MSG_PAUSE);
     }
 
     private void initializeFileList() {
-        this.fileList.setOnItemClickListener(new FileListListener(this));
+        mFileList.setOnItemClickListener(new FileListListener(this));
     }
 }
 
