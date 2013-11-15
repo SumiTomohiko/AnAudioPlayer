@@ -240,7 +240,6 @@ public class AudioService extends Service {
         private MessageHandler mWhatTimePlayingHandler;
 
         public IncomingHandler(AudioService service) {
-            super();
             initializeHandlers(service);
         }
 
