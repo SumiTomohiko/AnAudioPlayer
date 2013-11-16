@@ -7,7 +7,6 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.Region;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
@@ -67,6 +66,7 @@ public abstract class UzumakiSlider extends ViewGroup {
     private List<OnSliderChangeListener> mOnSliderChangeListenerList;
 
     // helper
+    private Path mDiscPath = new Path();
     private Logger mLogger;
 
     /*
@@ -385,28 +385,15 @@ public abstract class UzumakiSlider extends ViewGroup {
     protected void drawDisc(Canvas canvas) {
         int x = getWidth() / 2;
         int y = getHeight() / 2;
-        Path outerOutline = new Path();
-        outerOutline.addCircle(x, y, getOutlineOuterDiameter() / 2,
-                               Path.Direction.CW);
-
-        Path innerOutline = new Path();
+        mDiscPath.addCircle(x, y, getOutlineOuterDiameter() / 2,
+                            Path.Direction.CW);
         int outlineInnerDiameter = getAbsoluteOutlineInnerDiameter();
-        innerOutline.addCircle(x, y, outlineInnerDiameter / 2,
-                               Path.Direction.CW);
+        mDiscPath.addCircle(x, y, outlineInnerDiameter / 2, Path.Direction.CCW);
 
         Paint paint = new Paint();
         paint.setARGB(255, 0, 0, 0);
         paint.setAntiAlias(true);
-
-        canvas.save();
-        try {
-            canvas.clipPath(outerOutline);
-            canvas.clipPath(innerOutline, Region.Op.DIFFERENCE);
-            canvas.drawPaint(paint);
-        }
-        finally {
-            canvas.restore();
-        }
+        canvas.drawPath(mDiscPath, paint);
     }
 
     protected void drawUzumaki(Canvas canvas) {
