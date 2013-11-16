@@ -45,10 +45,12 @@ public abstract class UzumakiSlider extends ViewGroup {
         TYPE_PERCENT
     };
 
+    // document
     private int mMin;
     private int mMax;
     private int mProgress;
 
+    // view data
     private int mStartAngle;
     private int mSweepAngle;
     private SizeType mOuterDiameterType;
@@ -64,6 +66,7 @@ public abstract class UzumakiSlider extends ViewGroup {
     private List<OnStopHeadMovingListener> mOnStopHeadMovingListenerList;
     private List<OnSliderChangeListener> mOnSliderChangeListenerList;
 
+    // helper
     private Logger mLogger;
 
     /*
