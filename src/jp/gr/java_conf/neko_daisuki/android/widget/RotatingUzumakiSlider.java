@@ -121,7 +121,8 @@ public class RotatingUzumakiSlider extends UzumakiSlider {
 
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        drawTie(canvas);
+
+        drawDisc(canvas);
         drawRotatingUzumaki(canvas);
 
         // The following statement is useful in debug.

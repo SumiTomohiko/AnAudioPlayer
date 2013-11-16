@@ -379,7 +379,7 @@ public abstract class UzumakiSlider extends ViewGroup {
         return Math.min(getWidth(), getHeight());
     }
 
-    protected void drawTie(Canvas canvas) {
+    protected void drawDisc(Canvas canvas) {
         int x = getWidth() / 2;
         int y = getHeight() / 2;
         Path outerOutline = new Path();
