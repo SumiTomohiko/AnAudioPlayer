@@ -28,48 +28,34 @@ public class RotatingUzumakiSlider extends UzumakiSlider {
 
     private abstract class MotionEventProc implements MotionEventDispatcher.Proc {
 
-        private RotatingUzumakiSlider mSlider;
-
-        public MotionEventProc(RotatingUzumakiSlider slider) {
-            mSlider = slider;
-        }
-
         public boolean run(MotionEvent event) {
-            return callback(mSlider, event);
+            return callback(RotatingUzumakiSlider.this, event);
         }
 
-        protected abstract boolean callback(RotatingUzumakiSlider slider, MotionEvent event);
+        protected abstract boolean callback(RotatingUzumakiSlider slider,
+                                            MotionEvent event);
     }
 
     private class ActionDownProc extends MotionEventProc {
 
-        public ActionDownProc(RotatingUzumakiSlider slider) {
-            super(slider);
-        }
-
-        protected boolean callback(RotatingUzumakiSlider slider, MotionEvent event) {
+        protected boolean callback(RotatingUzumakiSlider slider,
+                                   MotionEvent event) {
             return slider.onActionDown(event);
         }
     }
 
     private class ActionMoveProc extends MotionEventProc {
 
-        public ActionMoveProc(RotatingUzumakiSlider slider) {
-            super(slider);
-        }
-
-        protected boolean callback(RotatingUzumakiSlider slider, MotionEvent event) {
+        protected boolean callback(RotatingUzumakiSlider slider,
+                                   MotionEvent event) {
             return slider.onActionMove(event);
         }
     }
 
     private class ActionUpProc extends MotionEventProc {
 
-        public ActionUpProc(RotatingUzumakiSlider slider) {
-            super(slider);
-        }
-
-        protected boolean callback(RotatingUzumakiSlider slider, MotionEvent event) {
+        protected boolean callback(RotatingUzumakiSlider slider,
+                                   MotionEvent event) {
             return slider.onActionUp(event);
         }
     }
@@ -157,9 +143,9 @@ public class RotatingUzumakiSlider extends UzumakiSlider {
         mOnStartRotatingListeners = new ArrayList<OnStartRotatingListener>();
         mOnStopRotatingListeners = new ArrayList<OnStopRotatingListener>();
         mDispatcher = new MotionEventDispatcher();
-        mDispatcher.setDownProc(new ActionDownProc(this));
-        mDispatcher.setMoveProc(new ActionMoveProc(this));
-        mDispatcher.setUpProc(new ActionUpProc(this));
+        mDispatcher.setDownProc(new ActionDownProc());
+        mDispatcher.setMoveProc(new ActionMoveProc());
+        mDispatcher.setUpProc(new ActionUpProc());
 
         mHeaderSize = 42;
     }
