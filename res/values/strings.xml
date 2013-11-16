@@ -4,6 +4,8 @@
     <string name="app_name">An Audio Player</string>
     <string name="about_title">About An Audio Player</string>
 
+    <string name="action_about">About&#8230;</string>
+
     <!-- player -->
     <string name="time_separator">/</string>
     <string name="time_dummy">XX:XX</string>
