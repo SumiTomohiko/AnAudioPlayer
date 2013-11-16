@@ -749,7 +749,7 @@ public class MainActivity extends Activity {
             }
         }
 
-        public PlayerTask(MainActivity activity) {
+        public PlayerTask() {
             mHandler = new Handler();
             mProc = new Proc();
         }
@@ -1136,11 +1136,15 @@ public class MainActivity extends Activity {
 
     private void startTimer() {
         mTimer = new TrueTimer();
+        int duration = getDuration(getPlayingPath());   // [msec]
+        int angle = Math.abs(mSlider.getSweepAngle());
+        int period = (int)((float)duration / (float)angle) / 2;
         /*
          * Each Timer requests new TimerTask object (Timers cannot share one
          * task).
          */
-        mTimer.scheduleAtFixedRate(new PlayerTask(this), 0, 10);
+        TimerTask task = new PlayerTask();
+        mTimer.scheduleAtFixedRate(task, 0, Math.max(period, 10));
     }
 
     private void changePlayButtonToPauseButton() {
