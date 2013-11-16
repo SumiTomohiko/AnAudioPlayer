@@ -67,6 +67,8 @@ public abstract class UzumakiSlider extends ViewGroup {
 
     // helper
     private Path mDiscPath = new Path();
+    private Paint mDiscPaint = new Paint();
+    private Paint mSpiralPaint = new Paint();
     private Logger mLogger;
 
     /*
@@ -167,6 +169,11 @@ public abstract class UzumakiSlider extends ViewGroup {
         mOnSliderChangeListenerList = new ArrayList<OnSliderChangeListener>();
 
         setLogger(new FakeLogger());
+        mDiscPaint.setARGB(255, 0, 0, 0);
+        mDiscPaint.setAntiAlias(true);
+        mSpiralPaint.setARGB(255, 255, 255, 255);
+        mSpiralPaint.setAntiAlias(true);
+        mSpiralPaint.setStyle(Paint.Style.STROKE);
 
         mNotHeadList = new ArrayList<View>();
         mHeadList = new ArrayList<View>();
@@ -390,27 +397,20 @@ public abstract class UzumakiSlider extends ViewGroup {
         int outlineInnerDiameter = getAbsoluteOutlineInnerDiameter();
         mDiscPath.addCircle(x, y, outlineInnerDiameter / 2, Path.Direction.CCW);
 
-        Paint paint = new Paint();
-        paint.setARGB(255, 0, 0, 0);
-        paint.setAntiAlias(true);
-        canvas.drawPath(mDiscPath, paint);
+        canvas.drawPath(mDiscPath, mDiscPaint);
     }
 
     protected void drawUzumaki(Canvas canvas) {
         int x = getWidth() / 2;
         int y = getHeight() / 2;
-
-        Paint paint = new Paint();
-        paint.setARGB(255, 255, 255, 255);
-        paint.setAntiAlias(true);
-        paint.setStrokeWidth(mStrokeWidth);
-        paint.setStyle(Paint.Style.STROKE);
+        mSpiralPaint.setStrokeWidth(mStrokeWidth);
 
         int outerDiameter = getAbsoluteOuterDiameter();
         int innerDiameter = getAbsoluteInnerDiameter();
         UzumakiDiagram uzumaki = new UzumakiDiagram(x, y, mStartAngle,
                                                     mSweepAngle, outerDiameter,
-                                                    innerDiameter, paint);
+                                                    innerDiameter,
+                                                    mSpiralPaint);
         uzumaki.draw(canvas);
     }
 
