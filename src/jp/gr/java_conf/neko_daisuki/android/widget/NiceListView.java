@@ -16,6 +16,15 @@ import jp.gr.java_conf.neko_daisuki.anaudioplayer.R;
 
 public class NiceListView extends ListView {
 
+    private enum Direction {
+        UP,
+        DOWN;
+
+        public int toInteger() {
+            return this == UP ? 1 : -1;
+        }
+    }
+
     private abstract class MoveAction implements Runnable {
 
         public void run() {
@@ -37,7 +46,7 @@ public class NiceListView extends ListView {
             if (range <= offset + extent) {
                 return;
             }
-            autoScroll(1, this);
+            autoScroll(Direction.UP, this);
         }
     }
 
@@ -47,7 +56,7 @@ public class NiceListView extends ListView {
             if (computeVerticalScrollOffset() <= 0) {
                 return;
             }
-            autoScroll(-1, this);
+            autoScroll(Direction.DOWN, this);
         }
     }
 
@@ -351,8 +360,9 @@ public class NiceListView extends ListView {
         return true;
     }
 
-    private void autoScroll(int direction, MoveAction action) {
-        smoothScrollByOffset(direction * computeVerticalScrollRange() / 100);
+    private void autoScroll(Direction direction, MoveAction action) {
+        int direc = direction.toInteger();
+        smoothScrollByOffset(direc * computeVerticalScrollRange() / 100);
         postDelayed(action, 50);
     }
 }
