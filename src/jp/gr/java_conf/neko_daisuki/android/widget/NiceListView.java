@@ -349,6 +349,7 @@ public class NiceListView extends ListView {
                 MotionEvent me = MotionEvent.obtain(event);
                 me.setAction(MotionEvent.ACTION_DOWN);
                 super.onTouchEvent(me);
+                me.recycle();
             }
             mAutoScrolling = false;
             return super.onTouchEvent(event);
