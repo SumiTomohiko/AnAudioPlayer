@@ -390,7 +390,7 @@ public abstract class UzumakiSlider extends ViewGroup {
     }
 
     protected void drawDisc(Canvas canvas) {
-        mDiscPath.reset();
+        mDiscPath.rewind();
 
         int x = getWidth() / 2;
         int y = getHeight() / 2;
