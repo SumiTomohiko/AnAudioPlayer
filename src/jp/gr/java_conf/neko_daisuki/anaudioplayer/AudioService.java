@@ -6,6 +6,8 @@ import java.io.IOException;
 import android.app.Service;
 import android.content.Intent;
 import android.media.AudioManager;
+import android.media.MediaPlayer.OnPreparedListener;
+import android.media.MediaPlayer.OnSeekCompleteListener;
 import android.media.MediaPlayer;
 import android.os.Handler;
 import android.os.IBinder;
@@ -45,18 +47,38 @@ public class AudioService extends Service {
 
     private static class TruePlayer implements Player {
 
+        private class SeekCompleteListener implements OnSeekCompleteListener {
+
+            public void onSeekComplete(MediaPlayer mp) {
+                mp.start();
+            }
+        }
+
+        private class PreparedListener implements OnPreparedListener {
+
+            private int mOffset;
+
+            public PreparedListener(int offset) {
+                mOffset = offset;
+            }
+
+            public void onPrepared(MediaPlayer mp) {
+                mp.seekTo(mOffset);
+            }
+        }
+
         private MediaPlayer mMp = new MediaPlayer();
 
         public TruePlayer() {
+            mMp.setOnSeekCompleteListener(new SeekCompleteListener());
             mMp.setAudioStreamType(AudioManager.STREAM_MUSIC);
         }
 
         public void play(String path, int offset) throws IOException {
+            mMp.setOnPreparedListener(new PreparedListener(offset));
             mMp.reset();
             mMp.setDataSource(path);
-            mMp.prepare();
-            mMp.seekTo(offset);
-            mMp.start();
+            mMp.prepareAsync();
         }
 
         public void pause() {
