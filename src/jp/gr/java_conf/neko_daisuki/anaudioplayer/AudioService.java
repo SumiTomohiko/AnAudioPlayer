@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import android.app.Service;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Handler;
 import android.os.IBinder;
@@ -45,6 +46,10 @@ public class AudioService extends Service {
     private static class TruePlayer implements Player {
 
         private MediaPlayer mMp = new MediaPlayer();
+
+        public TruePlayer() {
+            mMp.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        }
 
         public void play(String path, int offset) throws IOException {
             mMp.reset();
