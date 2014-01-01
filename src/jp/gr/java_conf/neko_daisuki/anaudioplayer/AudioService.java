@@ -63,6 +63,7 @@ public class AudioService extends Service {
         }
 
         public void release() {
+            mMp.reset();
             mMp.release();
         }
 
