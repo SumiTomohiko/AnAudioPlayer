@@ -2,8 +2,8 @@
 <!DOCTYPE manifest>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="jp.gr.java_conf.neko_daisuki.anaudioplayer"
-    android:versionCode="13"
-    android:versionName="1.0.0beta7">
+    android:versionCode="14"
+    android:versionName="1.0.0beta8">
     <uses-sdk android:minSdkVersion="11" android:targetSdkVersion="18"/>
     <application
         android:icon="@drawable/ic_launcher"
