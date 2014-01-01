@@ -6,6 +6,7 @@ import java.io.IOException;
 import android.app.Service;
 import android.content.Intent;
 import android.media.AudioManager;
+import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnPreparedListener;
 import android.media.MediaPlayer.OnSeekCompleteListener;
 import android.media.MediaPlayer;
@@ -42,7 +43,7 @@ public class AudioService extends Service {
         public void pause();
         public int getCurrentPosition();
         public void release();
-        public void setOnCompletionListener(MediaPlayer.OnCompletionListener listener);
+        public void setOnCompletionListener(OnCompletionListener listener);
     }
 
     private static class TruePlayer implements Player {
@@ -94,7 +95,7 @@ public class AudioService extends Service {
             mMp.release();
         }
 
-        public void setOnCompletionListener(MediaPlayer.OnCompletionListener listener) {
+        public void setOnCompletionListener(OnCompletionListener listener) {
             mMp.setOnCompletionListener(listener);
         }
     }
@@ -120,11 +121,11 @@ public class AudioService extends Service {
         public void release() {
         }
 
-        public void setOnCompletionListener(MediaPlayer.OnCompletionListener listener) {
+        public void setOnCompletionListener(OnCompletionListener listener) {
         }
     }
 
-    private class CompletionListener implements MediaPlayer.OnCompletionListener {
+    private class CompletionListener implements OnCompletionListener {
 
         @Override
         public void onCompletion(MediaPlayer _) {
