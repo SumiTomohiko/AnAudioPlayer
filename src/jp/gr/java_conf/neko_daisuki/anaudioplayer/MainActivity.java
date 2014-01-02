@@ -208,18 +208,9 @@ public class MainActivity extends Activity {
         }
     }
 
-    private abstract class ProcedureOnConnected implements Runnable {
+    private abstract class ProcedureOnConnected {
 
         public abstract void run();
-    }
-
-    private class PlayProcedureOnConnected extends ProcedureOnConnected {
-
-        public void run() {
-            sendInit();
-            sendPlay();
-            onConnectedWithService();
-        }
     }
 
     private class ResumeProcedureOnConnected extends ProcedureOnConnected {
@@ -230,60 +221,9 @@ public class MainActivity extends Activity {
         }
     }
 
-    private interface ServiceUnbinder {
+    private class NopProcedureOnConnected extends ProcedureOnConnected {
 
-        public void unbind();
-    }
-
-    private class TrueServiceUnbinder implements ServiceUnbinder {
-
-        public void unbind() {
-            unbindService(mConnection);
-        }
-    }
-
-    private class FakeServiceUnbinder implements ServiceUnbinder {
-
-        public void unbind() {
-        }
-    }
-
-    private interface ServiceStarter {
-
-        public void start();
-    }
-
-    private class TrueServiceStarter implements ServiceStarter {
-
-        public void start() {
-            Intent intent = new Intent(MainActivity.this, AudioService.class);
-            startService(intent);
-        }
-    }
-
-    private class FakeServiceStarter implements ServiceStarter {
-
-        public void start() {
-        }
-    }
-
-    private interface ServiceStopper {
-
-        public void stop();
-    }
-
-    private class TrueServiceStopper implements ServiceStopper {
-
-        public void stop() {
-            unbindAudioService();
-            Intent intent = new Intent(MainActivity.this, AudioService.class);
-            stopService(intent);
-        }
-    }
-
-    private class FakeServiceStopper implements ServiceStopper {
-
-        public void stop() {
+        public void run() {
         }
     }
 
@@ -313,9 +253,9 @@ public class MainActivity extends Activity {
 
     private class Connection implements ServiceConnection {
 
-        private Runnable mProcedureOnConnected;
+        private ProcedureOnConnected mProcedureOnConnected;
 
-        public Connection(Runnable procedureOnConnected) {
+        public Connection(ProcedureOnConnected procedureOnConnected) {
             mProcedureOnConnected = procedureOnConnected;
         }
 
@@ -887,11 +827,8 @@ public class MainActivity extends Activity {
 
     private Runnable mProcAfterSeeking;
 
-    private ServiceStarter mServiceStarter;
-    private ServiceStopper mServiceStopper;
-    private ServiceUnbinder mServiceUnbinder;
     private ServiceConnection mConnection;
-    private MessengerWrapper mOutgoingMessenger;
+    private MessengerWrapper mOutgoingMessenger = new FakeMessenger();
     private Messenger mIncomingMessenger;
     private IncomingHandler mIncomingHandler;
 
@@ -899,7 +836,6 @@ public class MainActivity extends Activity {
     private TimerInterface mFakeTimer;
     private UzumakiSlider.OnSliderChangeListener mTrueSliderListener;
     private UzumakiSlider.OnSliderChangeListener mFakeSliderListener;
-    private MessengerWrapper mFakeOutgoingMessenger;
 
     @Override
     public void onStart() {
@@ -930,7 +866,6 @@ public class MainActivity extends Activity {
 
         mIncomingHandler = new IncomingHandler(this);
         mIncomingMessenger = new Messenger(mIncomingHandler);
-        mFakeOutgoingMessenger = new FakeMessenger();
 
         Log.i(LOG_TAG, "MainActivity was created.");
     }
@@ -957,19 +892,17 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-
         resumeState();
 
-        if (mPlayerState == PlayerState.PLAYING) {
-            bindAudioService(new ResumeProcedureOnConnected());
-            mServiceStarter = new FakeServiceStarter();
-            mServiceStopper = new TrueServiceStopper();
-        }
-        else {
-            mServiceStarter = new TrueServiceStarter();
-            mServiceStopper = new FakeServiceStopper();
-            mServiceUnbinder = new FakeServiceUnbinder();
-            mConnection = null;
+        ProcedureOnConnected proc = mPlayerState == PlayerState.PLAYING
+                ? new ResumeProcedureOnConnected()
+                : new NopProcedureOnConnected();
+        mConnection = new Connection(proc);
+        Intent intent = new Intent(this, AudioService.class);
+        startService(intent);
+        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
+
+        if (mPlayerState != PlayerState.PLAYING) {
             /*
              * To initialize other members (timer, the play button, outgoing
              * messenger, etc), pause() is called.
@@ -984,8 +917,8 @@ public class MainActivity extends Activity {
     protected void onPause() {
         super.onPause();
 
+        unbindService(mConnection);
         stopTimer();
-        unbindAudioService();
         saveState();
 
         Log.i(LOG_TAG, "MainActivity was paused.");
@@ -1118,10 +1051,9 @@ public class MainActivity extends Activity {
     private void pause() {
         mProcAfterSeeking = new StayAfterSeeking();
         stopTimer();
-        stopAudioService();
         changePauseButtonToPlayButton();
         enableSliderChangeListener();
-        mOutgoingMessenger = mFakeOutgoingMessenger;
+        sendMessage(AudioService.MSG_PAUSE);
         mPlayerState = PlayerState.PAUSED;
     }
 
@@ -1165,14 +1097,11 @@ public class MainActivity extends Activity {
     }
 
     private void play() {
-        /*
-         * Stops the current timer. New timer will start by
-         * PlayProcedureOnConnected later.
-         */
         stopTimer();
 
-        startAudioService();
-        bindAudioService(new PlayProcedureOnConnected());
+        sendInit();
+        sendPlay();
+        onConnectedWithService();
 
         mPlayerState = PlayerState.PLAYING;
     }
@@ -1425,34 +1354,6 @@ public class MainActivity extends Activity {
         mTitle.setText(msg);
     }
     */
-
-    private void startAudioService() {
-        mServiceStarter.start();
-        mServiceStarter = new FakeServiceStarter();
-        mServiceStopper = new TrueServiceStopper();
-    }
-
-    private void stopAudioService() {
-        mServiceStopper.stop();
-        mServiceStarter = new TrueServiceStarter();
-        mServiceStopper = new FakeServiceStopper();
-    }
-
-    private void unbindAudioService() {
-        mServiceUnbinder.unbind();
-        mServiceUnbinder = new FakeServiceUnbinder();
-    }
-
-    private Intent makeAudioServiceIntent() {
-        return new Intent(this, AudioService.class);
-    }
-
-    private void bindAudioService(Runnable procedureOnConnected) {
-        Intent intent = makeAudioServiceIntent();
-        mConnection = new Connection(procedureOnConnected);
-        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-        mServiceUnbinder = new TrueServiceUnbinder();
-    }
 
     private void onStartSliding() {
         stopTimer();

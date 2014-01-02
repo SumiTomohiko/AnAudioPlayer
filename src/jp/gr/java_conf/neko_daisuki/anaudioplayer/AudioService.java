@@ -44,6 +44,7 @@ public class AudioService extends Service {
         public int getCurrentPosition();
         public void release();
         public void setOnCompletionListener(OnCompletionListener listener);
+        public void seekTo(int offset);
     }
 
     private static class TruePlayer implements Player {
@@ -98,6 +99,11 @@ public class AudioService extends Service {
         public void setOnCompletionListener(OnCompletionListener listener) {
             mMp.setOnCompletionListener(listener);
         }
+
+        @Override
+        public void seekTo(int offset) {
+            mMp.seekTo(offset);
+        }
     }
 
     private static class FakePlayer implements Player {
@@ -122,6 +128,10 @@ public class AudioService extends Service {
         }
 
         public void setOnCompletionListener(OnCompletionListener listener) {
+        }
+
+        @Override
+        public void seekTo(int offset) {
         }
     }
 
@@ -168,7 +178,7 @@ public class AudioService extends Service {
             }
 
             public void handle(Message msg) {
-                mService.mPlayer.pause();
+                mService.pause();
             }
         }
 
@@ -314,6 +324,8 @@ public class AudioService extends Service {
         @Override
         public void run() {
             mHandler.complete();
+            postProcessOfPause();
+            mPath = null;
         }
     }
 
@@ -377,10 +389,12 @@ public class AudioService extends Service {
     private String mDirectory;
     private String[] mFiles;
     private int mPosition;
+    private String mPath;
 
     private IncomingHandler mHandler;
     private Messenger mMessenger;
     private Player mPlayer;
+    private Player mTruePlayer;
     private CompletionProcedure mCompletionProc;
     private CompletionProcedure mStopProc;
     private CompletionProcedure mPlayNextProc;
@@ -403,8 +417,9 @@ public class AudioService extends Service {
 
         mHandler = new IncomingHandler(this);
         mMessenger = new Messenger(mHandler);
-        mPlayer = new TruePlayer();
-        mPlayer.setOnCompletionListener(new CompletionListener());
+        mTruePlayer = new TruePlayer();
+        mTruePlayer.setOnCompletionListener(new CompletionListener());
+        mPlayer = new FakePlayer(0);
         mStopProc = new StopProcedure();
         mPlayNextProc = new PlayNextProcedure();
 
@@ -416,12 +431,7 @@ public class AudioService extends Service {
         super.onDestroy();
 
         Player player = mPlayer;
-        player.pause();
-        /*
-         * MSG_WHAT_TIME message comes even after onDestroy(). So I placed
-         * FakePlayer to handle MSG_WHAT_TIME.
-         */
-        mPlayer = new FakePlayer(player.getCurrentPosition());
+        pause();    // NOTICE: This causes side effect to change mPlayer.
         player.release();
 
         Log.i(LOG_TAG, "AudioService was destroyed.");
@@ -435,6 +445,15 @@ public class AudioService extends Service {
     private void play(int offset) {
         String file = mFiles[mPosition];
         String path = mDirectory + File.separator + file;
+        mPlayer = mTruePlayer;
+
+        mHandler.sendPlaying();
+
+        if (path.equals(mPath)) {
+            mPlayer.seekTo(offset);
+            return;
+        }
+
         try {
             mPlayer.play(path, offset);
         }
@@ -443,10 +462,19 @@ public class AudioService extends Service {
             // TODO: The handler must return an error to a client.
             return;
         }
+        mPath = path;
         updateCompletionProcedure();
-        mHandler.sendPlaying();
 
         Log.i(LOG_TAG, String.format("Play: %s from %d", path, offset));
+    }
+
+    private void pause() {
+        mPlayer.pause();
+        postProcessOfPause();
+    }
+
+    private void postProcessOfPause() {
+        mPlayer = new FakePlayer(mPlayer.getCurrentPosition());
     }
 }
 
