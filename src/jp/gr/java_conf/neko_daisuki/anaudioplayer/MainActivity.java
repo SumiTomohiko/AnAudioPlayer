@@ -782,7 +782,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    public static final String LOG_TAG = "anaudioplayer";
+    public static final String LOG_TAG = "activity";
 
     private static final long ANIMATION_DURATION = 250;
     private static final int INTERPOLATOR = android.R.anim.linear_interpolator;

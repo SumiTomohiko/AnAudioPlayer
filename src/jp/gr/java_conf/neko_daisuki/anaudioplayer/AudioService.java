@@ -384,7 +384,7 @@ public class AudioService extends Service {
     public static final int MSG_COMPLETION = 0x20;
     public static final int MSG_NOT_PLAYING = 0x40;
 
-    private static final String LOG_TAG = MainActivity.LOG_TAG;
+    private static final String LOG_TAG = "service";
 
     private String mDirectory;
     private String[] mFiles;
