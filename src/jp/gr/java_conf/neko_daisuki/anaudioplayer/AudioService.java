@@ -325,7 +325,6 @@ public class AudioService extends Service {
         public void run() {
             mHandler.complete();
             postProcessOfPause();
-            mPath = null;
         }
     }
 
