@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:text="@string/title_dummy"
         style="@style/List"/>
-    <jp.gr.java_conf.neko_daisuki.android.widget.NiceListView
+    <jp.gr.java_conf.neko_daisuki.android.widget.AutoScrollableListView
         android:id="@+id/file_list"
         android:layout_width="fill_parent"
         android:layout_height="0dip"
