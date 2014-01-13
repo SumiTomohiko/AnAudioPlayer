@@ -69,6 +69,8 @@ public abstract class UzumakiSlider extends ViewGroup {
     private Path mDiscPath = new Path();
     private Paint mDiscPaint = new Paint();
     private Paint mSpiralPaint = new Paint();
+    private UzumakiDiagram mSpiralDrawer = new UzumakiDiagram();
+
     private Logger mLogger;
 
     /*
@@ -407,13 +409,9 @@ public abstract class UzumakiSlider extends ViewGroup {
         int y = getHeight() / 2;
         mSpiralPaint.setStrokeWidth(mStrokeWidth);
 
-        int outerDiameter = getAbsoluteOuterDiameter();
-        int innerDiameter = getAbsoluteInnerDiameter();
-        UzumakiDiagram uzumaki = new UzumakiDiagram(x, y, mStartAngle,
-                                                    mSweepAngle, outerDiameter,
-                                                    innerDiameter,
-                                                    mSpiralPaint);
-        uzumaki.draw(canvas);
+        mSpiralDrawer.draw(canvas, x, y, mStartAngle, mSweepAngle,
+                           getAbsoluteOuterDiameter(),
+                           getAbsoluteInnerDiameter(), mSpiralPaint);
     }
 
     protected abstract void layoutHead(View head, int l, int t, int r, int b);
