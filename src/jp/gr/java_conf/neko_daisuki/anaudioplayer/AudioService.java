@@ -39,7 +39,8 @@ public class AudioService extends Service {
         public static String getMessageString(Message msg) {
             Object o = msg.obj;
             String args = o != null ? o.toString() : "(null)";
-            return String.format("%s: %s", mMessages.get(msg.what), args);
+            return String.format(LOCALE, "%s: %s", mMessages.get(msg.what),
+                                 args);
         }
 
         static {
@@ -88,7 +89,7 @@ public class AudioService extends Service {
 
         public String toString() {
             String fmt = "directory=%s, files=%s";
-            return String.format(fmt, quote(directory), join(files));
+            return String.format(LOCALE, fmt, quote(directory), join(files));
         }
     }
 
@@ -104,7 +105,7 @@ public class AudioService extends Service {
                     "timeAtStart=%d (%s)",
                     "offsetAtStart=%d"
             });
-            return String.format(fmt, filePosition, timeAtStart,
+            return String.format(LOCALE, fmt, filePosition, timeAtStart,
                                  DATE_FORMAT.format(new Date(timeAtStart)),
                                  offsetAtStart);
         }
@@ -124,7 +125,7 @@ public class AudioService extends Service {
         public int currentOffset;
 
         public String toString() {
-            return String.format("currentOffset=%d", currentOffset);
+            return String.format(LOCALE, "currentOffset=%d", currentOffset);
         }
     }
 
@@ -135,7 +136,7 @@ public class AudioService extends Service {
 
         public String toString() {
             String fmt = "filePosition=%d, offset=%d";
-            return String.format(fmt, filePosition, offset);
+            return String.format(LOCALE, fmt, filePosition, offset);
         }
     }
 
@@ -146,7 +147,7 @@ public class AudioService extends Service {
 
         public String toString() {
             String fmt = "directory=%s, files=%s";
-            return String.format(fmt, quote(directory), join(files));
+            return String.format(LOCALE, fmt, quote(directory), join(files));
         }
     }
 
@@ -384,7 +385,7 @@ public class AudioService extends Service {
         @Override
         public void handleMessage(Message msg) {
             String s = Utils.getMessageString(msg);
-            Log.i(LOG_TAG, String.format("recv: %s", s));
+            Log.i(LOG_TAG, String.format(LOCALE, "recv: %s", s));
 
             mHandlers.get(msg.what).handle(msg);
         }
@@ -431,9 +432,10 @@ public class AudioService extends Service {
     private static final String PATH_FILE_POSITION = "file_position";
 
     private static final String LOG_TAG = "service";
+    private static final Locale LOCALE = Locale.ROOT;
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat(
             "yyyy-MM-dd HH:mm:ss.SSS",
-            Locale.ROOT);
+            LOCALE);
 
     private String mDirectory;
     private String[] mFiles;
@@ -501,7 +503,7 @@ public class AudioService extends Service {
     }
 
     private String joinPath(String s, String t) {
-        return String.format("%s%s%s", s, File.separator, t);
+        return String.format(LOCALE, "%s%s%s", s, File.separator, t);
     }
 
     private void play(int offset) {
@@ -524,7 +526,7 @@ public class AudioService extends Service {
         mPlayingPath = path;
         updateCompletionProcedure();
 
-        Log.i(LOG_TAG, String.format("Play: %s from %d", path, offset));
+        Log.i(LOG_TAG, String.format(LOCALE, "Play: %s from %d", path, offset));
     }
 
     private void pause() {
@@ -552,7 +554,7 @@ public class AudioService extends Service {
 
     private void reply(Messenger replyTo, Message res) {
         String s = Utils.getMessageString(res);
-        Log.i(LOG_TAG, String.format("send: %s", s));
+        Log.i(LOG_TAG, String.format(LOCALE, "send: %s", s));
 
         try {
             replyTo.send(res);
@@ -572,7 +574,7 @@ public class AudioService extends Service {
             in = openFileInput(path);
         }
         catch (FileNotFoundException e) {
-            Log.i(LOG_TAG, String.format("%s not found.", path));
+            Log.i(LOG_TAG, String.format(LOCALE, "%s not found.", path));
             return new String[0];
         }
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
@@ -622,7 +624,7 @@ public class AudioService extends Service {
         try {
             out = openFileOutput(path, 0);
         } catch (FileNotFoundException e) {
-            Log.i(LOG_TAG, String.format("%s not found.", path));
+            Log.i(LOG_TAG, String.format(LOCALE, "%s not found.", path));
             return;
         }
         PrintWriter writer = new PrintWriter(out);
