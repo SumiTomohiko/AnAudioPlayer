@@ -32,7 +32,8 @@
     </LinearLayout>
     <LinearLayout
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent">
+        android:layout_height="fill_parent"
+        android:baselineAligned="false">
         <include
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
@@ -46,7 +47,8 @@
             <include layout="@layout/slider"/>
             <LinearLayout
                 android:layout_width="fill_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:baselineAligned="false">
                 <!-- I don't know why I need the following two attributes:
 
                      * android:layout_width
