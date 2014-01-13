@@ -3,6 +3,7 @@ package jp.gr.java_conf.neko_daisuki.anaudioplayer;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -50,25 +51,7 @@ import jp.gr.java_conf.neko_daisuki.android.widget.UzumakiSlider;
 
 public class MainActivity extends Activity {
 
-    private enum PlayerState {
-        PLAYING,
-        PAUSED
-    };
-
     private static class PreferencesUtil {
-
-        private static final String KEY_PLAYER_STATE = "PlayerState";
-
-        public static PlayerState getPlayerState(SharedPreferences prefs) {
-            String value = prefs.getString(KEY_PLAYER_STATE, "");
-            return value.equals(PlayerState.PLAYING.name())
-                ? PlayerState.PLAYING
-                : PlayerState.PAUSED;
-        }
-
-        public static void putPlayerState(Editor editor, PlayerState state) {
-            editor.putString(KEY_PLAYER_STATE, state.name());
-        }
 
         public static String[] getStringArray(SharedPreferences prefs,
                                               String key) {
@@ -104,6 +87,22 @@ public class MainActivity extends Activity {
         public void copyFrom(FileSystem src) {
             directory = src.directory;
             files = src.files;
+        }
+
+        public String toString() {
+            String fmt = "directory=%s, files=[%s]";
+            return String.format(fmt, directory, join(files));
+        }
+
+        private String join(String[] sa) {
+            int length = sa.length;
+            String init = 0 < length ? sa[0] : "";
+            StringBuilder buffer = new StringBuilder(init);
+            for (int i = 1; i < length; i++) {
+                buffer.append(", ");
+                buffer.append(sa[i]);
+            }
+            return buffer.toString();
         }
     }
 
@@ -208,25 +207,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    private abstract class ProcedureOnConnected {
-
-        public abstract void run();
-    }
-
-    private class ResumeProcedureOnConnected extends ProcedureOnConnected {
-
-        public void run() {
-            sendWhatFile();
-            onConnectedWithService();
-        }
-    }
-
-    private class NopProcedureOnConnected extends ProcedureOnConnected {
-
-        public void run() {
-        }
-    }
-
     private interface MessengerWrapper {
 
         public void send(Message msg) throws RemoteException;
@@ -253,18 +233,13 @@ public class MainActivity extends Activity {
 
     private class Connection implements ServiceConnection {
 
-        private ProcedureOnConnected mProcedureOnConnected;
-
-        public Connection(ProcedureOnConnected procedureOnConnected) {
-            mProcedureOnConnected = procedureOnConnected;
-        }
-
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
             Messenger messenger = new Messenger(service);
             mOutgoingMessenger = new TrueMessenger(messenger);
 
-            mProcedureOnConnected.run();
+            sendMessage(AudioService.MSG_WHAT_STATUS);
+            sendMessage(AudioService.MSG_WHAT_LIST);
 
             Log.i(LOG_TAG, "MainActivity connected to AudioService.");
         }
@@ -288,17 +263,44 @@ public class MainActivity extends Activity {
         }
     }
 
-    private class PlayAfterSeeking implements Runnable {
+    private interface ProcBeforeSeeking extends Runnable {
+    }
+
+    private class NopBeforeSeeking implements ProcBeforeSeeking {
+
+        @Override
+        public void run() {
+        }
+    }
+
+    private class PauseBeforeSeeking implements ProcBeforeSeeking {
+
+        @Override
+        public void run() {
+            pause();
+        }
+    }
+
+    private abstract class ProcAfterSeeking {
 
         public void run() {
-            startTimer();
+            work();
+            mInSeeking = false;
+        }
+
+        protected abstract void work();
+    }
+
+    private class PlayAfterSeeking extends ProcAfterSeeking {
+
+        protected void work() {
             sendPlay();
         }
     }
 
-    private class StayAfterSeeking implements Runnable {
+    private class StayAfterSeeking extends ProcAfterSeeking {
 
-        public void run() {
+        protected void work() {
         }
     }
 
@@ -344,146 +346,55 @@ public class MainActivity extends Activity {
 
         private abstract class MessageHandler {
 
-            protected MainActivity mActivity;
-
-            public MessageHandler(MainActivity activity) {
-                mActivity = activity;
-            }
-
             public abstract void handle(Message msg);
         }
 
-        private class CompletionHandler extends MessageHandler {
+        private class PausedHandler extends MessageHandler {
 
-            public CompletionHandler(MainActivity activity) {
-                super(activity);
-            }
-
+            @Override
             public void handle(Message msg) {
-                completeSlider();
-                mActivity.pause();
-            }
-
-            /**
-             * Moves the slider head to the last.
-             *
-             * During AAP is on background, UI is not updated. UI is updated
-             * when AAP comes back to foreground. If music is on air,
-             * MSG_WHAT_TIME message updates the slider. Similarly,
-             * MSG_COMPLETION must update UI.
-             */
-            private void completeSlider() {
-                RotatingUzumakiSlider slider = mActivity.mSlider;
-                slider.setProgress(slider.getMax());
-            }
-        }
-
-        private class WhatTimeHandler extends MessageHandler {
-
-            public WhatTimeHandler(MainActivity activity) {
-                super(activity);
-            }
-
-            public void handle(Message msg) {
-                mActivity.updateCurrentTime(msg.arg1);
-            }
-        }
-
-        private class NotPlayingHandler extends MessageHandler {
-
-            public NotPlayingHandler(MainActivity activity) {
-                super(activity);
-            }
-
-            public void handle(Message msg) {
-                mActivity.pause();
-            }
-        }
-
-        private class NopHandler extends MessageHandler {
-
-            public NopHandler() {
-                super(null);
-            }
-
-            public void handle(Message _) {
+                Object o = msg.obj;
+                AudioService.PausedArgument a = (AudioService.PausedArgument)o;
+                mActivity.onPaused(a);
             }
         }
 
         private class PlayingHandler extends MessageHandler {
 
-            public PlayingHandler(MainActivity activity) {
-                super(activity);
-            }
-
             public void handle(Message msg) {
-                AudioService.PlayingArgument a = (AudioService.PlayingArgument)msg.obj;
-                mActivity.mPlayingFilePosition = a.position;
-                mActivity.showPlayingFile();
-
-                mActivity.mIncomingHandler.enableResponse();
+                mActivity.onPlaying((AudioService.PlayingArgument)msg.obj);
             }
         }
 
+        private class ListHandler extends MessageHandler {
+
+            public void handle(Message msg) {
+                AudioService.ListArgument a;
+                a = (AudioService.ListArgument)msg.obj;
+                FileSystem fs = mActivity.mPlayingFiles;
+                fs.directory = a.directory;
+                String[] files = a.files;
+                fs.files = files != null ? files : new String[0];
+            }
+        }
+
+        private MainActivity mActivity;
         private SparseArray<MessageHandler> mHandlers;
-        private MessageHandler mWhatTimeHandler;
-        private MessageHandler mCompletionHandler;
-        private MessageHandler mNopHandler;
 
         public IncomingHandler(MainActivity activity) {
+            mActivity = activity;
             mHandlers = new SparseArray<MessageHandler>();
-            mHandlers.put(AudioService.MSG_PLAYING,
-                          new PlayingHandler(activity));
-            mHandlers.put(AudioService.MSG_NOT_PLAYING,
-                          new NotPlayingHandler(activity));
-
-            mWhatTimeHandler = new WhatTimeHandler(activity);
-            mCompletionHandler = new CompletionHandler(activity);
-            mNopHandler = new NopHandler();
-
-            ignoreResponseUntilPlaying();
+            mHandlers.put(AudioService.MSG_PLAYING, new PlayingHandler());
+            mHandlers.put(AudioService.MSG_PAUSED, new PausedHandler());
+            mHandlers.put(AudioService.MSG_LIST, new ListHandler());
         }
 
         @Override
         public void handleMessage(Message msg) {
+            String s = AudioService.Utils.getMessageString(msg);
+            Log.i(LOG_TAG, String.format("recv: %s", s));
+
             mHandlers.get(msg.what).handle(msg);
-        }
-
-        /**
-         * Orders to ignore MSG_WHAT_TIME/MSG_COMPLETION messages until a next
-         * MSG_PLAYING.
-         *
-         * When a user selects a new music in playing another one, some
-         * MSG_WHAT_TIME messages may be included in the message queue. These
-         * messages will change time before starting to play the new music. So,
-         * MSG_WHAT_TIME must be ignored until a next MSG_PLAY response.
-         *
-         * Same case is on MSG_COMPLETION. If a music finished, AudioService
-         * send back MSG_COMPLETION for each MSG_WHAT_TIME message in the queue.
-         * These responses start playing a next music (finally, no music but
-         * last one will be skipped). This is a reason why I must drop
-         * MSG_COMPLETION responses once I accepted first one.
-         *
-         * NOTE: At first, I tried to use a new messenger and a handler, but
-         * they did not work expectedly. I guess that all messengers must share
-         * one singleton message queue.
-         */
-        public void ignoreResponseUntilPlaying() {
-            setWhatTimeHandler(mNopHandler);
-            setCompletionHandler(mNopHandler);
-        }
-
-        private void enableResponse() {
-            setWhatTimeHandler(mWhatTimeHandler);
-            setCompletionHandler(mCompletionHandler);
-        }
-
-        private void setWhatTimeHandler(MessageHandler handler) {
-            mHandlers.put(AudioService.MSG_WHAT_TIME, handler);
-        }
-
-        private void setCompletionHandler(MessageHandler handler) {
-            mHandlers.put(AudioService.MSG_COMPLETION, handler);
         }
     }
 
@@ -684,14 +595,23 @@ public class MainActivity extends Activity {
 
         private class Proc implements Runnable {
 
+            private long mTimeAtStart;
+            private int mOffsetAtStart;
+
+            public Proc(long timeAtStart, int offsetAtStart) {
+                mTimeAtStart = timeAtStart;
+                mOffsetAtStart = offsetAtStart;
+            }
+
             public void run() {
-                sendMessage(AudioService.MSG_WHAT_TIME);
+                long now = new Date().getTime();
+                updateCurrentTime((int)(now - mTimeAtStart + mOffsetAtStart));
             }
         }
 
-        public PlayerTask() {
+        public PlayerTask(long timeAtStart, int offsetAtStart) {
             mHandler = new Handler();
-            mProc = new Proc();
+            mProc = new Proc(timeAtStart, offsetAtStart);
         }
 
         private Handler mHandler;
@@ -819,13 +739,15 @@ public class MainActivity extends Activity {
     private TimerInterface mTimer;
 
     // Stateful internal data
-    private PlayerState mPlayerState;
     private String[] mDirectories;
     private FileSystem mShownFiles = new FileSystem();
     private FileSystem mPlayingFiles = new FileSystem();
     private int mPlayingFilePosition;
 
-    private Runnable mProcAfterSeeking;
+    private boolean mInPlaying;
+    private boolean mInSeeking = false;
+    private ProcBeforeSeeking mProcBeforeSeeking;
+    private ProcAfterSeeking mProcAfterSeeking;
 
     private ServiceConnection mConnection;
     private MessengerWrapper mOutgoingMessenger = new FakeMessenger();
@@ -853,7 +775,6 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
-        mPlayerState = PlayerState.PAUSED;
         findViews();
         initializeFlipButtonListener();
         initializeDirList();
@@ -894,21 +815,10 @@ public class MainActivity extends Activity {
         super.onResume();
         resumeState();
 
-        ProcedureOnConnected proc = mPlayerState == PlayerState.PLAYING
-                ? new ResumeProcedureOnConnected()
-                : new NopProcedureOnConnected();
-        mConnection = new Connection(proc);
+        mConnection = new Connection();
         Intent intent = new Intent(this, AudioService.class);
         startService(intent);
         bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-
-        if (mPlayerState != PlayerState.PLAYING) {
-            /*
-             * To initialize other members (timer, the play button, outgoing
-             * messenger, etc), pause() is called.
-             */
-            pause();
-        }
 
         Log.i(LOG_TAG, "MainActivity was resumed.");
     }
@@ -1048,15 +958,6 @@ public class MainActivity extends Activity {
         setSliderChangeListener(mFakeSliderListener);
     }
 
-    private void pause() {
-        mProcAfterSeeking = new StayAfterSeeking();
-        stopTimer();
-        changePauseButtonToPlayButton();
-        enableSliderChangeListener();
-        sendMessage(AudioService.MSG_PAUSE);
-        mPlayerState = PlayerState.PAUSED;
-    }
-
     private void showCurrentTime() {
         showTime(mCurrentTime, mSlider.getProgress());
     }
@@ -1066,7 +967,7 @@ public class MainActivity extends Activity {
         showCurrentTime();
     }
 
-    private void startTimer() {
+    private void startTimer(long timeAtStart, int offsetAtStart) {
         mTimer = new TrueTimer();
         int duration = getDuration(getPlayingPath());   // [msec]
         int angle = Math.abs(mSlider.getSweepAngle());
@@ -1075,7 +976,7 @@ public class MainActivity extends Activity {
          * Each Timer requests new TimerTask object (Timers cannot share one
          * task).
          */
-        TimerTask task = new PlayerTask();
+        TimerTask task = new PlayerTask(timeAtStart, offsetAtStart);
         mTimer.scheduleAtFixedRate(task, 0, Math.max(period, 10));
     }
 
@@ -1089,37 +990,52 @@ public class MainActivity extends Activity {
         mPlayButton.setImageResource(R.drawable.ic_play);
     }
 
-    private void onConnectedWithService() {
-        startTimer();
+    private void onPaused(AudioService.PausedArgument a) {
+        mProcBeforeSeeking = new NopBeforeSeeking();
+        mProcAfterSeeking = mInPlaying && mInSeeking
+                ? new PlayAfterSeeking()
+                : new StayAfterSeeking();
+        mInPlaying = false;
+
+        stopTimer();
+
+        mSlider.setProgress(a.currentOffset);
+        changePauseButtonToPlayButton();
+        enableSliderChangeListener();
+    }
+
+    private void onPlaying(AudioService.PlayingArgument a) {
+        mPlayingFilePosition = a.filePosition;
+        mProcBeforeSeeking = new PauseBeforeSeeking();
         mProcAfterSeeking = new PlayAfterSeeking();
+        mInPlaying = true;
+
+        stopTimer();
+        startTimer(a.timeAtStart, a.offsetAtStart);
+
+        showPlayingFile();
         changePlayButtonToPauseButton();
         disableSliderChangeListener();
     }
 
     private void play() {
-        stopTimer();
-
-        sendInit();
         sendPlay();
-        onConnectedWithService();
-
-        mPlayerState = PlayerState.PLAYING;
-    }
-
-    private void sendWhatFile() {
-        sendMessage(AudioService.MSG_WHAT_FILE);
     }
 
     private void sendInit() {
         AudioService.InitArgument a = new AudioService.InitArgument();
         a.directory = mPlayingFiles.directory;
         a.files = mPlayingFiles.files;
-        a.position = mPlayingFilePosition;
         sendMessage(AudioService.MSG_INIT, a);
+    }
+
+    private void initializeList() {
+        sendInit();
     }
 
     private void sendPlay() {
         AudioService.PlayArgument a = new AudioService.PlayArgument();
+        a.filePosition = mPlayingFilePosition;
         a.offset = mSlider.getProgress();
         sendMessage(AudioService.MSG_PLAY, a);
     }
@@ -1174,12 +1090,16 @@ public class MainActivity extends Activity {
         button.setImageResource(resourceId);
     }
 
+    private void pause() {
+        sendMessage(AudioService.MSG_PAUSE);
+    }
+
     private void selectFile(int position) {
         pause();
-        mIncomingHandler.ignoreResponseUntilPlaying();
 
         mPlayingFiles.copyFrom(mShownFiles);
         mPlayingFilePosition = position;
+        initializeList();
 
         enableButton(mNextButton1, true);
         showNext();
@@ -1241,7 +1161,6 @@ public class MainActivity extends Activity {
         saveTextView(editor, Key.TOTAL_TIME, mTotalTime);
 
         // internal data
-        PreferencesUtil.putPlayerState(editor, mPlayerState);
         saveStringArray(editor, Key.DIRECTORIES, mDirectories);
         saveFileSystem(editor, mShownFiles, Key.SHOWN_DIRECTORY,
                        Key.SHOWN_FILES);
@@ -1267,7 +1186,6 @@ public class MainActivity extends Activity {
         restoreTextView(prefs, Key.TOTAL_TIME, mTotalTime);
 
         // Internal data
-        mPlayerState = PreferencesUtil.getPlayerState(prefs);
         mDirectories = PreferencesUtil.getStringArray(prefs,
                                                       Key.DIRECTORIES.name());
         restoreFileSystem(prefs, mShownFiles, Key.SHOWN_DIRECTORY,
@@ -1333,8 +1251,11 @@ public class MainActivity extends Activity {
         editor.putBoolean(key.getKey(), button.isClickable());
     }
 
-    private void sendMessage(int what, Object o) {
-        Message msg = Message.obtain(null, what, o);
+    private void sendMessage(int what, AudioService.Argument a) {
+        Message msg = Message.obtain(null, what, a);
+        String s = AudioService.Utils.getMessageString(msg);
+        Log.i(LOG_TAG, String.format("send: %s", s));
+
         msg.replyTo = mIncomingMessenger;
         try {
             mOutgoingMessenger.send(msg);
@@ -1356,9 +1277,8 @@ public class MainActivity extends Activity {
     */
 
     private void onStartSliding() {
-        stopTimer();
-        enableSliderChangeListener();
-        sendMessage(AudioService.MSG_PAUSE);
+        mProcBeforeSeeking.run();
+        mInSeeking = true;
     }
 
     private void initializeFileList() {

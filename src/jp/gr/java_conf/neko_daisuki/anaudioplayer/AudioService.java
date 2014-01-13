@@ -1,7 +1,19 @@
 package jp.gr.java_conf.neko_daisuki.anaudioplayer;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
 
 import android.app.Service;
 import android.content.Intent;
@@ -20,21 +32,122 @@ import android.util.SparseArray;
 
 public class AudioService extends Service {
 
-    public static class PlayArgument {
+    public static class Utils {
 
-        public int offset;
+        private static SparseArray<String> mMessages;
+
+        public static String getMessageString(Message msg) {
+            Object o = msg.obj;
+            String args = o != null ? o.toString() : "(null)";
+            return String.format("%s: %s", mMessages.get(msg.what), args);
+        }
+
+        static {
+            mMessages = new SparseArray<String>();
+            mMessages.put(MSG_WHAT_LIST, "MSG_WHAT_LIST");
+            mMessages.put(MSG_LIST, "MSG_LIST");
+            mMessages.put(MSG_WHAT_STATUS, "MSG_WHAT_STATUS");
+            mMessages.put(MSG_PLAYING, "MSG_PLAYING");
+            mMessages.put(MSG_PAUSED, "MSG_PAUSED");
+            mMessages.put(MSG_INIT, "MSG_INIT");
+            mMessages.put(MSG_PLAY, "MSG_PLAY");
+            mMessages.put(MSG_PAUSE, "MSG_PAUSE");
+        }
     }
 
-    public static class InitArgument {
+    public static class Argument {
+
+        protected String join(String[] sa) {
+            return sa != null ? joinNonNullStrings(sa) : "(null)";
+        }
+
+        protected StringBuffer quote(String s) {
+            StringBuffer buffer = new StringBuffer("\"");
+            buffer.append(s);
+            buffer.append("\"");
+            return buffer;
+        }
+
+        private String joinNonNullStrings(String[] sa) {
+            StringBuilder buffer = new StringBuilder("[");
+            int len = sa.length;
+            buffer.append(quote(0 < len ? sa[0] : ""));
+            for (int i = 1; i < len; i++) {
+                buffer.append(", ");
+                buffer.append(quote(sa[i]));
+            }
+            buffer.append("]");
+            return buffer.toString();
+        }
+    }
+
+    public static class ListArgument extends Argument {
 
         public String directory;
         public String[] files;
-        public int position;
+
+        public String toString() {
+            String fmt = "directory=%s, files=%s";
+            return String.format(fmt, quote(directory), join(files));
+        }
     }
 
-    public static class PlayingArgument {
+    public static class PlayingArgument extends Argument {
 
-        public int position;
+        public int filePosition;
+        public long timeAtStart;
+        public int offsetAtStart;
+
+        public String toString() {
+            String fmt = joinStrings(new String[] {
+                    "filePosition=%d",
+                    "timeAtStart=%d (%s)",
+                    "offsetAtStart=%d"
+            });
+            return String.format(fmt, filePosition, timeAtStart,
+                                 DATE_FORMAT.format(new Date(timeAtStart)),
+                                 offsetAtStart);
+        }
+
+        private String joinStrings(String[] sa) {
+            StringBuilder buffer = new StringBuilder(sa[0]);
+            for (int i = 1; i < sa.length; i++) {
+                buffer.append(", ");
+                buffer.append(sa[i]);
+            }
+            return buffer.toString();
+        }
+    }
+
+    public static class PausedArgument extends Argument {
+
+        public int currentOffset;
+
+        public String toString() {
+            return String.format("currentOffset=%d", currentOffset);
+        }
+    }
+
+    public static class PlayArgument extends Argument {
+
+        public int filePosition;
+        public int offset;
+
+        public String toString() {
+            String fmt = "filePosition=%d, offset=%d";
+            return String.format(fmt, filePosition, offset);
+        }
+    }
+
+    public static class InitArgument extends Argument {
+
+        public String directory;
+        public String[] files;
+
+        public String toString() {
+            String fmt = "directory=%s, files=%s";
+            return String.format(fmt, quote(directory), join(files));
+        }
     }
 
     private interface Player {
@@ -45,14 +158,50 @@ public class AudioService extends Service {
         public void release();
         public void setOnCompletionListener(OnCompletionListener listener);
         public void seekTo(int offset);
+        public boolean isPlaying();
     }
 
-    private static class TruePlayer implements Player {
+    private class TruePlayer implements Player {
 
         private class SeekCompleteListener implements OnSeekCompleteListener {
 
+            /**
+             * Hmm, MediaPlayer.start() calls back OnSeekCompleteListener once
+             * more (I do not know why). This causes sending MSG_PLAYING twice.
+             */
+            private abstract class Proc {
+
+                public abstract void run(MediaPlayer mp);
+            }
+
+            private class TrueProc extends Proc {
+
+                @Override
+                public void run(MediaPlayer mp) {
+                    mTimeAtStart = new Date().getTime();
+                    mOffsetAtStart = mOffset;
+                    mp.start();
+                    reply(mReplyTo, obtainPlayingMessage());
+                }
+            }
+
+            private class FakeProc extends Proc {
+
+                @Override
+                public void run(MediaPlayer mp) {
+                }
+            }
+
+            private int mOffset;
+            private Proc mProc = new TrueProc();
+
+            public SeekCompleteListener(int offset) {
+                mOffset = offset;
+            }
+
             public void onSeekComplete(MediaPlayer mp) {
-                mp.start();
+                mProc.run(mp);
+                mProc = new FakeProc();
             }
         }
 
@@ -72,12 +221,12 @@ public class AudioService extends Service {
         private MediaPlayer mMp = new MediaPlayer();
 
         public TruePlayer() {
-            mMp.setOnSeekCompleteListener(new SeekCompleteListener());
             mMp.setAudioStreamType(AudioManager.STREAM_MUSIC);
         }
 
         public void play(String path, int offset) throws IOException {
             mMp.setOnPreparedListener(new PreparedListener(offset));
+            enableOnSeekCompleteListener(offset);
             mMp.reset();
             mMp.setDataSource(path);
             mMp.prepareAsync();
@@ -102,7 +251,17 @@ public class AudioService extends Service {
 
         @Override
         public void seekTo(int offset) {
+            enableOnSeekCompleteListener(offset);
             mMp.seekTo(offset);
+        }
+
+        @Override
+        public boolean isPlaying() {
+            return mMp.isPlaying();
+        }
+
+        private void enableOnSeekCompleteListener(int offset) {
+            mMp.setOnSeekCompleteListener(new SeekCompleteListener(offset));
         }
     }
 
@@ -133,6 +292,11 @@ public class AudioService extends Service {
         @Override
         public void seekTo(int offset) {
         }
+
+        @Override
+        public boolean isPlaying() {
+            return false;
+        }
     }
 
     private class CompletionListener implements OnCompletionListener {
@@ -145,172 +309,88 @@ public class AudioService extends Service {
 
     private static class IncomingHandler extends Handler {
 
-        private abstract static class MessageHandler {
+        private interface MessageHandler {
 
-            protected AudioService mService;
-
-            public MessageHandler(AudioService service) {
-                mService = service;
-            }
-
-            public abstract void handle(Message msg);
-
-            protected void reply(Message msg, Message res) {
-                try {
-                    msg.replyTo.send(res);
-                }
-                catch (RemoteException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            protected void sendPlaying(Message msg) {
-                PlayingArgument a = new PlayingArgument();
-                a.position = mService.mPosition;
-                reply(msg, Message.obtain(null, MSG_PLAYING, a));
-            }
+            public void handle(Message msg);
         }
 
-        private static class PauseHandler extends MessageHandler {
+        private class WhatListHandler implements MessageHandler {
 
-            public PauseHandler(AudioService service) {
-                super(service);
-            }
-
+            @Override
             public void handle(Message msg) {
-                mService.pause();
+                ListArgument a = new ListArgument();
+                a.directory = mService.mDirectory;
+                a.files = mService.mFiles;
+                reply(msg, Message.obtain(null, MSG_LIST, a));
             }
         }
 
-        private static class WhatTimeCompletionHandler extends MessageHandler {
+        private class WhatStatusHandler implements MessageHandler {
 
-            public WhatTimeCompletionHandler(AudioService service) {
-                super(service);
-            }
-
+            @Override
             public void handle(Message msg) {
-                Message reply = Message.obtain(null, MSG_COMPLETION);
-                try {
-                    msg.replyTo.send(reply);
-                }
-                catch (RemoteException e) {
-                    e.printStackTrace();
-                }
+                Message res = mService.mPlayer.isPlaying()
+                        ? mService.obtainPlayingMessage()
+                        : mService.obtainPausedMessage();
+                reply(msg, res);
             }
         }
 
-        private static class WhatTimeHandler extends MessageHandler {
+        private class InitHandler implements MessageHandler {
 
-            public WhatTimeHandler(AudioService service) {
-                super(service);
-            }
-
-            public void handle(Message msg) {
-                int what = MSG_WHAT_TIME;
-                int pos = mService.mPlayer.getCurrentPosition();
-                Message reply = Message.obtain(null, what, pos, 0, msg.obj);
-                reply(msg,  reply);
-            }
-        }
-
-        private static class PlayHandler extends MessageHandler {
-
-            public PlayHandler(AudioService service) {
-                super(service);
-            }
-
-            public void handle(Message msg) {
-                PlayArgument a = (PlayArgument)msg.obj;
-                mService.play(a.offset);
-            }
-        }
-
-        private static class WhatTimePlayingHandler extends MessageHandler {
-
-            public WhatTimePlayingHandler(AudioService service) {
-                super(service);
-            }
-
-            public void handle(Message msg) {
-                sendPlaying(msg);
-                mService.mHandler.sendWhatTime();
-            }
-        }
-
-        private static class WhatFileHandler extends MessageHandler {
-
-            public WhatFileHandler(AudioService service) {
-                super(service);
-            }
-
-            public void handle(Message msg) {
-                sendPlaying(msg);
-            }
-        }
-
-        private static class WhatTimeNotPlayingHandler extends MessageHandler {
-
-            public WhatTimeNotPlayingHandler(AudioService service) {
-                super(service);
-            }
-
-            public void handle(Message msg) {
-                reply(msg, Message.obtain(null, MSG_NOT_PLAYING));
-            }
-        }
-
-        private static class InitHandler extends MessageHandler {
-
-            public InitHandler(AudioService service) {
-                super(service);
-            }
-
+            @Override
             public void handle(Message msg) {
                 InitArgument a = (InitArgument)msg.obj;
                 mService.mDirectory = a.directory;
                 mService.mFiles = a.files;
-                mService.mPosition = a.position;
+                mService.writeList();
+            }
+        }
+
+        private class PlayHandler implements MessageHandler {
+
+            @Override
+            public void handle(Message msg) {
+                mService.mReplyTo = msg.replyTo;
+                PlayArgument a = (PlayArgument)msg.obj;
+                mService.updateFilePosition(a.filePosition);
+                mService.play(a.offset);
+            }
+        }
+
+        private class PauseHandler implements MessageHandler {
+
+            @Override
+            public void handle(Message msg) {
+                mService.pause();
+                reply(msg, mService.obtainPausedMessage());
             }
         }
 
         private AudioService mService;
         private SparseArray<MessageHandler> mHandlers;
-        private MessageHandler mWhatTimeHandler;
-        private MessageHandler mWhatTimePlayingHandler;
 
         public IncomingHandler(AudioService service) {
-            initializeHandlers(service);
+            mService = service;
+
+            mHandlers = new SparseArray<MessageHandler>();
+            mHandlers.put(MSG_WHAT_LIST,  new WhatListHandler());
+            mHandlers.put(MSG_WHAT_STATUS, new WhatStatusHandler());
+            mHandlers.put(MSG_INIT, new InitHandler());
+            mHandlers.put(MSG_PLAY, new PlayHandler());
+            mHandlers.put(MSG_PAUSE, new PauseHandler());
         }
 
         @Override
         public void handleMessage(Message msg) {
+            String s = Utils.getMessageString(msg);
+            Log.i(LOG_TAG, String.format("recv: %s", s));
+
             mHandlers.get(msg.what).handle(msg);
         }
 
-        public void complete() {
-            MessageHandler h = new WhatTimeCompletionHandler(mService);
-            mHandlers.put(MSG_WHAT_TIME, h);
-        }
-
-        public void sendPlaying() {
-            mHandlers.put(MSG_WHAT_TIME, mWhatTimePlayingHandler);
-        }
-
-        public void sendWhatTime() {
-            mHandlers.put(MSG_WHAT_TIME, mWhatTimeHandler);
-        }
-
-        private void initializeHandlers(AudioService service) {
-            mService = service;
-            mHandlers = new SparseArray<MessageHandler>();
-            mHandlers.put(MSG_PLAY,  new PlayHandler(service));
-            mHandlers.put(MSG_INIT, new InitHandler(service));
-            mHandlers.put(MSG_PAUSE, new PauseHandler(service));
-            mHandlers.put(MSG_WHAT_FILE, new WhatFileHandler(service));
-            mHandlers.put(MSG_WHAT_TIME,
-                          new WhatTimeNotPlayingHandler(service));
-            mWhatTimeHandler = new WhatTimeHandler(service);
-            mWhatTimePlayingHandler = new WhatTimePlayingHandler(service);
+        private void reply(Message msg, Message res) {
+            mService.reply(msg.replyTo, res);
         }
     }
 
@@ -323,7 +403,7 @@ public class AudioService extends Service {
 
         @Override
         public void run() {
-            mHandler.complete();
+            reply(mReplyTo, obtainPausedMessage());
             postProcessOfPause();
         }
     }
@@ -332,63 +412,40 @@ public class AudioService extends Service {
 
         @Override
         public void run() {
-            mPosition += 1;
+            updateFilePosition(mFilePosition + 1);
             play(0);
         }
     }
 
-    /*
-     * Protocol for the service
-     * ========================
-     *
-     * +-------------+---------------+-----------------------------------------+
-     * |Request      |Response       |Description                              |
-     * +=============+===============+=========================================+
-     * |MSG_INIT     |(nothing)      |Initializes the service with a file list.|
-     * |             |               |The service set current audio as a first |
-     * |             |               |one in the list.                         |
-     * +-------------+---------------+-----------------------------------------+
-     * |MSG_PLAY     |(nothing)      |Plays the current audio from given       |
-     * |             |               |offset.                                  |
-     * +-------------+---------------+-----------------------------------------+
-     * |MSG_PAUSE    |(nothing)      |                                         |
-     * +-------------+---------------+-----------------------------------------+
-     * |MSG_WHAT_TIME|MSG_WHAT_TIME  |Tells current offset.                    |
-     * +             +---------------+-----------------------------------------+
-     * |             |MSG_PLAYING    |Tells new file started.                  |
-     * +             +---------------+-----------------------------------------+
-     * |             |MSG_COMPLETION |Tells that the list ended.               |
-     * +             +---------------+-----------------------------------------+
-     * |             |MSG_NOT_PLAYING|Tells that no music is on air.           |
-     * +-------------+---------------+-----------------------------------------+
-     * |MSG_WHAT_FILE|MSG_PLAYING    |Tells what file the service playing.     |
-     * +-------------+---------------+-----------------------------------------+
-     *
-     * About MSG_NOT_PLAYING
-     * ---------------------
-     *
-     *  Sometimes Android kills the process which is playing music. Android re-
-     *  creates the service, but the service gets initialized (The service is
-     *  playing nothing). So, when a user restart the application, because the
-     *  application is resumed to be playing the killed music, then it sends
-     *  MSG_WHAT_TIME. The service must tell that no music is playing to stop
-     *  the timer, etc.
-     */
-    public static final int MSG_PLAY = 0x00;
-    public static final int MSG_INIT = 0x01;
-    public static final int MSG_PLAYING = 0x02;
-    public static final int MSG_PAUSE = 0x04;
-    public static final int MSG_WHAT_TIME = 0x08;
-    public static final int MSG_WHAT_FILE = 0x10;
-    public static final int MSG_COMPLETION = 0x20;
-    public static final int MSG_NOT_PLAYING = 0x40;
+    public static final int MSG_WHAT_LIST = 0;
+    public static final int MSG_LIST = 1;
+    public static final int MSG_WHAT_STATUS = 2;
+    public static final int MSG_PLAYING = 3;
+    public static final int MSG_PAUSED = 4;
+    public static final int MSG_INIT = 5;
+    public static final int MSG_PLAY = 6;
+    public static final int MSG_PAUSE = 7;
+
+    private static final String PATH_DIRECTORY = "directory";
+    private static final String PATH_FILES = "files";
+    private static final String PATH_FILE_POSITION = "file_position";
 
     private static final String LOG_TAG = "service";
+    private static final DateFormat DATE_FORMAT = new SimpleDateFormat(
+            "yyyy-MM-dd HH:mm:ss.SSS",
+            Locale.ROOT);
 
     private String mDirectory;
     private String[] mFiles;
-    private int mPosition;
-    private String mPath;
+    private int mFilePosition;
+    /**
+     * Path of a playing file. This is needed because MSG_INIT overwrites
+     * mDirectory and mFiles, so this service misses which file is playing.
+     */
+    private String mPlayingPath;
+
+    private long mTimeAtStart;
+    private int mOffsetAtStart;
 
     private IncomingHandler mHandler;
     private Messenger mMessenger;
@@ -397,6 +454,7 @@ public class AudioService extends Service {
     private CompletionProcedure mCompletionProc;
     private CompletionProcedure mStopProc;
     private CompletionProcedure mPlayNextProc;
+    private Messenger mReplyTo;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -413,6 +471,7 @@ public class AudioService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        readList();
 
         mHandler = new IncomingHandler(this);
         mMessenger = new Messenger(mHandler);
@@ -437,18 +496,20 @@ public class AudioService extends Service {
     }
 
     private void updateCompletionProcedure() {
-        boolean isLast = mPosition == mFiles.length - 1;
+        boolean isLast = mFilePosition == mFiles.length - 1;
         mCompletionProc = isLast ? mStopProc : mPlayNextProc;
     }
 
+    private String joinPath(String s, String t) {
+        return String.format("%s%s%s", s, File.separator, t);
+    }
+
     private void play(int offset) {
-        String file = mFiles[mPosition];
-        String path = mDirectory + File.separator + file;
         mPlayer = mTruePlayer;
 
-        mHandler.sendPlaying();
-
-        if (path.equals(mPath)) {
+        String name = mFiles[mFilePosition];
+        String path = joinPath(mDirectory, name);
+        if (path.equals(mPlayingPath)) {
             mPlayer.seekTo(offset);
             return;
         }
@@ -457,11 +518,10 @@ public class AudioService extends Service {
             mPlayer.play(path, offset);
         }
         catch (IOException e) {
-            e.printStackTrace();
-            // TODO: The handler must return an error to a client.
+            handleError(e);
             return;
         }
-        mPath = path;
+        mPlayingPath = path;
         updateCompletionProcedure();
 
         Log.i(LOG_TAG, String.format("Play: %s from %d", path, offset));
@@ -474,6 +534,121 @@ public class AudioService extends Service {
 
     private void postProcessOfPause() {
         mPlayer = new FakePlayer(mPlayer.getCurrentPosition());
+    }
+
+    private Message obtainPlayingMessage() {
+        PlayingArgument a = new PlayingArgument();
+        a.timeAtStart = mTimeAtStart;
+        a.offsetAtStart = mOffsetAtStart;
+        a.filePosition = mFilePosition;
+        return Message.obtain(null, MSG_PLAYING, a);
+    }
+
+    private Message obtainPausedMessage() {
+        PausedArgument a = new PausedArgument();
+        a.currentOffset = mPlayer.getCurrentPosition();
+        return Message.obtain(null, MSG_PAUSED, a);
+    }
+
+    private void reply(Messenger replyTo, Message res) {
+        String s = Utils.getMessageString(res);
+        Log.i(LOG_TAG, String.format("send: %s", s));
+
+        try {
+            replyTo.send(res);
+        } catch (RemoteException e) {
+            handleError(e);
+        }
+    }
+
+    private void handleError(Exception e) {
+        // TODO: Send MSG_ERROR.
+        e.printStackTrace();
+    }
+
+    private String[] readArray(String path) {
+        FileInputStream in;
+        try {
+            in = openFileInput(path);
+        }
+        catch (FileNotFoundException e) {
+            Log.i(LOG_TAG, String.format("%s not found.", path));
+            return new String[0];
+        }
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        try {
+            try {
+                List<String> l = new LinkedList<String>();
+                String s;
+                while ((s = reader.readLine()) != null) {
+                    l.add(s);
+                }
+                return l.toArray(new String[0]);
+            }
+            finally {
+                reader.close();
+            }
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    private String readDirectory() {
+        String[] sa = readArray(PATH_DIRECTORY);
+        return 0 < sa.length ? sa[0] : null;
+    }
+
+    private String[] readFiles() {
+        return readArray(PATH_FILES);
+    }
+
+    private int readFilePosition() {
+        String[] sa = readArray(PATH_FILE_POSITION);
+        return 0 < sa.length ? Integer.valueOf(sa[0]) : 0;
+
+    }
+
+    private void readList() {
+        mDirectory = readDirectory();
+        mFiles = readFiles();
+        mFilePosition = readFilePosition();
+    }
+
+    private void writeArray(String path, String[] sa) {
+        FileOutputStream out;
+        try {
+            out = openFileOutput(path, 0);
+        } catch (FileNotFoundException e) {
+            Log.i(LOG_TAG, String.format("%s not found.", path));
+            return;
+        }
+        PrintWriter writer = new PrintWriter(out);
+        try {
+            for (String s: sa) {
+                writer.println(s);
+            }
+        }
+        finally {
+            writer.close();
+        }
+    }
+
+    private void writeFilePosition() {
+        String filePosition = Integer.toString(mFilePosition);
+        writeArray(PATH_FILE_POSITION, new String[] { filePosition });
+    }
+
+    private void updateFilePosition(int newValue) {
+        mFilePosition = newValue;
+        writeFilePosition();
+    }
+
+    private void writeList() {
+        writeArray(PATH_DIRECTORY, new String[] { mDirectory });
+        writeArray(PATH_FILES, mFiles);
     }
 }
 
