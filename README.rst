@@ -19,7 +19,7 @@ The author tested AAP on Acer A500. Features of A500 are::
 License
 =======
 
-AAP is an open source software on MIT lisence. See COPYING.rst.
+AAP is an open source software on MIT license. See COPYING.rst.
 
 How to build
 ============
