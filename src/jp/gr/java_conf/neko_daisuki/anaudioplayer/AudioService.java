@@ -352,7 +352,6 @@ public class AudioService extends Service {
 
             @Override
             public void handle(Message msg) {
-                mService.mReplyTo = msg.replyTo;
                 PlayArgument a = (PlayArgument)msg.obj;
                 mService.updateFilePosition(a.filePosition);
                 mService.play(a.offset);
@@ -387,6 +386,7 @@ public class AudioService extends Service {
             String s = Utils.getMessageString(msg);
             Log.i(LOG_TAG, String.format(LOCALE, "recv: %s", s));
 
+            mService.mReplyTo = msg.replyTo;
             mHandlers.get(msg.what).handle(msg);
         }
 
