@@ -1298,12 +1298,6 @@ public class MainActivity extends Activity {
         sendMessage(what, null);
     }
 
-    /*
-    private void log(String msg) {
-        mTitle.setText(msg);
-    }
-    */
-
     private void onStartSliding() {
         mProcBeforeSeeking.run();
         mInSeeking = true;
