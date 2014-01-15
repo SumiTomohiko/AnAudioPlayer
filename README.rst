@@ -9,12 +9,12 @@ Requirements
 
 AAP works on::
 
-* Android 2.2 (API level 8) or later
+* Android 3.0.x (API level 11) or later
 
-The author tested AAP on Acer A500. Features of A500 are::
+The author tested AAP on ASUS MeMO Pad HD7 ME173-BL16. Features of it are::
 
-* Android 3.2.1 (API level 13)
-* 10inch (1280x800) screen
+* Android 4.2.2 (API level 17)
+* 7inch (1,280x800) screen
 
 License
 =======
