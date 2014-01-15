@@ -17,8 +17,8 @@
         <svg2drawables-large name="ic_no_entry"/>
         <svg2drawables-large name="ic_arrow_down"/>
         <svg2drawables-large name="ic_arrow_up"/>
-        <svg2drawables name="ic_auto_repeat_enabled"/>
-        <svg2drawables name="ic_auto_repeat_disabled"/>
+        <svg2drawables-large name="ic_auto_repeat_enabled"/>
+        <svg2drawables-large name="ic_auto_repeat_disabled"/>
         <svg2drawables name="ic_playing"/>
     </target>
 </project>
