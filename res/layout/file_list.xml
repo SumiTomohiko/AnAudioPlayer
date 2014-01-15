@@ -21,7 +21,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_auto_repeat_disabled"
-            android:contentDescription="@string/auto_repeat"/>
+            android:contentDescription="@string/auto_repeat"
+            style="@style/List"/>
     </LinearLayout>
     <jp.gr.java_conf.neko_daisuki.android.widget.AutoScrollableListView
         android:id="@+id/file_list"
