@@ -53,6 +53,9 @@ public class AudioService extends Service {
             mMessages.put(MSG_INIT, "MSG_INIT");
             mMessages.put(MSG_PLAY, "MSG_PLAY");
             mMessages.put(MSG_PAUSE, "MSG_PAUSE");
+            mMessages.put(MSG_WHAT_AUTO_REPEAT, "MSG_WHAT_AUTO_REPEAT");
+            mMessages.put(MSG_TOGGLE_AUTO_REPEAT, "MSG_TOGGLE_AUTO_REPEAT");
+            mMessages.put(MSG_AUTO_REPEAT, "MSG_AUTO_REPEAT");
         }
     }
 
@@ -79,6 +82,15 @@ public class AudioService extends Service {
             }
             buffer.append("]");
             return buffer.toString();
+        }
+    }
+
+    public static class AutoRepeatArgument extends Argument {
+
+        public boolean value;
+
+        public String toString() {
+            return String.format(LOCALE, "value=%s", Boolean.toString(value));
         }
     }
 
@@ -370,6 +382,23 @@ public class AudioService extends Service {
             }
         }
 
+        private class WhatAutoRepeatHandler implements MessageHandler {
+
+            @Override
+            public void handle(Message msg) {
+                replyAutoRepeat(msg);
+            }
+        }
+
+        private class ToggleAutoRepeatHandler implements MessageHandler {
+
+            @Override
+            public void handle(Message msg) {
+                mService.toggleAutoRepeat();
+                replyAutoRepeat(msg);
+            }
+        }
+
         private AudioService mService;
         private SparseArray<MessageHandler> mHandlers;
 
@@ -382,6 +411,8 @@ public class AudioService extends Service {
             mHandlers.put(MSG_INIT, new InitHandler());
             mHandlers.put(MSG_PLAY, new PlayHandler());
             mHandlers.put(MSG_PAUSE, new PauseHandler());
+            mHandlers.put(MSG_WHAT_AUTO_REPEAT, new WhatAutoRepeatHandler());
+            mHandlers.put(MSG_TOGGLE_AUTO_REPEAT, new ToggleAutoRepeatHandler());
         }
 
         @Override
@@ -395,6 +426,16 @@ public class AudioService extends Service {
 
         private void reply(Message msg, Message res) {
             mService.reply(msg.replyTo, res);
+        }
+
+        private Message obtainAutoRepeatMessage() {
+            AutoRepeatArgument a = new AutoRepeatArgument();
+            a.value = mService.mAutoRepeat;
+            return Message.obtain(null, MSG_AUTO_REPEAT, a);
+        }
+
+        private void replyAutoRepeat(Message msg) {
+            reply(msg, obtainAutoRepeatMessage());
         }
     }
 
@@ -412,12 +453,30 @@ public class AudioService extends Service {
         }
     }
 
-    private class PlayNextProcedure extends CompletionProcedure {
+    private abstract class PlayProcedure extends CompletionProcedure {
 
         @Override
         public void run() {
-            updateFilePosition(mFilePosition + 1);
+            updateFilePosition(getNextPosition());
             play(0);
+        }
+
+        protected abstract int getNextPosition();
+    }
+
+    private class PlayFirstProcedure extends PlayProcedure {
+
+        @Override
+        protected int getNextPosition() {
+            return 0;
+        }
+    }
+
+    private class PlayNextProcedure extends PlayProcedure {
+
+        @Override
+        protected int getNextPosition() {
+            return mFilePosition + 1;
         }
     }
 
@@ -429,11 +488,15 @@ public class AudioService extends Service {
     public static final int MSG_INIT = 5;
     public static final int MSG_PLAY = 6;
     public static final int MSG_PAUSE = 7;
+    public static final int MSG_WHAT_AUTO_REPEAT = 8;
+    public static final int MSG_TOGGLE_AUTO_REPEAT = 9;
+    public static final int MSG_AUTO_REPEAT = 10;
 
     private static final String PATH_DIRECTORY = "directory";
     private static final String PATH_FILES = "files";
     private static final String PATH_FILE_POSITION = "file_position";
     private static final String PATH_CURRENT_POSITION = "current_position";
+    private static final String PATH_AUTO_REPEAT = "auto_repeat";
 
     private static final String LOG_TAG = "service";
     private static final Locale LOCALE = Locale.ROOT;
@@ -444,6 +507,7 @@ public class AudioService extends Service {
     private String mDirectory;
     private String[] mFiles;
     private int mFilePosition;
+    private boolean mAutoRepeat;
     /**
      * Path of a playing file. This is needed because MSG_INIT overwrites
      * mDirectory and mFiles, so this service misses which file is playing.
@@ -460,6 +524,7 @@ public class AudioService extends Service {
     private CompletionProcedure mCompletionProc;
     private CompletionProcedure mStopProc;
     private CompletionProcedure mPlayNextProc;
+    private CompletionProcedure mPlayFirstProc;
     private Messenger mReplyTo;
 
     @Override
@@ -478,6 +543,7 @@ public class AudioService extends Service {
     public void onCreate() {
         super.onCreate();
         readList();
+        mAutoRepeat = readAutoRepeat();
 
         mHandler = new IncomingHandler(this);
         mMessenger = new Messenger(mHandler);
@@ -486,6 +552,7 @@ public class AudioService extends Service {
         mPlayer = new FakePlayer(readCurrentPosition());
         mStopProc = new StopProcedure();
         mPlayNextProc = new PlayNextProcedure();
+        mPlayFirstProc = new PlayFirstProcedure();
 
         Log.i(LOG_TAG, "AudioService was created.");
     }
@@ -501,9 +568,14 @@ public class AudioService extends Service {
         Log.i(LOG_TAG, "AudioService was destroyed.");
     }
 
+    private CompletionProcedure getCompletionProcedureForLast() {
+        return mAutoRepeat ? mPlayFirstProc : mStopProc;
+    }
+
     private void updateCompletionProcedure() {
-        boolean isLast = mFilePosition == mFiles.length - 1;
-        mCompletionProc = isLast ? mStopProc : mPlayNextProc;
+        mCompletionProc = mFilePosition == mFiles.length - 1
+                ? getCompletionProcedureForLast()
+                : mPlayNextProc;
     }
 
     private String joinPath(String s, String t) {
@@ -669,6 +741,22 @@ public class AudioService extends Service {
         String[] a = readArray(PATH_CURRENT_POSITION);
         return 0 < a.length ? Integer.parseInt(a[0]) : 0;
 
+    }
+
+    private void writeAutoRepeat() {
+        String autoRepeat = Boolean.toString(mAutoRepeat);
+        writeArray(PATH_AUTO_REPEAT, new String[] { autoRepeat });
+    }
+
+    private boolean readAutoRepeat() {
+        String[] a = readArray(PATH_AUTO_REPEAT);
+        return 0 < a.length ? Boolean.parseBoolean(a[0]) : false;
+    }
+
+    private void toggleAutoRepeat() {
+        mAutoRepeat = !mAutoRepeat;
+        writeAutoRepeat();
+        updateCompletionProcedure();
     }
 }
 

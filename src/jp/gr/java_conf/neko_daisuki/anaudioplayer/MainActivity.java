@@ -241,6 +241,7 @@ public class MainActivity extends Activity {
 
             sendMessage(AudioService.MSG_WHAT_STATUS);
             sendMessage(AudioService.MSG_WHAT_LIST);
+            sendMessage(AudioService.MSG_WHAT_AUTO_REPEAT);
 
             Log.i(LOG_TAG, "MainActivity connected to AudioService.");
         }
@@ -379,6 +380,19 @@ public class MainActivity extends Activity {
             }
         }
 
+        private class AutoRepeatHandler extends MessageHandler {
+
+            @Override
+            public void handle(Message msg) {
+                AudioService.AutoRepeatArgument a;
+                a = (AudioService.AutoRepeatArgument)msg.obj;
+                int resId = a.value
+                        ? R.drawable.ic_auto_repeat_enabled
+                        : R.drawable.ic_auto_repeat_disabled;
+                mActivity.mAutoRepeatButton.setImageResource(resId);
+            }
+        }
+
         private MainActivity mActivity;
         private SparseArray<MessageHandler> mHandlers;
 
@@ -388,6 +402,8 @@ public class MainActivity extends Activity {
             mHandlers.put(AudioService.MSG_PLAYING, new PlayingHandler());
             mHandlers.put(AudioService.MSG_PAUSED, new PausedHandler());
             mHandlers.put(AudioService.MSG_LIST, new ListHandler());
+            mHandlers.put(AudioService.MSG_AUTO_REPEAT,
+                          new AutoRepeatHandler());
         }
 
         @Override
@@ -573,6 +589,14 @@ public class MainActivity extends Activity {
         }
     }
 
+    private class AutoRepeatButtonListener implements View.OnClickListener {
+
+        @Override
+        public void onClick(View v) {
+            sendMessage(AudioService.MSG_TOGGLE_AUTO_REPEAT);
+        }
+    }
+
     private abstract class ListListener implements AdapterView.OnItemClickListener {
     }
 
@@ -714,6 +738,7 @@ public class MainActivity extends Activity {
     private View mPrevButton1;
     private TextView mDirLabel;
     private ListView mFileList;
+    private ImageView mAutoRepeatButton;
     private ImageButton mNextButton1;
 
     private View mPrevButton2;
@@ -867,6 +892,7 @@ public class MainActivity extends Activity {
         mPrevButton1 = (View)findViewById(R.id.prev1);
         mDirLabel = (TextView)findViewById(R.id.dir_label);
         mFileList = (ListView)findViewById(R.id.file_list);
+        mAutoRepeatButton = (ImageView)findViewById(R.id.auto_repeat_button);
         mNextButton1 = (ImageButton)findViewById(R.id.next1);
 
         mPrevButton2 = (View)findViewById(R.id.prev2);
@@ -1285,6 +1311,7 @@ public class MainActivity extends Activity {
 
     private void initializeFileList() {
         mFileList.setOnItemClickListener(new FileListListener());
+        mAutoRepeatButton.setOnClickListener(new AutoRepeatButtonListener());
     }
 }
 

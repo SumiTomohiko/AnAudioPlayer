@@ -39,6 +39,7 @@ THE SOFTWARE.</string>
 
     <string name="playing_icon_desc">playing icon</string>
     <string name="navigator_button_desc">navigator button</string>
+    <string name="auto_repeat">auto repeat</string>
 </resources>
 <!--
 vim: tabstop=4 shiftwidth=4 expandtab softtabstop=4
