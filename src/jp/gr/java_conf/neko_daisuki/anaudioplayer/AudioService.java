@@ -203,6 +203,7 @@ public class AudioService extends Service {
             public void onSeekComplete(MediaPlayer mp) {
                 mProc.run(mp);
                 mProc = new FakeProc();
+                writeCurrentPosition();
             }
         }
 
@@ -430,6 +431,7 @@ public class AudioService extends Service {
     private static final String PATH_DIRECTORY = "directory";
     private static final String PATH_FILES = "files";
     private static final String PATH_FILE_POSITION = "file_position";
+    private static final String PATH_CURRENT_POSITION = "current_position";
 
     private static final String LOG_TAG = "service";
     private static final Locale LOCALE = Locale.ROOT;
@@ -479,7 +481,7 @@ public class AudioService extends Service {
         mMessenger = new Messenger(mHandler);
         mTruePlayer = new TruePlayer();
         mTruePlayer.setOnCompletionListener(new CompletionListener());
-        mPlayer = new FakePlayer(0);
+        mPlayer = new FakePlayer(readCurrentPosition());
         mStopProc = new StopProcedure();
         mPlayNextProc = new PlayNextProcedure();
 
@@ -536,6 +538,7 @@ public class AudioService extends Service {
 
     private void postProcessOfPause() {
         mPlayer = new FakePlayer(mPlayer.getCurrentPosition());
+        writeCurrentPosition();
     }
 
     private Message obtainPlayingMessage() {
@@ -652,6 +655,17 @@ public class AudioService extends Service {
     private void writeList() {
         writeArray(PATH_DIRECTORY, new String[] { mDirectory });
         writeArray(PATH_FILES, mFiles);
+    }
+
+    private void writeCurrentPosition() {
+        String pos = Integer.toString(mPlayer.getCurrentPosition());
+        writeArray(PATH_CURRENT_POSITION, new String[] { pos });
+    }
+
+    private int readCurrentPosition() {
+        String[] a = readArray(PATH_CURRENT_POSITION);
+        return 0 < a.length ? Integer.parseInt(a[0]) : 0;
+
     }
 }
 
