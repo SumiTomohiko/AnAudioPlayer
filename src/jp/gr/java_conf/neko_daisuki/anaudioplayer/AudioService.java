@@ -558,7 +558,8 @@ public class AudioService extends Service {
 
         try {
             replyTo.send(res);
-        } catch (RemoteException e) {
+        }
+        catch (RemoteException e) {
             handleError(e);
         }
     }
@@ -610,7 +611,6 @@ public class AudioService extends Service {
     private int readFilePosition() {
         String[] sa = readArray(PATH_FILE_POSITION);
         return 0 < sa.length ? Integer.valueOf(sa[0]) : 0;
-
     }
 
     private void readList() {
@@ -623,7 +623,8 @@ public class AudioService extends Service {
         FileOutputStream out;
         try {
             out = openFileOutput(path, 0);
-        } catch (FileNotFoundException e) {
+        }
+        catch (FileNotFoundException e) {
             Log.i(LOG_TAG, String.format(LOCALE, "%s not found.", path));
             return;
         }
