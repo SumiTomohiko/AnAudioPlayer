@@ -18,6 +18,7 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.database.CursorIndexOutOfBoundsException;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -684,9 +685,7 @@ public class MainActivity extends Activity {
         DIRECTORY_LABEL,
         DURATION,
         PROGRESS,
-        TITLE,
         CURRENT_TIME,
-        TOTAL_TIME,
 
         DIRECTORIES,
         SHOWN_DIRECTORY,
@@ -991,6 +990,7 @@ public class MainActivity extends Activity {
     }
 
     private void onPaused(AudioService.PausedArgument a) {
+        mPlayingFilePosition = a.filePosition;
         mProcBeforeSeeking = new NopBeforeSeeking();
         mProcAfterSeeking = mInPlaying && mInSeeking
                 ? new PlayAfterSeeking()
@@ -999,6 +999,7 @@ public class MainActivity extends Activity {
 
         stopTimer();
 
+        showPlayingFile();
         mSlider.setProgress(a.currentOffset);
         changePauseButtonToPlayButton();
         enableSliderChangeListener();
@@ -1061,9 +1062,14 @@ public class MainActivity extends Activity {
                 new String[] { path },
                 null);  // order
         try {
-            // FIXME: This code crashes when no record is found.
             c.moveToNext();
-            return c.getInt(c.getColumnIndex(col));
+            int index = c.getColumnIndex(col);
+            try {
+                return c.getInt(index);
+            }
+            catch (CursorIndexOutOfBoundsException e) {
+                return 1;       // one is harmless, zero causes zero division.
+            }
         }
         finally {
             c.close();
@@ -1156,9 +1162,7 @@ public class MainActivity extends Activity {
         saveTextView(editor, Key.DIRECTORY_LABEL, mDirLabel);
         saveInt(editor, Key.DURATION, mSlider.getMax());
         saveInt(editor, Key.PROGRESS, mSlider.getProgress());
-        saveTextView(editor, Key.TITLE, mTitle);
         saveTextView(editor, Key.CURRENT_TIME, mCurrentTime);
-        saveTextView(editor, Key.TOTAL_TIME, mTotalTime);
 
         // internal data
         saveStringArray(editor, Key.DIRECTORIES, mDirectories);
@@ -1181,9 +1185,7 @@ public class MainActivity extends Activity {
         restoreButton(prefs, Key.NEXT_BUTTON1_ENABLED, mNextButton1);
         restoreTextView(prefs, Key.DIRECTORY_LABEL, mDirLabel);
         restoreSlider(prefs);
-        restoreTextView(prefs, Key.TITLE, mTitle);
         restoreTextView(prefs, Key.CURRENT_TIME, mCurrentTime);
-        restoreTextView(prefs, Key.TOTAL_TIME, mTotalTime);
 
         // Internal data
         mDirectories = PreferencesUtil.getStringArray(prefs,

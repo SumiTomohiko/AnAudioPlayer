@@ -122,10 +122,12 @@ public class AudioService extends Service {
 
     public static class PausedArgument extends Argument {
 
+        public int filePosition;
         public int currentOffset;
 
         public String toString() {
-            return String.format(LOCALE, "currentOffset=%d", currentOffset);
+            String fmt = "filePosition=%d, currentOffset=%d";
+            return String.format(LOCALE, fmt, filePosition, currentOffset);
         }
     }
 
@@ -551,6 +553,7 @@ public class AudioService extends Service {
 
     private Message obtainPausedMessage() {
         PausedArgument a = new PausedArgument();
+        a.filePosition = mFilePosition;
         a.currentOffset = mPlayer.getCurrentPosition();
         return Message.obtain(null, MSG_PAUSED, a);
     }
