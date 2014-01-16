@@ -8,14 +8,14 @@
     android:orientation="vertical">
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        style="@style/List">
         <TextView
             android:id="@+id/dir_label"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/title_dummy"
-            style="@style/List"/>
+            android:text="@string/title_dummy"/>
         <ImageView
             android:id="@+id/auto_repeat_button"
             android:layout_width="wrap_content"
