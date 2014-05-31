@@ -858,7 +858,6 @@ public class MainActivity extends Activity {
         Log.i(LOG_TAG, "MainActivity was paused.");
     }
 
-
     private void showAbout() {
         Intent i = new Intent(this, AboutActivity.class);
         startActivity(i);
