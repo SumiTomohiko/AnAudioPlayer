@@ -30,6 +30,8 @@ import android.os.RemoteException;
 import android.util.Log;
 import android.util.SparseArray;
 
+import jp.gr.java_conf.neko_daisuki.android.util.ContextUtil;
+
 public class AudioService extends Service {
 
     public static class Utils {
@@ -596,7 +598,7 @@ public class AudioService extends Service {
             mPlayer.play(path, offset);
         }
         catch (IOException e) {
-            handleError(e);
+            ContextUtil.showException(this, "I/O error", e);
             return;
         }
         mPlayingPath = path;
@@ -638,13 +640,8 @@ public class AudioService extends Service {
             replyTo.send(res);
         }
         catch (RemoteException e) {
-            handleError(e);
+            ContextUtil.showException(this, "Cannot send a message", e);
         }
-    }
-
-    private void handleError(Exception e) {
-        // TODO: Send MSG_ERROR.
-        e.printStackTrace();
     }
 
     private String[] readArray(String path) {
