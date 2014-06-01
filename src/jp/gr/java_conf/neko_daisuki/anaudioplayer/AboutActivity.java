@@ -6,7 +6,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.widget.TextView;
 
-import jp.gr.java_conf.neko_daisuki.android.util.ActivityUtil;
+import jp.gr.java_conf.neko_daisuki.android.util.ContextUtil;
 
 public class AboutActivity extends Activity {
 
@@ -20,11 +20,11 @@ public class AboutActivity extends Activity {
     private void showVersion() {
         PackageInfo pi;
         try {
-            pi = ActivityUtil.getPackageInfo(this);
+            pi = ContextUtil.getPackageInfo(this);
         }
         catch (PackageManager.NameNotFoundException e) {
             String msg = "Cannot fetch the package information";
-            ActivityUtil.showException(this, msg, e);
+            ContextUtil.showException(this, msg, e);
             return;
         }
 
