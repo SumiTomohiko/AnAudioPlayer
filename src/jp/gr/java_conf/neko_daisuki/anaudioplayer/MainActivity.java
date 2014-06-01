@@ -46,6 +46,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
 
+import jp.gr.java_conf.neko_daisuki.android.util.ActivityUtil;
 import jp.gr.java_conf.neko_daisuki.android.widget.RotatingUzumakiSlider;
 import jp.gr.java_conf.neko_daisuki.android.widget.UzumakiHead;
 import jp.gr.java_conf.neko_daisuki.android.widget.UzumakiSlider;
@@ -1288,8 +1289,7 @@ public class MainActivity extends Activity {
             mOutgoingMessenger.send(msg);
         }
         catch (RemoteException e) {
-            // TODO: MainActivity must show error to users.
-            e.printStackTrace();
+            ActivityUtil.showException(this, "Cannot send a message", e);
         }
     }
 
