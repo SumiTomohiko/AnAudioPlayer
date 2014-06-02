@@ -15,8 +15,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 
+import android.app.Notification;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
@@ -367,11 +370,35 @@ public class AudioService extends Service {
 
         private class PlayHandler implements MessageHandler {
 
+            private static final int NOTIFICATION_ID = 1;
+            private Notification mNotification;
+
+            public PlayHandler() {
+                Context ctx = mService;
+                Notification.Builder builder = new Notification.Builder(ctx);
+                builder.setContentTitle(getApplicationName());
+                builder.setContentText("Playing");
+                builder.setSmallIcon(R.drawable.ic_launcher);
+                mNotification = builder.getNotification();
+            }
+
             @Override
             public void handle(Message msg) {
                 PlayArgument a = (PlayArgument)msg.obj;
                 mService.updateFilePosition(a.filePosition);
                 mService.play(a.offset);
+                mService.startForeground(NOTIFICATION_ID, mNotification);
+            }
+
+            private String getApplicationName() {
+                try {
+                    return ContextUtil.getApplicationName(mService);
+                }
+                catch (PackageManager.NameNotFoundException e) {
+                    String msg = "Cannot get the application name";
+                    ContextUtil.showException(mService, msg, e);
+                    return "An Audio Player";
+                }
             }
         }
 
@@ -379,6 +406,7 @@ public class AudioService extends Service {
 
             @Override
             public void handle(Message msg) {
+                mService.stopForeground(true);
                 mService.pause();
                 reply(msg, mService.obtainPausedMessage());
             }

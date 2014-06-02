@@ -32,18 +32,20 @@ public class ContextUtil {
         showToast(context, msg, Toast.LENGTH_LONG);
     }
 
+    public static String getApplicationName(Context context) throws PackageManager.NameNotFoundException {
+        PackageInfo pi = getPackageInfo(context);
+        return context.getResources().getString(pi.applicationInfo.labelRes);
+    }
+
     private static void showToast(Context context, String msg, int length) {
-        PackageInfo pi;
+        String name;
         try {
-            pi = getPackageInfo(context);
+            name = getApplicationName(context);
         }
         catch (PackageManager.NameNotFoundException e) {
             showException(context, "Cannot fetch the package information", e);
             return;
         }
-
-        int resId = pi.applicationInfo.labelRes;
-        String name = context.getResources().getString(resId);
         String s = String.format("%s: %s", name, msg);
         Toast.makeText(context, s, length).show();
     }
