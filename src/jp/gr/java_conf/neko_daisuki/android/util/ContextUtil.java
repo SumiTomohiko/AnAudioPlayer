@@ -24,7 +24,15 @@ public class ContextUtil {
         return pm.getPackageInfo(name, PackageManager.GET_INSTRUMENTATION);
     }
 
+    public static void showShortToast(Context context, String msg) {
+        showToast(context, msg, Toast.LENGTH_SHORT);
+    }
+
     public static void showToast(Context context, String msg) {
+        showToast(context, msg, Toast.LENGTH_LONG);
+    }
+
+    private static void showToast(Context context, String msg, int length) {
         PackageInfo pi;
         try {
             pi = getPackageInfo(context);
