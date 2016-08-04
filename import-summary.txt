@@ -1,0 +1,91 @@
+ECLIPSE ANDROID PROJECT IMPORT SUMMARY
+======================================
+
+Ignored Files:
+--------------
+The following files were *not* copied into the new Gradle project; you
+should evaluate whether these are still needed in your project and if
+so manually move them:
+
+* .gitignore
+* COPYING.rst
+* ChangeLog.rst
+* Makefile
+* README.rst
+* ant.properties
+* archive.sh
+* build.xml
+* custom_rules.xml
+* doc/
+* doc/dirlist-land.png
+* doc/dirlist-port.png
+* doc/filelist-land.png
+* doc/filelist-port.png
+* doc/finger.xcf
+* doc/player-land.png
+* doc/player-port.png
+* doc/player.png
+* doc/player.xcf
+* icon/
+* icon/ic_arrow_down.svg
+* icon/ic_arrow_up.svg
+* icon/ic_auto_repeat_disabled.svg
+* icon/ic_auto_repeat_enabled.svg
+* icon/ic_no_entry.svg
+* icon/ic_playing.svg
+* images/
+* images/arm.svg
+* images/button_neutral.svg
+* images/button_pressed.svg
+* images/head.svg
+* images/ic_launcher.svg
+* images/ic_pause_neutral.svg
+* images/ic_pause_pressed.svg
+* images/nav_left_disabled.svg
+* images/nav_left_neutral.svg
+* images/nav_left_pressed.svg
+* images/nav_right_disabled.svg
+* images/nav_right_neutral.svg
+* images/nav_right_pressed.svg
+* key.properties
+* proguard-project.txt
+* src/jp/gr/java_conf/neko_daisuki/anaudioplayer/
+* src/jp/gr/java_conf/neko_daisuki/anaudioplayer/AboutActivity.java
+* src/jp/gr/java_conf/neko_daisuki/anaudioplayer/AudioService.java
+* src/jp/gr/java_conf/neko_daisuki/anaudioplayer/MainActivity.java
+* src/jp/gr/java_conf/neko_daisuki/android/widget/
+* src/jp/gr/java_conf/neko_daisuki/android/widget/AutoScrollableListView.java
+* src/jp/gr/java_conf/neko_daisuki/android/widget/CircleImageButton.java
+* src/jp/gr/java_conf/neko_daisuki/android/widget/RotatingUzumakiSlider.java
+* src/jp/gr/java_conf/neko_daisuki/android/widget/UzumakiArmHead.java
+* src/jp/gr/java_conf/neko_daisuki/android/widget/UzumakiDiagram.java
+* src/jp/gr/java_conf/neko_daisuki/android/widget/UzumakiHead.java
+* src/jp/gr/java_conf/neko_daisuki/android/widget/UzumakiImageHead.java
+* src/jp/gr/java_conf/neko_daisuki/android/widget/UzumakiSlider.java
+* svg2drawables.xml
+
+Moved Files:
+------------
+Android Gradle projects use a different directory structure than ADT
+Eclipse projects. Here's how the projects were restructured:
+
+* AndroidManifest.xml => app/src/main/AndroidManifest.xml
+* assets/ => app/src/main/assets
+* lint.xml => app/lint.xml
+* res/ => app/src/main/res/
+* src/ => app/src/main/java/
+
+Next Steps:
+-----------
+You can now build the project. The Gradle project needs network
+connectivity to download dependencies.
+
+Bugs:
+-----
+If for some reason your project does not build, and you determine that
+it is due to a bug or limitation of the Eclipse to Gradle importer,
+please file a bug at http://b.android.com with category
+Component-Tools.
+
+(This import summary is for your information only, and can be deleted
+after import once you are satisfied with the results.)
