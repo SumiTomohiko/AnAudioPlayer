@@ -199,7 +199,7 @@ public class AudioService extends Service {
                 @Override
                 public void run(MediaPlayer mp) {
                     mTimeAtStart = new Date().getTime();
-                    mOffsetAtStart = mOffset;
+                    mOffsetAtStart = mp.getCurrentPosition();
                     mp.start();
                     reply(mReplyTo, obtainPlayingMessage());
                 }
@@ -212,12 +212,7 @@ public class AudioService extends Service {
                 }
             }
 
-            private int mOffset;
             private Proc mProc = new TrueProc();
-
-            public SeekCompleteListener(int offset) {
-                mOffset = offset;
-            }
 
             public void onSeekComplete(MediaPlayer mp) {
                 mProc.run(mp);
@@ -282,7 +277,7 @@ public class AudioService extends Service {
         }
 
         private void enableOnSeekCompleteListener(int offset) {
-            mMp.setOnSeekCompleteListener(new SeekCompleteListener(offset));
+            mMp.setOnSeekCompleteListener(new SeekCompleteListener());
         }
     }
 
