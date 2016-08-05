@@ -456,12 +456,6 @@ public class MainActivity extends Activity {
         }
 
         private List<String> fetchRecord(Cursor c) {
-            /*
-             * Sometimes the content provider contains duplicated rows (I do not
-             * know why). The cache is for removing second rows and latter.
-             */
-            Set<String> cache = new HashSet<String>();
-
             try {
                 List<String> l = new ArrayList<String>();
 
@@ -479,12 +473,7 @@ public class MainActivity extends Activity {
                             fmt.format(new Date(c.getLong(6))));
                     Log.e(LOG_TAG, s);
                     */
-                    String path = c.getString(index);
-                    if (cache.contains(path)) {
-                        continue;
-                    }
                     l.add(c.getString(index));
-                    cache.add(path);
                 }
 
                 return l;
