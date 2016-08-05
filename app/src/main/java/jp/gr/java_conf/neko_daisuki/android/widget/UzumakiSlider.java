@@ -208,9 +208,9 @@ public abstract class UzumakiSlider extends ViewGroup {
     protected void onFinishInflate() {
         super.onFinishInflate();
 
-        List<View> _ = new ArrayList<View>();
+        List<View> notHeadList = new ArrayList<View>();
         List<View> headList = new ArrayList<View>();
-        groupChildren(_, headList);
+        groupChildren(notHeadList, headList);
         for (View view: headList) {
             UzumakiHead head = (UzumakiHead)view;
             head.setSlider(this);

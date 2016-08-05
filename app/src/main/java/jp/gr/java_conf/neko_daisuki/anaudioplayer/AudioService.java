@@ -318,7 +318,7 @@ public class AudioService extends Service {
     private class CompletionListener implements OnCompletionListener {
 
         @Override
-        public void onCompletion(MediaPlayer _) {
+        public void onCompletion(MediaPlayer unused) {
             mCompletionProc.run();
         }
     }

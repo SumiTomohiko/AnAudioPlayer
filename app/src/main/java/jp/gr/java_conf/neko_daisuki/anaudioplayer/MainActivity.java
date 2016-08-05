@@ -230,7 +230,7 @@ public class MainActivity extends Activity {
 
     private static class FakeMessenger implements MessengerWrapper {
 
-        public void send(Message _) throws RemoteException {
+        public void send(Message unused) throws RemoteException {
         }
     }
 
@@ -587,14 +587,14 @@ public class MainActivity extends Activity {
 
     private class TrueSliderListener implements UzumakiSlider.OnSliderChangeListener {
 
-        public void onProgressChanged(UzumakiSlider _) {
+        public void onProgressChanged(UzumakiSlider unused) {
             showCurrentTime();
         }
     }
 
     private static class FakeSliderListener implements UzumakiSlider.OnSliderChangeListener {
 
-        public void onProgressChanged(UzumakiSlider _) {
+        public void onProgressChanged(UzumakiSlider unused) {
         }
     }
 
