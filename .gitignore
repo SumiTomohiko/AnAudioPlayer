@@ -4,6 +4,7 @@ AnAudioPlayer.apk
 _build
 bin
 dist
+feature_graphic.png
 gen
 jp.gr.java_conf.neko_daisuki.anaudioplayer
 jp.gr.java_conf.neko_daisuki.android.widget
