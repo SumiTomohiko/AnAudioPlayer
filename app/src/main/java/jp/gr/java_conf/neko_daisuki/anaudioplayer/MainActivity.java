@@ -1,6 +1,7 @@
 package jp.gr.java_conf.neko_daisuki.anaudioplayer;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -15,8 +16,8 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.database.Cursor;
 import android.database.CursorIndexOutOfBoundsException;
 import android.os.AsyncTask;
@@ -46,6 +47,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.ViewFlipper;
 
+import jp.gr.java_conf.neko_daisuki.android.util.ContextUtil;
 import jp.gr.java_conf.neko_daisuki.android.widget.RotatingUzumakiSlider;
 import jp.gr.java_conf.neko_daisuki.android.widget.UzumakiHead;
 import jp.gr.java_conf.neko_daisuki.android.widget.UzumakiSlider;
@@ -454,12 +456,35 @@ public class MainActivity extends Activity {
         }
 
         private List<String> fetchRecord(Cursor c) {
+            /*
+             * Sometimes the content provider contains duplicated rows (I do not
+             * know why). The cache is for removing second rows and latter.
+             */
+            Set<String> cache = new HashSet<String>();
+
             try {
                 List<String> l = new ArrayList<String>();
 
                 int index = c.getColumnIndex(MediaStore.MediaColumns.DATA);
                 while (c.moveToNext()) {
+                    /*
+                    SimpleDateFormat fmt = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                    String s = String.format(
+                            "id=%d, title=%s, display_name=%s, mime_type=%s, date_added=%s, date_modified=%s",
+                            c.getLong(1),
+                            c.getString(2),
+                            c.getString(3),
+                            c.getString(4),
+                            fmt.format(new Date(c.getLong(5))),
+                            fmt.format(new Date(c.getLong(6))));
+                    Log.e(LOG_TAG, s);
+                    */
+                    String path = c.getString(index);
+                    if (cache.contains(path)) {
+                        continue;
+                    }
                     l.add(c.getString(index));
+                    cache.add(path);
                 }
 
                 return l;
@@ -472,10 +497,21 @@ public class MainActivity extends Activity {
         private List<String> queryAudio() {
             String trackColumn = MediaStore.Audio.AudioColumns.TRACK;
             String pathColumn = MediaStore.MediaColumns.DATA;
+            String[] columns = new String[] {
+                    pathColumn,
+                    /*
+                    MediaStore.MediaColumns._ID,
+                    MediaStore.MediaColumns.TITLE,
+                    MediaStore.MediaColumns.DISPLAY_NAME,
+                    MediaStore.MediaColumns.MIME_TYPE,
+                    MediaStore.MediaColumns.DATE_ADDED,
+                    MediaStore.MediaColumns.DATE_MODIFIED
+                    */
+            };
             String order = String.format("%s, %s", trackColumn, pathColumn);
             Cursor c = getContentResolver().query(
                     MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                    new String[] { pathColumn },
+                    columns,
                     null,   // selection
                     null,   // selection arguments
                     order); // order
@@ -857,7 +893,6 @@ public class MainActivity extends Activity {
 
         Log.i(LOG_TAG, "MainActivity was paused.");
     }
-
 
     private void showAbout() {
         Intent i = new Intent(this, AboutActivity.class);
@@ -1289,8 +1324,7 @@ public class MainActivity extends Activity {
             mOutgoingMessenger.send(msg);
         }
         catch (RemoteException e) {
-            // TODO: MainActivity must show error to users.
-            e.printStackTrace();
+            ContextUtil.showException(this, "Cannot send a message", e);
         }
     }
 

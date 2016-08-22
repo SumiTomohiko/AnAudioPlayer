@@ -6,6 +6,8 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.widget.TextView;
 
+import jp.gr.java_conf.neko_daisuki.android.util.ContextUtil;
+
 public class AboutActivity extends Activity {
 
     @Override
@@ -16,16 +18,13 @@ public class AboutActivity extends Activity {
     }
 
     private void showVersion() {
-        PackageManager pm = getPackageManager();
-        String name = getPackageName();
-        int flags = PackageManager.GET_INSTRUMENTATION;
-
         PackageInfo pi;
         try {
-            pi = pm.getPackageInfo(name, flags);
+            pi = ContextUtil.getPackageInfo(this);
         }
         catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
+            String msg = "Cannot fetch the package information";
+            ContextUtil.showException(this, msg, e);
             return;
         }
 
